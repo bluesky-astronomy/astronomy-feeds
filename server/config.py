@@ -30,6 +30,6 @@ DATABASE_HOST = os.environ.get('DATABASE_HOST', None)
 DATABASE_PORT = os.environ.get('DATABASE_PORT', 25060)
 DATABASE_USER = os.environ.get('DATABASE_USER', None)
 DATABASE_PASSWORD = os.environ.get('DATABASE_PASSWORD', None)
-DATABASE_NAME = os.environ.get('DATABASE_PASSWORD')
+DATABASE_NAME = os.environ.get('DATABASE_NAME')
 if DATABASE_HOST is None or DATABASE_USER is None or DATABASE_PASSWORD is None or DATABASE_NAME is None:
     raise ValueError("You must specify a database to use!")
