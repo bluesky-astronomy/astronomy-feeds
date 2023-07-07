@@ -12,7 +12,7 @@ db = peewee.MySQLDatabase(
     port=DATABASE_PORT,
     user=DATABASE_USER,
     password=DATABASE_PASSWORD,
-    ssl_ca="/home/emily/ca-certificate.crt",
+    # ssl_ca="/home/emily/ca-certificate.crt",
     ssl_disabled=False,
 )
 
