@@ -9,7 +9,7 @@ from .config import DATABASE_NAME, DATABASE_HOST, DATABASE_USER, DATABASE_PASSWO
 db = peewee.MySQLDatabase(
     DATABASE_NAME,
     host=DATABASE_HOST,
-    port=DATABASE_PORT,
+    port=int(DATABASE_PORT),
     user=DATABASE_USER,
     password=DATABASE_PASSWORD,
     # ssl_ca="/home/emily/ca-certificate.crt",
