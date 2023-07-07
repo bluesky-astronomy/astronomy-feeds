@@ -33,7 +33,7 @@ def operations_callback(ops: dict) -> None:
     posts_to_delete = [p['uri'] for p in ops['posts']['deleted']]
     if posts_to_delete:
         Post.delete().where(Post.uri.in_(posts_to_delete))
-        logger.info(f'Deleted from feed: {len(posts_to_delete)}')
+        # logger.info(f'Deleted from feed: {len(posts_to_delete)}')
 
     if posts_to_create:
         with db.atomic():

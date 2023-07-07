@@ -2,7 +2,7 @@ import pandas as pd
 import time
 import asyncio
 import logging
-from .config import HANDLE, PASSWORD
+from .config import HANDLE, PASSWORD, SHEET_LINK, QUERY_INTERVAL
 from atproto import AsyncClient
 from .database import Account, db
 
@@ -10,8 +10,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-SHEET_LINK = "https://docs.google.com/spreadsheets/d/1aUjkLr5uzoVQuT8Iy_7QpmkdSfCXuR7S3MV3-zYKnFk/export?format=csv&gid=1795057871"
-QUERY_INTERVAL = 60 * 1
+
 
 
 async def fetch_handle(client, handle):
@@ -84,7 +83,6 @@ def refresh_valid_accounts(stream_stop_event=None, limit=50):
 
         # Update the validity status of existing accounts
         # Todo: can this be written in a less janky way
-        print("HI: ", all_accounts.query("not valid")['id'].tolist())
         with db.atomic():
             number_validated = (Account
             .update(is_valid=True)

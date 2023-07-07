@@ -19,3 +19,6 @@ PASSWORD = os.getenv("BLUESKY_PASSWORD")
 
 if HANDLE is None or PASSWORD is None:
     raise ValueError("Bluesky account environment variables not set.")
+
+SHEET_LINK = "https://docs.google.com/spreadsheets/d/1aUjkLr5uzoVQuT8Iy_7QpmkdSfCXuR7S3MV3-zYKnFk/export?format=csv&gid=1795057871"
+QUERY_INTERVAL = 60 * 10
