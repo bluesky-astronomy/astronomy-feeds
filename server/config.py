@@ -9,8 +9,13 @@ if HOSTNAME is None:
 if SERVICE_DID is None:
     SERVICE_DID = f'did:web:{HOSTNAME}'
 
-
 WHATS_ALF_URI = os.environ.get('WHATS_ALF_URI')
 if WHATS_ALF_URI is None:
     raise RuntimeError('Publish your feed first (run publish_feed.py) to obtain Feed URI. '
                        'Set this URI to "WHATS_ALF_URI" environment variable.')
+
+HANDLE = os.getenv("BLUESKY_HANDLE")
+PASSWORD = os.getenv("BLUESKY_PASSWORD")
+
+if HANDLE is None or PASSWORD is None:
+    raise ValueError("Bluesky account environment variables not set.")

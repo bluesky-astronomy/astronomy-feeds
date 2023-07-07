@@ -2,13 +2,22 @@ from datetime import datetime
 from typing import Optional
 
 from server import config
-from server.database import Post
+from server.database import Post, Account
 
 uri = config.WHATS_ALF_URI
 
 
 def handler(cursor: Optional[str], limit: int) -> dict:
-    posts = Post.select().order_by(Post.indexed_at.desc()).order_by(Post.cid.desc()).limit(limit)
+
+    valid_dids = Account.select(Account.did).where(Account.is_valid)
+
+    posts = (Post
+        .select()
+        .where(Post.author.in_(valid_dids))
+        .order_by(Post.indexed_at.desc())
+        .order_by(Post.cid.desc())
+        .limit(limit)
+    )
 
     if cursor:
         cursor_parts = cursor.split('::')

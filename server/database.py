@@ -14,8 +14,10 @@ class BaseModel(peewee.Model):
 class Post(BaseModel):
     uri = peewee.CharField(index=True)
     cid = peewee.CharField()
-    reply_parent = peewee.CharField(null=True, default=None)
-    reply_root = peewee.CharField(null=True, default=None)
+    author = peewee.CharField()
+    feed_all = peewee.BooleanField(default=False)
+    # reply_parent = peewee.CharField(null=True, default=None)
+    # reply_root = peewee.CharField(null=True, default=None)
     indexed_at = peewee.DateTimeField(default=datetime.now)
 
 
@@ -24,6 +26,15 @@ class SubscriptionState(BaseModel):
     cursor = peewee.IntegerField()
 
 
+class Account(BaseModel):
+    handle = peewee.CharField(index=True)
+    submission_id = peewee.CharField()
+    did = peewee.CharField(default="not set")
+    is_valid = peewee.BooleanField()
+    feed_all = peewee.BooleanField(default=False)
+    indexed_at = peewee.DateTimeField(default=datetime.now)
+
+
 if db.is_closed():
     db.connect()
-    db.create_tables([Post, SubscriptionState])
+    db.create_tables([Post, SubscriptionState, Account])

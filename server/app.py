@@ -2,6 +2,7 @@ import sys
 import signal
 import threading
 
+
 from server import config
 from server import data_stream
 
@@ -9,10 +10,20 @@ from flask import Flask, jsonify, request
 
 from server.algos import algos
 from server.data_filter import operations_callback
+from server.accounts import refresh_valid_accounts
+
 
 app = Flask(__name__)
 
+
+# All threads:
 stream_stop_event = threading.Event()
+
+account_thread = threading.Thread(
+    target=refresh_valid_accounts, args=(stream_stop_event,)
+)
+account_thread.start()
+
 stream_thread = threading.Thread(
     target=data_stream.run, args=(config.SERVICE_DID, operations_callback, stream_stop_event,)
 )

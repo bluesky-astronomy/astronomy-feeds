@@ -1,3 +1,10 @@
+## Custom things
+# IDE-related
+.vscode
+*.code-workspace
+
+
+## Default Python .gitignore
 .DS_Store
 .idea
 *.iml
