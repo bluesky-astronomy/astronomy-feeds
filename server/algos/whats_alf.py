@@ -14,8 +14,8 @@ def handler(cursor: Optional[str], limit: int) -> dict:
     posts = (Post
         .select()
         .where(Post.author.in_(valid_dids))
-        .order_by(Post.indexed_at.desc())
-        .order_by(Post.cid.desc())
+        .order_by(Post.indexed_at.asc())
+        .order_by(Post.cid.asc())
         .limit(limit)
     )
 

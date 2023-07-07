@@ -56,7 +56,7 @@ def refresh_valid_accounts(stream_stop_event=None, limit=50):
         logger.info("Refreshing current list of valid accounts.")
 
         # Grab the df
-        all_accounts = query_google_sheets()
+        all_accounts = query_google_sheets().dropna(subset=["name", "id", "valid"])
 
         # Work out which accounts are not in the account database
         existing_handles = [account.submission_id for account in Account.select()]
