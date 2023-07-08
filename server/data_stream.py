@@ -37,20 +37,22 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
                 continue
 
             record = get_or_create(record_raw_data, strict=False)
-            if uri.collection == models.ids.AppBskyFeedLike and is_record_type(record, models.AppBskyFeedLike):
-                operation_by_type['likes']['created'].append({'record': record, **create_info})
-            elif uri.collection == models.ids.AppBskyFeedPost and is_record_type(record, models.AppBskyFeedPost):
+            if uri.collection == models.ids.AppBskyFeedPost and is_record_type(record, models.AppBskyFeedPost):
                 operation_by_type['posts']['created'].append({'record': record, **create_info})
-            elif uri.collection == models.ids.AppBskyGraphFollow and is_record_type(record, models.AppBskyGraphFollow):
-                operation_by_type['follows']['created'].append({'record': record, **create_info})
+            # The following types of event don't need to be tracked by the feed right now:
+            # elif uri.collection == models.ids.AppBskyFeedLike and is_record_type(record, models.AppBskyFeedLike):
+            #     operation_by_type['likes']['created'].append({'record': record, **create_info})
+            # elif uri.collection == models.ids.AppBskyGraphFollow and is_record_type(record, models.AppBskyGraphFollow):
+            #     operation_by_type['follows']['created'].append({'record': record, **create_info})
 
         if op.action == 'delete':
-            if uri.collection == models.ids.AppBskyFeedLike:
-                operation_by_type['likes']['deleted'].append({'uri': str(uri)})
             if uri.collection == models.ids.AppBskyFeedPost:
                 operation_by_type['posts']['deleted'].append({'uri': str(uri)})
-            if uri.collection == models.ids.AppBskyGraphFollow:
-                operation_by_type['follows']['deleted'].append({'uri': str(uri)})
+            # The following types of event don't need to be tracked by the feed right now:
+            # elif uri.collection == models.ids.AppBskyFeedLike:
+            #     operation_by_type['likes']['deleted'].append({'uri': str(uri)})
+            # elif uri.collection == models.ids.AppBskyGraphFollow:
+            #     operation_by_type['follows']['deleted'].append({'uri': str(uri)})
 
     return operation_by_type
 

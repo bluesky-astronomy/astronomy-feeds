@@ -1,11 +1,36 @@
 import logging
-
+import time
 from atproto import models
-
 from server.database import db, Post, Account
+from .config import QUERY_INTERVAL
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+
+class AccountList:
+    def __init__(self) -> None:
+        self.accounts = None
+        self.last_query_time = time.time()
+
+    def _query_database(self) -> None:
+        if db.is_closed():
+            db.connect()
+
+        self.accounts = {account.did for account in Account.select()}
+
+        if not db.is_closed():
+            db.close()
+    
+    def get_accounts(self) -> set:
+        is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL
+        if is_overdue or self.accounts is None:
+            self._query_database()
+        return self.accounts
+    
+
+account_list = AccountList()
 
 
 def operations_callback(ops: dict) -> None:
@@ -16,7 +41,7 @@ def operations_callback(ops: dict) -> None:
     # for example, let's create our custom feed that will contain all posts that contains alf related text
 
     posts_to_create = []
-    valid_dids = {account.did for account in Account.select()}
+    valid_dids = account_list.get_accounts()
     valid_posts = [post for post in ops['posts']['created'] if post['author'] in valid_dids]
 
     for created_post in valid_posts:
@@ -30,7 +55,7 @@ def operations_callback(ops: dict) -> None:
         }
         posts_to_create.append(post_dict)
 
-    posts_to_delete = [p['uri'] for p in ops['posts']['deleted']]
+    posts_to_delete = [post['uri'] for post in ops['posts']['deleted']]
     if posts_to_delete:
         Post.delete().where(Post.uri.in_(posts_to_delete))
         # logger.info(f'Deleted from feed: {len(posts_to_delete)}')
