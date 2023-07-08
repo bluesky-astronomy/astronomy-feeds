@@ -49,14 +49,26 @@ def query_google_sheets():
     # Sanitise the valid column into a boolean only (it can be blank otherwise)
     all_accounts['valid'] = all_accounts['valid'] == True
     return all_accounts
+
+
+def sanitise_handles(all_accounts):
+    """Sanitises handle names in all_accounts to remove common encountered errors with incorrect account names."""
+    all_accounts['name'] = [x.strip() for x in all_accounts['name']]
     
 
 def refresh_valid_accounts(stream_stop_event=None, limit=50):
+    """Service that looks up current list of valid accounts, adding new DIDs to the database when new accounts are 
+    found, in addition to updating the validity of accounts based on the looked up source. 
+    
+    Conceptually, this means DIDs are queried and posts are indexed well before a user may be marked as valid, which
+    allows for the feed to be populated with their recent skeets immediately when their validity changes.
+    """
     while True:
         logger.info("Refreshing current list of valid accounts.")
 
         # Grab the df
         all_accounts = query_google_sheets().dropna(subset=["name", "id", "valid"])
+        sanitise_handles(all_accounts)
 
         # Work out which accounts are not in the account database
         existing_handles = [account.submission_id for account in Account.select()]
