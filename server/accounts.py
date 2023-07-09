@@ -10,7 +10,37 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+class AccountList:
+    def __init__(self, with_database_closing=True) -> None:
+        """Generic refreshing account list. Tries to reduce number of required query operations!"""
+        self.accounts = None
+        self.last_query_time = time.time()
+        if with_database_closing:
+            self.query_database = self.query_database_with_closing
+        else:
+            self.query_database = self.query_database_without_closing
 
+    def query_database_without_closing(self) -> None:
+        self.accounts = self.account_query()
+
+    def query_database_with_closing(self) -> None:
+        if db.is_closed():
+            db.connect()
+
+        self.query_database_without_closing()
+
+        if not db.is_closed():
+            db.close()
+
+    def account_query(self):
+        """Intended to be overwritten! Should return a set of accounts."""
+        return {account.did for account in Account.select()}
+
+    def get_accounts(self) -> set:
+        is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL
+        if is_overdue or self.accounts is None:
+            self.query_database()
+        return self.accounts
 
 
 async def fetch_handle(client, handle):

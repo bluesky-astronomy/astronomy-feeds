@@ -3,31 +3,12 @@ import time
 from atproto import models
 from server.database import db, Post, Account
 from .config import QUERY_INTERVAL
+from .accounts import AccountList
+from .algos.astro import post_is_valid
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
-
-class AccountList:
-    def __init__(self) -> None:
-        self.accounts = None
-        self.last_query_time = time.time()
-
-    def _query_database(self) -> None:
-        if db.is_closed():
-            db.connect()
-
-        self.accounts = {account.did for account in Account.select()}
-
-        if not db.is_closed():
-            db.close()
-    
-    def get_accounts(self) -> set:
-        is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL
-        if is_overdue or self.accounts is None:
-            self._query_database()
-        return self.accounts
     
 
 account_list = AccountList()
@@ -45,12 +26,18 @@ def operations_callback(ops: dict) -> None:
     valid_posts = [post for post in ops['posts']['created'] if post['author'] in valid_dids]
 
     for created_post in valid_posts:
+        post_text = created_post['record']['text']
+        add_to_feed_astro = post_is_valid(post_text)
+
+        print(post_text, add_to_feed_astro)
+
         post_dict = {
             'uri': created_post['uri'],
             'cid': created_post['cid'],
             'author': created_post['author'],
+            'text': post_text,
             'feed_all': True,
-            'feed_astro': True
+            'feed_astro': add_to_feed_astro,
             # 'reply_parent': reply_parent,
             # 'reply_root': reply_root,
         }
