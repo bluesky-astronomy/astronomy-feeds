@@ -26,7 +26,9 @@ class Post(BaseModel):
     uri = peewee.CharField(index=True)
     cid = peewee.CharField()
     author = peewee.CharField()
+    text = peewee.CharField()
     feed_all = peewee.BooleanField(default=False)
+    feed_astro = peewee.BooleanField(default=False)
     # reply_parent = peewee.CharField(null=True, default=None)
     # reply_root = peewee.CharField(null=True, default=None)
     indexed_at = peewee.DateTimeField(default=datetime.now)
@@ -42,7 +44,7 @@ class Account(BaseModel):
     submission_id = peewee.CharField()
     did = peewee.CharField(default="not set")
     is_valid = peewee.BooleanField()
-    feed_all = peewee.BooleanField(default=False)
+    feed_all = peewee.BooleanField(default=False)  # Also implicitly includes allowing feed_astro
     indexed_at = peewee.DateTimeField(default=datetime.now)
 
 

@@ -56,7 +56,7 @@ def _db_close(exc):
 
 @app.route('/')
 def index():
-    return 'ATProto Feed Generator powered by The AT Protocol SDK for Python (https://github.com/MarshalX/atproto).'
+    return 'Homepage of astronomy feeds on Bluesky. To be able to post in a feed, visit https://signup.astronomy.blue'
 
 
 @app.route('/.well-known/did.json', methods=['GET'])

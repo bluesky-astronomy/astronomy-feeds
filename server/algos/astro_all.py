@@ -4,7 +4,7 @@ from typing import Optional
 from server import config
 from server.database import Post, Account
 
-uri = config.WHATS_ALF_URI
+uri = config.URI_ASTRO_ALL
 
 
 def handler(cursor: Optional[str], limit: int) -> dict:

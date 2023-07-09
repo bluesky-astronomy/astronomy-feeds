@@ -1,6 +1,6 @@
 import os
 
-# Feed generator variables
+# Server host variables
 SERVICE_DID = os.environ.get('SERVICE_DID', None)
 HOSTNAME = os.environ.get('HOSTNAME', None)
 
@@ -10,10 +10,11 @@ if HOSTNAME is None:
 if SERVICE_DID is None:
     SERVICE_DID = f'did:web:{HOSTNAME}'
 
-WHATS_ALF_URI = os.environ.get('WHATS_ALF_URI')
-if WHATS_ALF_URI is None:
-    raise RuntimeError('Publish your feed first (run publish_feed.py) to obtain Feed URI. '
-                       'Set this URI to "WHATS_ALF_URI" environment variable.')
+# Feed variables
+URI_ASTRO_ALL = os.environ.get('URI_ASTRO_ALL')
+URI_ASTRO = os.environ.get('URI_ASTRO')
+if URI_ASTRO_ALL is None or URI_ASTRO is None:
+    raise RuntimeError('Publish your feed first (run publish_feed.py) to obtain Feed URI.')
 
 # Bluesky client integration for DID queries
 HANDLE = os.getenv("BLUESKY_HANDLE")

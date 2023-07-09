@@ -50,6 +50,7 @@ def operations_callback(ops: dict) -> None:
             'cid': created_post['cid'],
             'author': created_post['author'],
             'feed_all': True,
+            'feed_astro': True
             # 'reply_parent': reply_parent,
             # 'reply_root': reply_root,
         }
