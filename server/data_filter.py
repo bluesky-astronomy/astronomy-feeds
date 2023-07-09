@@ -1,8 +1,5 @@
 import logging
-import time
-from atproto import models
-from server.database import db, Post, Account
-from .config import QUERY_INTERVAL
+from server.database import db, Post
 from .accounts import AccountList
 from .algos.astro import post_is_valid
 
@@ -25,11 +22,11 @@ def operations_callback(ops: dict) -> None:
     valid_dids = account_list.get_accounts()
     valid_posts = [post for post in ops['posts']['created'] if post['author'] in valid_dids]
 
+    astro_feed_counter = 0
     for created_post in valid_posts:
         post_text = created_post['record']['text']
         add_to_feed_astro = post_is_valid(post_text)
-
-        print(post_text, add_to_feed_astro)
+        astro_feed_counter += int(add_to_feed_astro)
 
         post_dict = {
             'uri': created_post['uri'],
@@ -52,4 +49,4 @@ def operations_callback(ops: dict) -> None:
         with db.atomic():
             for post_dict in posts_to_create:
                 Post.create(**post_dict)
-        logger.info(f'Added to feed: {len(posts_to_create)}')
+        logger.info(f'Added to astro-all: {len(posts_to_create)}; astro: {astro_feed_counter}')

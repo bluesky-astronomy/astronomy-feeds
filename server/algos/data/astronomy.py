@@ -4,12 +4,37 @@ text = [
     "astronomer",
     "astrophysics",
     "astrophysicist",
+    "interstellar",  # the dust, not the film!
+    "intergalactic",
+    "cosmology",
+    "cosmologist",
+    "gravity",
+    "gravitational",
+    "relativity",
+    "observer",
+    "observation",
+
+    # Organisations
+    "nasa",  # may include random space news?
+    "esa",
+    "iau",
+    "aas",
+    "eas",
 
     # Instruments
+    "telescope",
+    "observatory",
     "gaia",
+    "hst",
     "hubble",
     "tess",
-    ""
+    "euclid",
+    "jwst",
+    "webb",
+    "vlt",
+    "alma",
+    "lsst",
+    "rubin",
 
     # Planets
     "earth",
@@ -26,17 +51,27 @@ text = [
     "eris",
     "planet",
     "exoplanet",
+    "protoplanetary",
 
     # Other solar system
     "asteroid",
     "comet",
 
-    # Extrasolar objects
+    # Extrasolar objects (not planets)
     "star",
-    "open cluster",
-    "globular cluster",
-    "stellar stream",
+    "stellar",
+    # "white dwarf",  # phrases are unsupported right now, sadly
+    # "red giant",
+    # "m dwarf",
+    # "black hole",
+    # "open cluster",
+    # "globular cluster",
+    # "stellar stream",
     "galaxy",
     "galaxies",
     "universe",
+
+    # Events
+    # "gamma ray burst",
+    "grb",
 ]

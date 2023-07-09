@@ -18,7 +18,7 @@ HANDLE: str = 'emily.space'
 
 # The hostname of the server where feed server will be hosted
 # Ex: feed.bsky.dev
-HOSTNAME: str = 'feed-astro.astronomy.blue'
+HOSTNAME: str = 'feed-all.astronomy.blue'
 
 # A short name for the record that will show in urls
 # Lowercase with no spaces.
