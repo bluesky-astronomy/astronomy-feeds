@@ -1,4 +1,8 @@
 text = [
+    # Hashtags
+    "#astronomy",
+    "#astro",
+
     # Terms
     "astronomy",
     "astronomer",

@@ -10,8 +10,9 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+# Todo: implement stable database closing that doesn't interfere with other threads
 class AccountList:
-    def __init__(self, with_database_closing=True) -> None:
+    def __init__(self, with_database_closing=False) -> None:
         """Generic refreshing account list. Tries to reduce number of required query operations!"""
         self.accounts = None
         self.last_query_time = time.time()
@@ -145,5 +146,5 @@ def refresh_valid_accounts(stream_stop_event=None, limit=50):
         while i < QUERY_INTERVAL:
             if stream_stop_event and stream_stop_event.is_set():
                 return
-            time.sleep(1)
-            i += 1
+            time.sleep(5)
+            i += 5
