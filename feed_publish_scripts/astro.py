@@ -31,7 +31,7 @@ DISPLAY_NAME: str = 'Astronomy'
 
 # (Optional) A description of your feed
 # Ex: Top trending content from the whole network
-DESCRIPTION: str = 'Astronomy posts on Bluesky, from astronomers!\nPosts from registered users including a 🔭 (or those classified as being about astronomy) will be included.\nAny astronomer can register to post here: https://signup.astronomy.blue'
+DESCRIPTION: str = "Astronomy posts on Bluesky, from astronomers!\nAny astronomer can register to post here: https://signup.astronomy.blue \n\nPosts from registered users including a 🔭, #astronomy, #astro, or relevant terms like 'galaxy' will be included."
 
 # (Optional) The path to an image to be used as your feed's avatar
 # Ex: ./path/to/avatar.jpeg
