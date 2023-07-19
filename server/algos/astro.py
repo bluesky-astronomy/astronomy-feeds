@@ -1,11 +1,12 @@
-from string import punctuation
 from .data import astronomy_terms
 from server import config
 from server.database import Post
 from ._algorithm import Algorithm
+from string import punctuation
 
-
-PUNCTUATION = list(punctuation) + ["\n", "\r"]
+# The same as string.punctuation in the base library, except we want to keep hashtags and also add newline etc chars
+# to the list of punctuation identifiers to remove
+PUNCTUATION = list("""!"$%&'()*+,-./:;<=>?@[\]^_`{|}~""") + ["\n", "\r"]
 
 
 def post_is_valid(post: str) -> bool:
