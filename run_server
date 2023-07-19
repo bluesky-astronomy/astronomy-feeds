@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "Starting Flask webapp in gunicorn instance..."
+gunicorn --worker-tmp-dir /dev/shm server.app:app

@@ -5,39 +5,38 @@ import threading
 from .database import db
 
 from server import config
-from server import data_stream
+from server import firehose
 
 from flask import Flask, jsonify, request
 
 from server.algos import algos
-from server.data_filter import operations_callback
 from server.accounts import refresh_valid_accounts
 
 
 app = Flask(__name__)
 
 
-# All threads:
-stream_stop_event = threading.Event()
+# # All threads:
+# stream_stop_event = threading.Event()
 
-account_thread = threading.Thread(
-    target=refresh_valid_accounts, args=(stream_stop_event,)
-)
-account_thread.start()
+# account_thread = threading.Thread(
+#     target=refresh_valid_accounts, args=(stream_stop_event,)
+# )
+# account_thread.start()
 
-stream_thread = threading.Thread(
-    target=data_stream.run, args=(config.SERVICE_DID, operations_callback, stream_stop_event,)
-)
-stream_thread.start()
-
-
-def sigint_handler(*_):
-    print('Stopping data stream...')
-    stream_stop_event.set()
-    sys.exit(0)
+# stream_thread = threading.Thread(
+#     target=firehose.run, args=(stream_stop_event,)
+# )
+# stream_thread.start()
 
 
-signal.signal(signal.SIGINT, sigint_handler)
+# def sigint_handler(*_):
+#     print('Stopping data stream...')
+#     stream_stop_event.set()
+#     sys.exit(0)
+
+
+# signal.signal(signal.SIGINT, sigint_handler)
 
 
 # This hook ensures that a connection is opened to handle any queries

@@ -40,6 +40,9 @@ def operations_callback(ops: dict) -> None:
         }
         posts_to_create.append(post_dict)
 
+    if db.is_closed():
+        db.connect()
+
     posts_to_delete = [post['uri'] for post in ops['posts']['deleted']]
     if posts_to_delete:
         Post.delete().where(Post.uri.in_(posts_to_delete))

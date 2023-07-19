@@ -4,7 +4,9 @@ from atproto import CAR, AtUri, models
 from atproto.firehose import FirehoseSubscribeReposClient, parse_subscribe_repos_message
 from atproto.xrpc_client.models.utils import get_or_create, is_record_type
 
+from server.data_filter import operations_callback
 from server.database import SubscriptionState
+from server import config
 
 if t.TYPE_CHECKING:
     from atproto.firehose import MessageFrame
@@ -57,8 +59,10 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
-def run(name, operations_callback, stream_stop_event=None):
+def run(stream_stop_event=None):
+    name = config.SERVICE_DID
     state = SubscriptionState.select(SubscriptionState.service == name).first()
+    print(f"Running firehose from HOSTNAME {name} and resuming at state {state}")
 
     params = None
     if state:
