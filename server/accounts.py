@@ -87,7 +87,7 @@ def sanitise_handles(all_accounts):
     all_accounts['name'] = [x.strip() for x in all_accounts['name']]
     
 
-def refresh_valid_accounts(stream_stop_event=None, limit=50):
+def refresh_valid_accounts(limit=50):
     """Service that looks up current list of valid accounts, adding new DIDs to the database when new accounts are 
     found, in addition to updating the validity of accounts based on the looked up source. 
     
@@ -97,9 +97,13 @@ def refresh_valid_accounts(stream_stop_event=None, limit=50):
     while True:
         logger.info("Refreshing current list of valid accounts.")
 
-        # Grab the df
+        # Grab the latest account data from Google Sheets
         all_accounts = query_google_sheets().dropna(subset=["name", "id", "valid"])
         sanitise_handles(all_accounts)
+
+        # Open the database connection
+        if db.is_closed():
+            db.connect()
 
         # Work out which accounts are not in the account database
         existing_handles = [account.submission_id for account in Account.select()]
@@ -138,13 +142,14 @@ def refresh_valid_accounts(stream_stop_event=None, limit=50):
             .execute()
             )
         logger.info(f"-> Marked {number_validated} accounts as valid and {number_unvalidated} as now invalid.")
-        
+
+        # Close the database connection, since it should be a little while until we interact with it again.
+        if not db.is_closed():
+            db.close()
         
         # Sleep! (Since downloading the .csv is relatively expensive, it's better to not do this too often.)
         # Todo: stopping criteria here is janky as fuck, fix this shit
         i = 0
         while i < QUERY_INTERVAL:
-            if stream_stop_event and stream_stop_event.is_set():
-                return
             time.sleep(5)
             i += 5
