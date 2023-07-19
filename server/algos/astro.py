@@ -3,6 +3,7 @@ from server import config
 from server.database import Post
 from ._algorithm import Algorithm
 from string import punctuation
+import re
 
 # The same as string.punctuation in the base library, except we want to keep hashtags and also add newline etc chars
 # to the list of punctuation identifiers to remove
@@ -14,12 +15,16 @@ def post_is_valid(post: str) -> bool:
     if "🔭" in post:
         return True
     
+    # Remove all links from post
+    # Modified from https://stackoverflow.com/questions/11331982/how-to-remove-any-url-within-a-string-in-python
+    post = re.sub(r"https?:\/{2}\S+", "", post)
+    
     # Remove all punctuation from the post
     post_cleaned = "".join([x if x not in PUNCTUATION else " " for x in post.lower()])
-    words = [f" {x} " for x in post_cleaned.split()]
+    words = [f" {word} " for word in post_cleaned.split()]
 
     # See if any of the words are in our list of valid astronomy terms
-    return any([True for x in words if x in astronomy_terms])
+    return any([True for word in words if word in astronomy_terms])
 
 
 class AstroAlgorithm(Algorithm):
