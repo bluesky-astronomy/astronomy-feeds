@@ -43,8 +43,8 @@ text = [
     "rubin",
 
     # Planets
-    "earth",
-    "sun",
+    # "earth",
+    # "sun",
     "venus",
     "mercury",
     "mars",
@@ -55,7 +55,7 @@ text = [
     "pluto",
     "ceres",
     "eris",
-    "planet",
+    # "planet",
     "exoplanet",
     "protoplanetary",
 
@@ -64,7 +64,7 @@ text = [
     "comet",
 
     # Extrasolar objects (not planets)
-    "star",
+    # "star",
     "stellar",
     # "white dwarf",  # phrases are unsupported right now, sadly
     # "red giant",
@@ -75,7 +75,7 @@ text = [
     # "stellar stream",
     "galaxy",
     "galaxies",
-    "universe",
+    # "universe",
 
     # Events
     # "gamma ray burst",
