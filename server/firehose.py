@@ -5,7 +5,7 @@ from atproto.firehose import FirehoseSubscribeReposClient, parse_subscribe_repos
 from atproto.xrpc_client.models.utils import get_or_create, is_record_type
 
 from server.data_filter import operations_callback
-from server.database import SubscriptionState
+from server.database import SubscriptionState, db
 from server import config
 
 if t.TYPE_CHECKING:
@@ -85,6 +85,8 @@ def run(stream_stop_event=None):
 
         # update stored state every ~20 events
         if commit.seq % 20 == 0:
+            if db.is_closed():
+                db.connect()
             SubscriptionState.update(cursor=commit.seq).where(SubscriptionState.service == name).execute()
 
         operations_callback(_get_ops_by_type(commit))

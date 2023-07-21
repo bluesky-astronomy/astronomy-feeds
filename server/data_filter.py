@@ -40,15 +40,16 @@ def operations_callback(ops: dict) -> None:
         }
         posts_to_create.append(post_dict)
 
-    if db.is_closed():
-        db.connect()
-
     posts_to_delete = [post['uri'] for post in ops['posts']['deleted']]
     if posts_to_delete:
+        if db.is_closed():
+            db.connect()
         Post.delete().where(Post.uri.in_(posts_to_delete))
         # logger.info(f'Deleted from feed: {len(posts_to_delete)}')
 
     if posts_to_create:
+        if db.is_closed():
+            db.connect()
         with db.atomic():
             for post_dict in posts_to_create:
                 Post.create(**post_dict)

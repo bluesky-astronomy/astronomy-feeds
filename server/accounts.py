@@ -22,14 +22,14 @@ class AccountList:
             self.query_database = self.query_database_without_closing
 
     def query_database_without_closing(self) -> None:
+        if db.is_closed():
+            db.connect()
         self.accounts = self.account_query()
 
     def query_database_with_closing(self) -> None:
         if db.is_closed():
             db.connect()
-
-        self.query_database_without_closing()
-
+        self.account_query()
         if not db.is_closed():
             db.close()
 
