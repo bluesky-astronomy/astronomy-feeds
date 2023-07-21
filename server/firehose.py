@@ -8,6 +8,12 @@ from server.data_filter import operations_callback
 from server.database import SubscriptionState, db
 from server import config
 
+import logging
+import traceback
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 if t.TYPE_CHECKING:
     from atproto.firehose import MessageFrame
 
@@ -59,6 +65,15 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
+def on_error_callback(e):
+    logger(f"Exception encountered in on_message_handler! {e}")
+    traceback.print_exc()
+
+    logger("Trying to re-open database connection (as this is a common issue...)")
+    if db.is_closed():
+        db.connect()
+
+
 def run(stream_stop_event=None):
     name = config.SERVICE_DID
     state = SubscriptionState.select(SubscriptionState.service == name).first()
@@ -91,4 +106,4 @@ def run(stream_stop_event=None):
 
         operations_callback(_get_ops_by_type(commit))
 
-    client.start(on_message_handler)
+    client.start(on_message_handler, on_error_callback)
