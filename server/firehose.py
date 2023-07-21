@@ -8,6 +8,7 @@ from server.data_filter import operations_callback
 from server.database import SubscriptionState, db
 from server import config
 
+import time
 import logging
 import traceback
 
@@ -65,15 +66,6 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
-def on_error_callback(e):
-    logger(f"Exception encountered in on_message_handler! {e}")
-    traceback.print_exc()
-
-    logger("Trying to re-open database connection (as this is a common issue...)")
-    if db.is_closed():
-        db.connect()
-
-
 def run(stream_stop_event=None):
     name = config.SERVICE_DID
     state = SubscriptionState.select(SubscriptionState.service == name).first()
@@ -105,5 +97,30 @@ def run(stream_stop_event=None):
             SubscriptionState.update(cursor=commit.seq).where(SubscriptionState.service == name).execute()
 
         operations_callback(_get_ops_by_type(commit))
+
+    fails = 0
+    last_fail_time = 0
+
+    def on_error_callback(e):
+        logger.info(f"Exception encountered in on_message_handler! {e}")
+        traceback.print_exc()
+
+        global fails, last_fail_time
+
+        if time.time() - 60 < last_fail_time:
+            fails += 1
+        else:
+            fails = 0
+        last_fail_time = time.time()
+        
+        if fails >= 5:
+            logger.info(f"Encountered more than 5 errors in 60 seconds! Closing firehose...")
+            client.stop()
+            return
+
+        logger.info("Trying to re-open database connection (as this is a common issue...)")
+        if db.is_closed():
+            db.connect()
+
 
     client.start(on_message_handler, on_error_callback)
