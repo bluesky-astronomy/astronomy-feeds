@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-# Todo: implement stable database closing that doesn't interfere with other threads
 class AccountList:
     def __init__(self, with_database_closing=False) -> None:
         """Generic refreshing account list. Tries to reduce number of required query operations!"""
@@ -22,16 +21,13 @@ class AccountList:
             self.query_database = self.query_database_without_closing
 
     def query_database_without_closing(self) -> None:
-        if db.is_closed():
-            db.connect()
+        db.connect(reuse_if_open=True)
         self.accounts = self.account_query()
 
     def query_database_with_closing(self) -> None:
-        if db.is_closed():
-            db.connect()
-        self.account_query()
-        if not db.is_closed():
-            db.close()
+        db.connect(reuse_if_open=True)
+        self.accounts = self.account_query()
+        db.close()
 
     def account_query(self):
         """Intended to be overwritten! Should return a set of accounts."""
@@ -41,6 +37,7 @@ class AccountList:
         is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL
         if is_overdue or self.accounts is None:
             self.query_database()
+            self.last_query_time = time.time()
         return self.accounts
 
 
