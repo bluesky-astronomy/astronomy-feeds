@@ -68,17 +68,17 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
 
 def run(stream_stop_event=None):
     name = config.SERVICE_DID
-    state = SubscriptionState.select(SubscriptionState.service == name).first()
-    print(f"Running firehose from HOSTNAME {name} and resuming at state {state}")
+    # state = SubscriptionState.select(SubscriptionState.service == name).first()
+    # params = None
+    # if state:
+    #     params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=state.cursor)
 
-    params = None
-    if state:
-        params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=state.cursor)
+    client = FirehoseSubscribeReposClient(None)
 
-    client = FirehoseSubscribeReposClient(params)
+    # if not state:
+    #     SubscriptionState.create(service=name, cursor=0)
 
-    if not state:
-        SubscriptionState.create(service=name, cursor=0)
+    print(f"Running firehose from HOSTNAME {name}")
 
     def on_message_handler(message: 'MessageFrame') -> None:
         # stop on next message if requested
@@ -90,11 +90,11 @@ def run(stream_stop_event=None):
         if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
             return
 
-        # update stored state every ~20 events
-        if commit.seq % 20 == 0:
-            if db.is_closed():
-                db.connect()
-            SubscriptionState.update(cursor=commit.seq).where(SubscriptionState.service == name).execute()
+        # # update stored state every ~20 events
+        # if commit.seq % 20 == 0:
+        #     if db.is_closed():
+        #         db.connect()
+        #     SubscriptionState.update(cursor=commit.seq).where(SubscriptionState.service == name).execute()
 
         operations_callback(_get_ops_by_type(commit))
 

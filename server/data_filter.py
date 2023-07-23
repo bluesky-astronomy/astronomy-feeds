@@ -2,13 +2,14 @@ import logging
 from server.database import db, Post
 from .accounts import AccountList
 from .algos.astro import post_is_valid
+import time
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
     
 
-account_list = AccountList()
+account_list = AccountList(with_database_closing=True)
 
 
 def operations_callback(ops: dict) -> None:
@@ -41,16 +42,31 @@ def operations_callback(ops: dict) -> None:
         posts_to_create.append(post_dict)
 
     posts_to_delete = [post['uri'] for post in ops['posts']['deleted']]
-    if posts_to_delete:
-        if db.is_closed():
-            db.connect()
-        Post.delete().where(Post.uri.in_(posts_to_delete))
-        # logger.info(f'Deleted from feed: {len(posts_to_delete)}')
 
-    if posts_to_create:
+    if posts_to_delete or posts_to_create:
+
+        start_time = time.time()
         if db.is_closed():
             db.connect()
-        with db.atomic():
-            for post_dict in posts_to_create:
-                Post.create(**post_dict)
-        logger.info(f'Added to astro-all: {len(posts_to_create)}; astro: {astro_feed_counter}')
+        open_time = time.time() - start_time
+
+        if posts_to_delete:
+            Post.delete().where(Post.uri.in_(posts_to_delete))
+            # logger.info(f'Deleted from feed: {len(posts_to_delete)}')
+
+        delete_time = time.time() - start_time
+
+        if posts_to_create:
+            with db.atomic():
+                for post_dict in posts_to_create:
+                    Post.create(**post_dict)
+            logger.info(f'Added to astro-all: {len(posts_to_create)}; astro: {astro_feed_counter}')
+
+        add_time = time.time() - start_time
+
+        if not db.is_closed():
+            db.close()
+
+        close_time = time.time() - start_time
+
+        logger.info(f'Timing stats:\nopn: {open_time:.6f}  del: {delete_time:.6f} add: {add_time:.6f} clo: {close_time:.6f}')
