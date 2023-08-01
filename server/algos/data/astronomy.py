@@ -1,9 +1,10 @@
 text = [
-    # Todo: hashtags don't actually work as punctuation is removed! It will use the term below (like "astro" or "astronomy") instead.
     # Hashtags
     "#astronomy",
     "#astro",
+]
 
+"""
     # Terms
     "astronomy",
     "astro",
@@ -81,3 +82,4 @@ text = [
     # "gamma ray burst",
     "grb",
 ]
+"""
