@@ -59,7 +59,7 @@ class PostList:
             self.posts.remove(post)
     
 
-post_list = PostList(with_database_closing=False)
+post_list = PostList(with_database_closing=True)
 
 
 def operations_callback(ops: dict) -> None:

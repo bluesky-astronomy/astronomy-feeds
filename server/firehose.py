@@ -112,13 +112,13 @@ def run(stream_stop_event=None):
 def _run(stream_stop_event=None):
     
     name = config.SERVICE_DID
-    print(f"Running firehose from HOSTNAME {name}")
+    print(f"Running firehose for {name}")
 
     # This is the client used to subscribe to the firehose from the atproto lib.
     client = FirehoseSubscribeReposClient(None)
 
     # Setup workers to analyse and process posts (i.e. this is done as separately as possible to atproto post ingestion)
-    workers_count = multiprocessing.cpu_count() * 2 - 1
+    workers_count = 1  # multiprocessing.cpu_count() * 2 - 1
     max_queue_size = 500
 
     queue = multiprocessing.Queue(maxsize=max_queue_size)
