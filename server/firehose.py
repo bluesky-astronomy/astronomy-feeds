@@ -9,7 +9,6 @@ from atproto.exceptions import FirehoseError
 from atproto.xrpc_client.models.common import XrpcError
 
 from server.data_filter import operations_callback
-from server.database import db
 from server import config
 
 import logging
@@ -73,9 +72,11 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
-def worker_main(pool_queue) -> None:
+def worker_main(receiver) -> None:
+    print("- worker process started")
     while True:
-        message = pool_queue.get()
+        # Wait for the multiprocessing.connection.Connection to contain something. This is blocking, btw!
+        message = receiver.recv()
 
         commit = parse_subscribe_repos_message(message)
         if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
@@ -120,32 +121,13 @@ def _run(stream_stop_event=None):
     # Setup workers to analyse and process posts (i.e. this is done as separately as possible to atproto post ingestion)
     # TODO: multi-workers are currently NOT supported! Only 1 worker is allowed at this time.
     #       There are too many things that need to be thread-safed for it to get implemented right now...
-    workers_count = 1  # multiprocessing.cpu_count() * 2 - 1
-    max_queue_size = 500
+    #       Also: AWS doesn't support Queue and Pool objects, so it takes a lot more manual coding (sad.)
+    receiver, pipe = multiprocessing.Pipe(duplex=False)
+    worker = multiprocessing.Process(target=worker_main, args=(receiver,))
 
-    queue = multiprocessing.Queue(maxsize=max_queue_size)
-    pool = multiprocessing.Pool(workers_count, worker_main, (queue,))
-
-    # The handlers below tell the client what to do when a new commit is encountered
+    # The handler below tells the client what to do when a new commit is encountered
     def on_message_handler(message: MessageFrame) -> None:
-        queue.put(message)
+        pipe.send(message)
 
-    # ...and when an error is encountered.
-    def on_error_callback(e):
-        logger.info(f"Exception encountered in on_message_handler! {e}")
-        traceback.print_exc()
-
-        logger.info("Trying to re-open database connection (as this is a common issue...)")
-        try:
-            db.close()
-        except Exception as e:
-            pass
-
-        try:
-            db.connect()
-        except Exception as e:
-            logger.info("Unable to re-open database connection. Stopping client.")
-            traceback.print_exc()
-            client.stop()
-
-    client.start(on_message_handler, on_error_callback)
+    worker.start()
+    client.start(on_message_handler)
