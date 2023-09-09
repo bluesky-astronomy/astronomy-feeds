@@ -14,11 +14,17 @@ account_list = AccountList(with_database_closing=True)
 
 
 class PostList:
-    def __init__(self, with_database_closing=False, query_interval=60*60*24) -> None:
+    def __init__(
+            self, 
+            with_database_closing: bool=False, 
+            query_interval: int=60*60*24, 
+            max_post_age: timedelta=timedelta(days=7)
+        ) -> None:
         """Generic refreshing post list. Tries to reduce number of required query operations!"""
         self.last_query_time = time.time()
         self.query_interval = query_interval
         self.posts = None
+        self.max_post_age = max_post_age
         if with_database_closing:
             self.query_database = self.query_database_with_closing
         else:
@@ -35,7 +41,7 @@ class PostList:
 
     def post_query(self):
         """Intended to be overwritten! Should return a set of posts."""
-        return {uri for uri in Post.select(Post.uri).where(Post.indexed_at > datetime.now() - timedelta(days=7))}
+        return {uri for uri in Post.select(Post.uri).where(Post.indexed_at > datetime.now() - self.max_post_age)}
 
     def get_posts(self) -> set:
         is_overdue = time.time() - self.last_query_time > self.query_interval
