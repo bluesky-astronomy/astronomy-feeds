@@ -4,15 +4,17 @@ import peewee
 from .config import DATABASE_NAME, DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_PORT
 
 
+# Local DB:
 # db = peewee.SqliteDatabase('feed_database.db')
 # print(DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PASSWORD)
+
+# MySQL DB:
 db = peewee.MySQLDatabase(
     DATABASE_NAME,
     host=DATABASE_HOST,
     port=int(DATABASE_PORT),
     user=DATABASE_USER,
     password=DATABASE_PASSWORD,
-    # ssl_ca="/home/emily/ca-certificate.crt",
     ssl_disabled=False,
 )
 

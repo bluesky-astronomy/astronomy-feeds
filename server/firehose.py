@@ -118,6 +118,8 @@ def _run(stream_stop_event=None):
     client = FirehoseSubscribeReposClient(None)
 
     # Setup workers to analyse and process posts (i.e. this is done as separately as possible to atproto post ingestion)
+    # TODO: multi-workers are currently NOT supported! Only 1 worker is allowed at this time.
+    #       There are too many things that need to be thread-safed for it to get implemented right now...
     workers_count = 1  # multiprocessing.cpu_count() * 2 - 1
     max_queue_size = 500
 
