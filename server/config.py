@@ -11,13 +11,13 @@ if SERVICE_DID is None:
     SERVICE_DID = f'did:web:{HOSTNAME}'
 
 # Feed variables
-URI_ASTRO_ALL = os.environ.get('URI_ASTRO_ALL')
-URI_ASTRO = os.environ.get('URI_ASTRO')
+URI_ASTRO_ALL = "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/astro-all"  # os.environ.get('URI_ASTRO_ALL')
+URI_ASTRO = "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/astro"  # os.environ.get('URI_ASTRO')
 if URI_ASTRO_ALL is None or URI_ASTRO is None:
     raise RuntimeError('Publish your feed first (run publish_feed.py) to obtain Feed URI.')
 
 # Bluesky client integration for DID queries
-HANDLE = os.getenv("BLUESKY_HANDLE")
+HANDLE = "emily.space"  # os.getenv("BLUESKY_HANDLE")
 PASSWORD = os.getenv("BLUESKY_PASSWORD")
 if HANDLE is None or PASSWORD is None:
     raise ValueError("Bluesky account environment variables not set.")
