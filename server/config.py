@@ -1,5 +1,6 @@
 import os
 
+# Todo this is the worst code ever. Needs a better system
 # Server host variables
 SERVICE_DID = os.environ.get('SERVICE_DID', None)
 HOSTNAME = os.environ.get('HOSTNAME', None)
