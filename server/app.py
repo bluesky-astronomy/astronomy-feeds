@@ -99,11 +99,17 @@ def get_feed_skeleton():
     
     print(request.headers)
 
+    # Query the algorithm
     try:
         cursor = request.args.get('cursor', default=None, type=str)
         limit = request.args.get('limit', default=20, type=int)
         body = algo(cursor, limit)
     except ValueError:
         return 'Malformed cursor', 400
+    
+    # Add pinned instruction post
+    # See: https://bsky.app/profile/did:plc:jcoy7v3a2t4rcfdh6i4kza25/post/3kc632qlmnm2j
+    if cursor is None:
+       body['feed'].insert(0, {"post": "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kc632qlmnm2j"})
 
     return jsonify(body)
