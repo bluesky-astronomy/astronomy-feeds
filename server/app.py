@@ -96,6 +96,8 @@ def get_feed_skeleton():
     algo = algos.get(feed)
     if not algo:
         return 'Unsupported algorithm', 400
+    
+    print(request.headers)
 
     try:
         cursor = request.args.get('cursor', default=None, type=str)
