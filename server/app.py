@@ -97,7 +97,15 @@ def get_feed_skeleton():
     if not algo:
         return 'Unsupported algorithm', 400
     
-    print(request.headers)
+    # Get the user's DID
+    # try:
+    #     authorization = request.headers['Authorization']
+    # except Exception as e:
+    #     authorization = None
+    #     print("Authorization not in request header!")
+
+    # if authorization is not None:
+        
 
     # Query the algorithm
     try:
