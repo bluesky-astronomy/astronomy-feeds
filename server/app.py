@@ -118,6 +118,6 @@ def get_feed_skeleton():
     # Add pinned instruction post
     # See: https://bsky.app/profile/did:plc:jcoy7v3a2t4rcfdh6i4kza25/post/3kc632qlmnm2j
     if cursor is None:
-       body['feed'].insert(0, {"post": "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kc632qlmnm2j"})
+       body['feed'].insert(0, {"post": "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kcfu7agwen2c"})
 
     return jsonify(body)
