@@ -24,13 +24,8 @@ FEED_URI = "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/"
 # The actual inner workings of feeds are housed in feeds.py. This variable specifies which feeds the firehose and
 # server should try to host, however.
 FEED_URIS = {
-    "all": FEED_URI + "astro-all",
-    "astro": FEED_URI + "astro",
-}
-
-# These feeds have exceptions to how they're named on Bluesky. This dict converts from Bluesky name to the internal name
-FEED_EXTERNAL_NAMES = {
-    "astro-all": "astro"
+    FEED_URI + "astro-all": "all",
+    FEED_URI + "astro": "astro",
 }
 
 # Dict containing all terms to search for in strings
@@ -72,19 +67,20 @@ class DatabaseConfig:
 
         mysql://USER:PASSWORD@HOST:PORT/NAME?ssl-mode=REQUIRED
         """
-        connection_string = os.environ.get("DATABASE_STRING", None)
+        connection_string = os.environ.get("BLUESKY_DATABASE", None)
 
         if connection_string is None:
             raise ValueError("must set database environment variables!")
 
         # Split it into three segments
-        connection_string = connection_string.replace("mysql://", "").replace("@", "")
+        connection_string = connection_string.replace("mysql://", "")
         first_half, second_half = connection_string.split("/")
         user_details, host_details = first_half.split("@")
 
         # Deal with user & host
         self.params["user"], self.params["password"] = user_details.split(":")
         self.params["host"], self.params["port"] = host_details.split(":")
+        self.params["port"] = int(self.params["port"])
 
         # Deal with name and flags
         self.name, flags = second_half.split("?")
@@ -96,11 +92,11 @@ class DatabaseConfig:
         """Fetches parameters from individual environment variables."""
         print(
             "WARNING! Setting parameters of database from individual env vars. This will be deprecated."
-            " In future, use DATABASE_STRING instead."
+            " In future, use BLUESKY_DATABASE instead."
         )
 
         self.params["host"] = os.environ.get("DATABASE_HOST", None)
-        self.params["port"] = os.environ.get("DATABASE_PORT", 25060)
+        self.params["port"] = int(os.environ.get("DATABASE_PORT", 25060))
         self.params["user"] = os.environ.get("DATABASE_USER", None)
         self.params["password"] = os.environ.get("DATABASE_PASSWORD", None)
         self.name = os.environ.get("DATABASE_NAME", None)

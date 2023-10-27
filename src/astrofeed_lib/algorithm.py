@@ -48,7 +48,7 @@ def unpack_cursor(cursor):
 
 def create_cursor(timestamp, cid):
     """Converts a timestamp and cid for a post into a feed cursor."""
-    return f"{timestamp * 1000}::{cid}"
+    return f"{int(timestamp * 1000)}::{cid}"
 
 
 def get_posts(feed: str, cursor: Optional[str], limit: int) -> dict:
