@@ -12,10 +12,11 @@ logging.basicConfig(level=logging.INFO)
 
 
 class AccountList:
-    def __init__(self, with_database_closing=False) -> None:
+    def __init__(self, with_database_closing=False, flags=None) -> None:
         """Generic refreshing account list. Tries to reduce number of required query operations!"""
         self.accounts = None
         self.last_query_time = time.time()
+        self.flags = flags
         if with_database_closing:
             self.query_database = self.query_database_with_closing
         else:
@@ -32,7 +33,11 @@ class AccountList:
 
     def account_query(self):
         """Intended to be overwritten! Should return a set of accounts."""
-        return {account.did for account in Account.select()}
+        query = Account.select()
+        if self.flags is None:
+            query = query.where(*self.flags)
+        return {account.did for account in query}
+        
 
     def get_accounts(self) -> set:
         is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL

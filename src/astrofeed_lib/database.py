@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import peewee
-from .accounts import AccountList
 from .config import DatabaseConfig
 
 
@@ -19,6 +18,7 @@ class BaseModel(peewee.Model):
         database = db
 
 
+# Todo should set attributes based on feeds / have some way to add new columns to the mysql db
 class Post(BaseModel):
     uri = peewee.CharField(index=True)
     cid = peewee.CharField()

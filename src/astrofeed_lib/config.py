@@ -4,10 +4,14 @@ import os
 
 # --- HOST CONFIGURATION ----------------------
 # Server host variables
-SERVICE_DID = os.environ.get("SERVICE_DID", None)
-HOSTNAME = os.environ.get("HOSTNAME", None)
-if HOSTNAME is None:
-    raise RuntimeError('You should set "HOSTNAME" environment variable first.')
+# Todo: change how these are set
+# HOSTNAME = os.environ.get("HOSTNAME", None)
+# SERVICE_DID = os.environ.get("SERVICE_DID", None)
+# if HOSTNAME is None:
+#     raise RuntimeError('You should set "HOSTNAME" environment variable first.')
+HOSTNAME = "feed-all.astronomy.blue"
+SERVICE_DID = None
+
 if SERVICE_DID is None:
     SERVICE_DID = f"did:web:{HOSTNAME}"
 
@@ -22,6 +26,11 @@ FEED_URI = "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/"
 FEED_URIS = {
     "all": FEED_URI + "astro-all",
     "astro": FEED_URI + "astro",
+}
+
+# These feeds have exceptions to how they're named on Bluesky. This dict converts from Bluesky name to the internal name
+FEED_EXTERNAL_NAMES = {
+    "astro-all": "astro"
 }
 
 # Dict containing all terms to search for in strings

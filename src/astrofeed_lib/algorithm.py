@@ -1,5 +1,71 @@
-import peewee
+from .database import db, Account, Post
 from .accounts import AccountList
+from datetime import datetime
+from typing import Optional
 
-def get_posts(db: peewee.MySqlDatabase, account_list: AccountList, feed_name: str) -> list:
-    pass
+
+VALID_ACCOUNTS = AccountList(with_database_closing=False, flags=[Account.is_valid])
+
+
+def _select_posts(feed, valid_dids, limit):
+    feed_boolean = getattr(Post, "feed_" + feed)
+    return (Post
+        .select()
+        .where(Post.author.in_(valid_dids), feed_boolean)
+        .order_by(Post.indexed_at.desc())
+        .limit(limit)
+    )
+
+
+def _create_feed(posts):
+    """Turns list of posts into a sorted """
+    return [{'post': post.uri} for post in posts]
+
+
+def _handle_cursor(cursor, posts):
+    """Handles cursor operations if one is included in the request"""
+    timestamp, cid = unpack_cursor(cursor)
+    posts = posts.where(Post.indexed_at <= timestamp).where(Post.cid < cid)
+    return posts
+
+
+def _move_cursor_to_last_post(posts):
+    last_post = posts[-1] if posts else None
+    if last_post:
+        return create_cursor(last_post.indexed_at.timestamp(), last_post.cid)
+    return None
+
+
+def unpack_cursor(cursor):
+    """Converts a feed cursor into a timestamp and a cid for a post."""
+    cursor_parts = cursor.split('::')
+    if len(cursor_parts) != 2:
+        raise ValueError('Malformed cursor')
+    indexed_at, cid = cursor_parts
+    timestamp = datetime.fromtimestamp(int(indexed_at) / 1000)
+    return timestamp, cid
+
+
+def create_cursor(timestamp, cid):
+    """Converts a timestamp and cid for a post into a feed cursor."""
+    return f"{timestamp * 1000}::{cid}"
+
+
+def get_posts(feed: str, cursor: Optional[str], limit: int) -> dict:
+    """Gets posts for a given feed!"""
+    # Setup a query that's only for valid accounts
+    valid_dids = VALID_ACCOUNTS.get_accounts()
+    posts = _select_posts(feed, valid_dids, limit)
+
+    # If the client specified a cursor, limit the posts to within some time range
+    if cursor:
+        posts = _handle_cursor(cursor, posts)
+
+    # Create the actual feed to send back to the user!
+    feed = _create_feed(posts)
+    cursor = _move_cursor_to_last_post(posts)
+
+    return {
+        'cursor': cursor,
+        'feed': feed
+    }
