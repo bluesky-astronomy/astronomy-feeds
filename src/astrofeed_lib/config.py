@@ -4,12 +4,12 @@ import os
 
 # --- HOST CONFIGURATION ----------------------
 # Server host variables
-SERVICE_DID = os.environ.get('SERVICE_DID', None)
-HOSTNAME = os.environ.get('HOSTNAME', None)
+SERVICE_DID = os.environ.get("SERVICE_DID", None)
+HOSTNAME = os.environ.get("HOSTNAME", None)
 if HOSTNAME is None:
     raise RuntimeError('You should set "HOSTNAME" environment variable first.')
 if SERVICE_DID is None:
-    SERVICE_DID = f'did:web:{HOSTNAME}'
+    SERVICE_DID = f"did:web:{HOSTNAME}"
 
 # --- FEED CONFIGURATION ----------------------
 # Feed variables
@@ -46,12 +46,57 @@ if HANDLE is None or PASSWORD is None:
 SHEET_LINK = "https://docs.google.com/spreadsheets/d/1aUjkLr5uzoVQuT8Iy_7QpmkdSfCXuR7S3MV3-zYKnFk/export?format=csv&gid=1795057871"
 QUERY_INTERVAL = 60 * 10
 
+
 # --- DATABASE CONFIGURATION ----------------------
 # Database stuff
-DATABASE_HOST = os.environ.get('DATABASE_HOST', None)
-DATABASE_PORT = os.environ.get('DATABASE_PORT', 25060)
-DATABASE_USER = os.environ.get('DATABASE_USER', None)
-DATABASE_PASSWORD = os.environ.get('DATABASE_PASSWORD', None)
-DATABASE_NAME = os.environ.get('DATABASE_NAME')
-if DATABASE_HOST is None or DATABASE_USER is None or DATABASE_PASSWORD is None or DATABASE_NAME is None:
-    raise ValueError("You must specify a database to use!")
+class DatabaseConfig:
+    def __init__(self):
+        self.name, self.params = "", dict()
+        
+        try:
+            self._set_params_from_connection_string()
+        except ValueError:
+            self._set_params_from_environment_variables()
+
+    def _set_params_from_connection_string(self):
+        """Fetches parameters from a connection string, which will look like:
+
+        mysql://USER:PASSWORD@HOST:PORT/NAME?ssl-mode=REQUIRED
+        """
+        connection_string = os.environ.get("DATABASE_STRING", None)
+
+        if connection_string is None:
+            raise ValueError("must set database environment variables!")
+
+        # Split it into three segments
+        connection_string = connection_string.replace("mysql://", "").replace("@", "")
+        first_half, second_half = connection_string.split("/")
+        user_details, host_details = first_half.split("@")
+
+        # Deal with user & host
+        self.params["user"], self.params["password"] = user_details.split(":")
+        self.params["host"], self.params["port"] = host_details.split(":")
+
+        # Deal with name and flags
+        self.name, flags = second_half.split("?")
+
+        if "ssl-mode=REQUIRED" in flags:
+            self.params["ssl_disabled"] = False
+
+    def _set_params_from_environment_variables(self):
+        """Fetches parameters from individual environment variables."""
+        print(
+            "WARNING! Setting parameters of database from individual env vars. This will be deprecated."
+            " In future, use DATABASE_STRING instead."
+        )
+
+        self.params["host"] = os.environ.get("DATABASE_HOST", None)
+        self.params["port"] = os.environ.get("DATABASE_PORT", 25060)
+        self.params["user"] = os.environ.get("DATABASE_USER", None)
+        self.params["password"] = os.environ.get("DATABASE_PASSWORD", None)
+        self.name = os.environ.get("DATABASE_NAME", None)
+        if self.name is None or any([value is None for value in self.params.values()]):
+            raise ValueError("You must specify a database to use!")
+
+        # Hard-set (since this will be deprecated)
+        self.params["ssl_disabled"] = False

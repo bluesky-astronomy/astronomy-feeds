@@ -2,7 +2,7 @@ from datetime import datetime
 
 import peewee
 from .accounts import AccountList
-from .config import DATABASE_NAME, DATABASE_HOST, DATABASE_USER, DATABASE_PASSWORD, DATABASE_PORT
+from .config import DatabaseConfig
 
 
 # Local DB:
@@ -10,14 +10,8 @@ from .config import DATABASE_NAME, DATABASE_HOST, DATABASE_USER, DATABASE_PASSWO
 # print(DATABASE_HOST, DATABASE_PORT, DATABASE_USER, DATABASE_PASSWORD)
 
 # MySQL DB:
-db = peewee.MySQLDatabase(
-    DATABASE_NAME,
-    host=DATABASE_HOST,
-    port=int(DATABASE_PORT),
-    user=DATABASE_USER,
-    password=DATABASE_PASSWORD,
-    ssl_disabled=False,
-)
+DATABASE_CONFIG = DatabaseConfig()
+db = peewee.MySQLDatabase(DATABASE_CONFIG.name, **DATABASE_CONFIG.params)
 
 
 class BaseModel(peewee.Model):
@@ -54,3 +48,5 @@ class Account(BaseModel):
 if db.is_closed():
     db.connect()
     db.create_tables([Post, SubscriptionState, Account])
+    if not db.is_closed():
+        db.close()

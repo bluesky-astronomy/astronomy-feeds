@@ -39,24 +39,30 @@ for feed, terms in FEED_TERMS.items():
     FEED_TERMS_WITH_SPACES[feed] = [f" {term} " for term in terms]
 
 
+def label_post(labels, words, feed, terms):
+    """Labels a post as being in a given feed."""
+    # Special case: if there are no terms specified, then it's automatically added to this feed
+    # Todo: this may want to be coded more neatly
+    if terms is None:
+        labels[feed] = True
+        return
+    
+    # Otherwise, we check against all feeds
+    labels[feed] = any([True for word in words if word in terms])
+
+    # Special case: add all posts in other feeds to the Astronomy feed
+    # Todo: this may want to be coded more neatly
+    if feed != "astro" and labels[feed]:
+        labels["astro"] = True
+
+
 def post_in_feeds(post: str) -> dict:
     """Tests if a given post is in the defined feeds by checking its text; returns none if so."""
     words = cleaned_word_list(post)
     labels = {}
-
-    # Todo refactor this to remove nesting + make more developable (thats a word, dont @ me)
+    
     for feed, terms in FEED_TERMS_WITH_SPACES.items():
-        # All posts without a given term are added to this feed
-        if terms is None:
-            labels[feed] = True
-
-        # Otherwise, we check against all feeds
-        else:
-            labels[feed] = any([True for word in words if word in terms])
-
-            # Add all posts in other feeds to the Astronomy feed
-            if feed != "astro" and labels[feed]:
-                labels["astro"] = True
-
+        label_post(labels, words, feed, terms)
+        
     return labels
     
