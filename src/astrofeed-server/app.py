@@ -28,7 +28,6 @@ def _db_close(exc):
 
 @app.route("/")
 def index():
-    # Todo add debug links here which link to all services on this app, like /xrpc/app.bsky.feed.getFeedSkeleton?feed=...
     feed_urls = []
 
     for uri, name in config.FEED_URIS.items():
