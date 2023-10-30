@@ -72,8 +72,8 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
-def worker_main(receiver) -> None:
-    print("- worker process started")
+def _worker_loop(receiver):
+    logger.info("-> Firehose worker process started")
     while True:
         # Wait for the multiprocessing.connection.Connection to contain something. This is blocking, btw!
         message = receiver.recv()
@@ -89,6 +89,28 @@ def worker_main(receiver) -> None:
         #     post_msg = post['record'].text
         #     post_langs = post['record'].langs
         #     print(f'New post in the network! Langs: {post_langs}. Text: {post_msg}')
+
+
+def worker_main(receiver) -> None:
+    """Main worker handler! Automatically reboots when done."""
+    reboots = 0
+    while True:
+        try:
+            _worker_loop(receiver)
+        except Exception as e:  # Todo: not good to catch all but it will do I guess
+            logger.info(f"EXCEPTION IN FIREHOSE WORKER: {e}")
+            traceback.print_exception(e)
+
+        # Clear the pipe so that the next worker doesn't get swamped
+        logger.info("Clearing out connection to parent thread")
+        messages_dumped = 0
+        while receiver.poll():
+            receiver.recv()
+            messages_dumped += 1
+        logger.info(f"Lost {messages_dumped} messages")
+
+        reboots += 1
+        logger.info(f"Reboot count: {reboots}")
 
 
 def run(stream_stop_event=None):
