@@ -1,6 +1,3 @@
-import sys
-import signal
-import threading
 from flask import Flask, jsonify, request
 from astrofeed_lib import config
 from astrofeed_lib.database import db
