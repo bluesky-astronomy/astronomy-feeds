@@ -102,6 +102,7 @@ classifiers = [  # Optional
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [ # Optional
   "peewee>=3.16.2,<4.0",
+  "pymysql>=1.1.0,<2.0",  # If using a MySQL database
   "atproto==0.0.29",
 ]
 
