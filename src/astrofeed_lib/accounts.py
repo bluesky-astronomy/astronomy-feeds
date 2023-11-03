@@ -34,7 +34,7 @@ class AccountList:
     def account_query(self):
         """Intended to be overwritten! Should return a set of accounts."""
         query = Account.select()
-        if self.flags is None:
+        if self.flags is not None:
             query = query.where(*self.flags)
         return {account.did for account in query}
         
