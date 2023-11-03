@@ -9,7 +9,7 @@ from atproto.exceptions import FirehoseError
 from atproto.xrpc_client.models.common import XrpcError
 
 from server.data_filter import operations_callback
-from server import config
+from astrofeed_lib.config import SERVICE_DID
 
 import logging
 import traceback
@@ -133,9 +133,7 @@ def run(stream_stop_event=None):
 
 
 def _run(stream_stop_event=None):
-    
-    name = config.SERVICE_DID
-    print(f"Running firehose for {name}")
+    print(f"Running firehose for {SERVICE_DID}")
 
     # This is the client used to subscribe to the firehose from the atproto lib.
     client = FirehoseSubscribeReposClient(None)

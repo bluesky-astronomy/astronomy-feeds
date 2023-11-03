@@ -1,7 +1,7 @@
 import logging
-from server.database import db, Post
-from .accounts import AccountList
-from .algos.astro import post_is_valid
+from astrofeed_lib.database import db, Post
+from astrofeed_lib.accounts import AccountList
+from astrofeed_lib.feeds import post_in_feeds
 import time
 from datetime import datetime, timedelta
 
@@ -89,6 +89,7 @@ def operations_callback(ops: dict) -> None:
             # 'reply_parent': reply_parent,
             # 'reply_root': reply_root,
         }
+        post_dict.update(post_in_feeds(post_text))
         posts_to_create.append(post_dict)
 
     posts_to_delete = [post['uri'] for post in ops['posts']['deleted'] if post['uri'] in post_list.get_posts()]
