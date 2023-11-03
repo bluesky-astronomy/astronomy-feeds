@@ -56,13 +56,13 @@ def label_post(labels, words, feed, terms):
         labels["astro"] = True
 
 
-def post_in_feeds(post: str) -> dict:
+def post_in_feeds(post: str, database_feed_prefix: str = "feed_") -> dict:
     """Tests if a given post is in the defined feeds by checking its text; returns none if so."""
     words = cleaned_word_list(post)
     labels = {}
     
     for feed, terms in FEED_TERMS_WITH_SPACES.items():
-        label_post(labels, words, feed, terms)
+        label_post(labels, words, database_feed_prefix + feed, terms)
         
     return labels
     
