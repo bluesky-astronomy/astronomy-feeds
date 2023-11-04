@@ -29,13 +29,15 @@ FEED_URIS = {
 }
 
 # Dict containing all terms to search for in strings
+# There are two options here: a feed may either have 'None' (all posts added) OR a dict containing emoji combinations
+# and words. Emoji are accepted anywhere in a post; whereas words have to be exact space-separated matches (e.g. #space
+# won't match #spacecraft, but it would if it was in the emoji section)
 FEED_TERMS = {
+    # "EXAMPLE": {"emoji": [], "words": []},
     "all": None,
-    "astro": ("🔭", "#astro", "#astronomy"),
-    # "exoplanets": ("🪐", "#exoplanet", "#exoplanets"),
-    # "planetary": ("🌍", "🌎", "🌏", "#planetaryscience", "#planetsci"),
-    # "stars": ("⭐", "#star", "#stars"),
-    # "astrophotos": ("🔭📷", "#astrophotos", "#astrophotography"),
+    "astro": {"emoji": ["🔭"], "words": ["#astro", "#astronomy"]},
+    # "exoplanets": {"emoji": ["🪐"], "words": ["#exoplanet", "#exoplanets"]},
+    # "astrophotos": {"emoji": ["🔭📷"], "words": ["#astrophotos", "#astrophotography"]},
 }
 
 
@@ -56,7 +58,7 @@ QUERY_INTERVAL = 60 * 10
 class DatabaseConfig:
     def __init__(self):
         self.name, self.params = "", dict()
-        
+
         try:
             self._set_params_from_connection_string()
         except ValueError:

@@ -37,7 +37,7 @@ def cleaned_word_list(post: str) -> list:
 FEED_TERMS_WITH_SPACES = dict()
 for feed, terms in FEED_TERMS.items():
     if terms is not None:
-        FEED_TERMS_WITH_SPACES[feed] = [f" {term} " for term in terms]
+        FEED_TERMS_WITH_SPACES[feed] = terms["emoji"] + [f" {term} " for term in terms["words"]]
     else:
         FEED_TERMS_WITH_SPACES[feed] = None
 
