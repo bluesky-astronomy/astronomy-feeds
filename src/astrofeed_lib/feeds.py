@@ -37,12 +37,14 @@ def cleaned_word_list(post: str) -> list:
 FEED_TERMS_WITH_SPACES = dict()
 for feed, terms in FEED_TERMS.items():
     if terms is not None:
-        FEED_TERMS_WITH_SPACES[feed] = terms["emoji"] + [f" {term} " for term in terms["words"]]
+        FEED_TERMS_WITH_SPACES[feed] = {}
+        FEED_TERMS_WITH_SPACES[feed]["emoji"] = terms["emoji"]
+        FEED_TERMS_WITH_SPACES[feed]["words"] = [f" {term} " for term in terms["words"]]
     else:
         FEED_TERMS_WITH_SPACES[feed] = None
 
 
-def label_post(labels, words, feed, terms):
+def label_post(labels, post, words, feed, terms):
     """Labels a post as being in a given feed."""
     # Special case: if there are no terms specified, then it's automatically added to this feed
     # Todo: this may want to be coded more neatly
@@ -51,12 +53,25 @@ def label_post(labels, words, feed, terms):
         return
     
     # Otherwise, we check against all feeds
-    labels[feed] = any([True for word in words if word in terms])
+    # Firstly, check emoji
+    labels[feed] = _emoji_in_post(terms, post)
+
+    # Then check words if the emoji wasn't already a hit
+    if not labels[feed]:
+        labels[feed] = _word_in_post(terms, words)
 
     # Special case: add all posts in other feeds to the Astronomy feed
     # Todo: this may want to be coded more neatly
-    if feed != "astro" and labels[feed]:
+    if labels[feed] and feed != "astro":
         labels["astro"] = True
+
+
+def _emoji_in_post(terms, post):
+    return any([True for emoji in terms["emoji"] if emoji in post])
+
+
+def _word_in_post(terms, words):
+    return any([True for word in words if word in terms["words"]])
 
 
 def post_in_feeds(post: str, database_feed_prefix: str = "feed_") -> dict:
@@ -65,7 +80,7 @@ def post_in_feeds(post: str, database_feed_prefix: str = "feed_") -> dict:
     labels = {}
     
     for feed, terms in FEED_TERMS_WITH_SPACES.items():
-        label_post(labels, words, database_feed_prefix + feed, terms)
+        label_post(labels, post, words, database_feed_prefix + feed, terms)
         
     return labels
     
