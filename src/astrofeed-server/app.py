@@ -32,7 +32,7 @@ def index():
         if config.FEED_TERMS[name] is None:
             terms = "all posts by validated users"
         else:
-            terms = ', '.join(config.FEED_TERMS[name])
+            terms = ', '.join(config.FEED_TERMS[name]["emoji"] + config.FEED_TERMS[name]["words"])
         feed_urls.append(link + f" ({terms})</li>")
 
     feed_urls = "\n".join(feed_urls)
