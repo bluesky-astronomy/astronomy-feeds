@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.INFO)
     
 
 account_list = AccountList(with_database_closing=True)
+account_list.get_accounts()  # Initial get
 
 
 class PostList:
@@ -60,6 +61,7 @@ class PostList:
     
 
 post_list = PostList(with_database_closing=True)
+post_list.get_posts()  # Initial get
 
 
 def operations_callback(ops: dict) -> None:
