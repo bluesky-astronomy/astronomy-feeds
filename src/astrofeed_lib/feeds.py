@@ -13,7 +13,7 @@ def remove_links_from_post(post: str) -> str:
 
 # The same as string.punctuation in the base library, except we want to keep hashtags and also add newline etc chars
 # to the list of punctuation identifiers to remove
-PUNCTUATION = list("""!"$%&'()*+,-./:;<=>?@[\]^_`{|}~""") + ["\n", "\r"]
+PUNCTUATION = list(r"""!"$%&'()*+,-./:;<=>?@[\]^_`{|}~""") + ["\n", "\r"]
 
 
 def remove_punctuation_from_post(post: str) -> str:

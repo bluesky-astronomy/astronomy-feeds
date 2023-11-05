@@ -62,10 +62,10 @@ def get_posts(feed: str, cursor: Optional[str], limit: int) -> dict:
         posts = _handle_cursor(cursor, posts)
 
     # Create the actual feed to send back to the user!
-    feed = _create_feed(posts)
+    post_uris = _create_feed(posts)
     cursor = _move_cursor_to_last_post(posts)
 
     return {
         'cursor': cursor,
-        'feed': feed
+        'feed': post_uris
     }

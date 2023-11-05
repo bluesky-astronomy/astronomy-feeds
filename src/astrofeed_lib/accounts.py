@@ -38,13 +38,12 @@ class AccountList:
             query = query.where(*self.flags)
         return {account.did for account in query}
         
-
     def get_accounts(self) -> set:
         is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL
         if is_overdue or self.accounts is None:
             self.query_database()
             self.last_query_time = time.time()
-        return self.accounts
+        return self.accounts  # type: ignore (because pylance is a silly thing here. this should always be a set)
 
 
 async def fetch_handle(client, handle):
