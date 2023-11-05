@@ -110,7 +110,7 @@ def operations_callback(ops: dict) -> None:
                 for post_dict in posts_to_create:
                     Post.create(**post_dict)
             post_list.add_posts([x['uri'] for x in posts_to_create])
-            feed_counts_string = " ".join([f"{key[5:]}: {feed_counts[key]}" for key in feed_counts])
+            feed_counts_string = ", ".join([f"{key[5:]}-{feed_counts[key]}" for key in feed_counts])
             logger.info(f'Added posts: {feed_counts_string}')
 
         db.close()
