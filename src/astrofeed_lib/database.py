@@ -20,15 +20,16 @@ class BaseModel(peewee.Model):
 
 # Todo should set attributes based on feeds / have some way to add new columns to the mysql db
 class Post(BaseModel):
+    indexed_at = peewee.DateTimeField(default=datetime.now, index=True)
     uri = peewee.CharField(index=True)
-    cid = peewee.CharField()
+    cid = peewee.CharField(index=True)
     author = peewee.CharField()
     text = peewee.CharField()
     feed_all = peewee.BooleanField(default=False)
     feed_astro = peewee.BooleanField(default=False)
+    feed_exoplanets = peewee.BooleanField(default=False)
     # reply_parent = peewee.CharField(null=True, default=None)
     # reply_root = peewee.CharField(null=True, default=None)
-    indexed_at = peewee.DateTimeField(default=datetime.now)
 
 
 class SubscriptionState(BaseModel):

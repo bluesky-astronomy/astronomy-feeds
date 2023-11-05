@@ -19,15 +19,6 @@ if SERVICE_DID is None:
 # Feed variables
 FEED_URI = "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/"
 
-# Dict containing all feeds *to be published*! key:value pairs of the short name and name as published.
-# The short name is used throughout databases. The name as published is the URI where the feed is.
-# The actual inner workings of feeds are housed in feeds.py. This variable specifies which feeds the firehose and
-# server should try to host, however.
-FEED_URIS = {
-    FEED_URI + "astro-all": "all",
-    FEED_URI + "astro": "astro",
-}
-
 # Dict containing all terms to search for in strings
 # There are two options here: a feed may either have 'None' (all posts added) OR a dict containing emoji combinations
 # and words. Emoji are accepted anywhere in a post; whereas words have to be exact space-separated matches (e.g. #space
@@ -36,9 +27,22 @@ FEED_TERMS = {
     # "EXAMPLE": {"emoji": [], "words": []},
     "all": None,
     "astro": {"emoji": ["🔭"], "words": ["#astro", "#astronomy"]},
-    # "exoplanets": {"emoji": ["🪐"], "words": ["#exoplanet", "#exoplanets"]},
+    "exoplanets": {"emoji": ["🪐"], "words": ["#exoplanet", "#exoplanets"]},
     # "astrophotos": {"emoji": ["🔭📷"], "words": ["#astrophotos", "#astrophotography"]},
 }
+
+# Dict containing all feeds *to be published*! key:value pairs of the name as published and internal (short) name.
+# The short name is used throughout databases. The name as published is the URI where the feed is.
+# The actual inner workings of feeds are housed in feeds.py. This variable specifies which feeds the firehose and
+# server should try to host, however.
+FEED_NAMING_SCHEME_RULEBREAKERS = {"all": "astro-all"}
+FEED_URIS = {}
+for a_feed in FEED_TERMS.keys():
+    if a_feed in FEED_NAMING_SCHEME_RULEBREAKERS:
+        key = FEED_URI + FEED_NAMING_SCHEME_RULEBREAKERS[a_feed]
+    else:
+        key = FEED_URI + a_feed
+    FEED_URIS[key] = a_feed
 
 
 # --- ACCOUNT SYSTEM CONFIGURATION ----------------------
