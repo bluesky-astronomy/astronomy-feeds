@@ -6,6 +6,8 @@ from typing import Optional
 
 VALID_ACCOUNTS = AccountList(with_database_closing=False, flags=[Account.is_valid])
 
+CURSOR_END_OF_FEED = "eof"
+
 
 def _select_posts(feed, valid_dids, limit):
     feed_boolean = getattr(Post, "feed_" + feed)
@@ -25,7 +27,7 @@ def _create_feed(posts):
 def _handle_cursor(cursor, posts):
     """Handles cursor operations if one is included in the request"""
     timestamp, cid = unpack_cursor(cursor)
-    posts = posts.where(Post.indexed_at <= timestamp).where(Post.cid < cid)
+    posts = posts.where(((Post.indexed_at == timestamp) & (Post.cid < cid)) | (Post.indexed_at < timestamp))
     return posts
 
 
@@ -33,7 +35,7 @@ def _move_cursor_to_last_post(posts):
     last_post = posts[-1] if posts else None
     if last_post:
         return create_cursor(last_post.indexed_at.timestamp(), last_post.cid)
-    return None
+    return CURSOR_END_OF_FEED
 
 
 def unpack_cursor(cursor):
@@ -53,6 +55,10 @@ def create_cursor(timestamp, cid):
 
 def get_posts(feed: str, cursor: Optional[str], limit: int) -> dict:
     """Gets posts for a given feed!"""
+    # Early return if the cursor is just the end of feed indicator
+    if cursor == CURSOR_END_OF_FEED:
+        return {'cursor': CURSOR_END_OF_FEED, 'feed': []}
+    
     # Setup a query that's only for valid accounts
     valid_dids = VALID_ACCOUNTS.get_accounts()
     posts = _select_posts(feed, valid_dids, limit)
@@ -65,7 +71,4 @@ def get_posts(feed: str, cursor: Optional[str], limit: int) -> dict:
     post_uris = _create_feed(posts)
     cursor = _move_cursor_to_last_post(posts)
 
-    return {
-        'cursor': cursor,
-        'feed': post_uris
-    }
+    return {'cursor': cursor, 'feed': post_uris}
