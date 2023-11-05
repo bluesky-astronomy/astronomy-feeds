@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from astrofeed_lib import config
 from astrofeed_lib.database import db
 from astrofeed_lib.algorithm import get_posts
+from .pinned import add_pinned_post_to_feed
 
 
 app = Flask(__name__)
@@ -108,6 +109,6 @@ def get_feed_skeleton():
     # Add pinned instruction post
     # See: https://bsky.app/profile/did:plc:jcoy7v3a2t4rcfdh6i4kza25/post/3kc632qlmnm2j
     if cursor is None:
-        body["feed"].insert(0, {"post": "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kcfu7agwen2c"})
+        add_pinned_post_to_feed(body)
 
     return jsonify(body)
