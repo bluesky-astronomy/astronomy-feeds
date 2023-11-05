@@ -44,8 +44,9 @@ for feed, terms in FEED_TERMS.items():
         FEED_TERMS_WITH_SPACES[feed] = None
 
 
-def label_post(labels, post, words, feed, terms):
+def label_post(labels, post, words, feed, terms, database_feed_prefix: str = "feed_"):
     """Labels a post as being in a given feed."""
+    feed = database_feed_prefix + feed
     # Special case: if there are no terms specified, then it's automatically added to this feed
     # Todo: this may want to be coded more neatly
     if terms is None:
@@ -63,7 +64,7 @@ def label_post(labels, post, words, feed, terms):
     # Special case: add all posts in other feeds to the Astronomy feed
     # Todo: this may want to be coded more neatly
     if labels[feed] and feed != "astro":
-        labels["astro"] = True
+        labels[database_feed_prefix + "astro"] = True
 
 
 def _emoji_in_post(terms, post):
@@ -80,7 +81,7 @@ def post_in_feeds(post: str, database_feed_prefix: str = "feed_") -> dict:
     labels = {}
     
     for feed, terms in FEED_TERMS_WITH_SPACES.items():
-        label_post(labels, post, words, database_feed_prefix + feed, terms)
+        label_post(labels, post, words, feed, terms, database_feed_prefix=database_feed_prefix)
         
     return labels
     
