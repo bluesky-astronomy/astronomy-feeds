@@ -47,6 +47,7 @@ class AccountList:
 
 
 async def fetch_handle(client, handle):
+    """Fetches DIDs - NOT handles!"""
     try: 
         response = await client.com.atproto.identity.resolve_handle(params={'handle': handle})
         logger.info(f"Found DID for {handle}")
@@ -72,3 +73,31 @@ async def fetch_dids_async(accounts_to_query):
 
 def fetch_dids(account_names):
     return asyncio.run(fetch_dids_async(account_names))
+
+
+async def fetch_handle_from_did_async(client, did):
+    try: 
+        response = await client.com.atproto.repo.describe_repo(params={'repo': did})
+        logger.info(f"Found handle for {did}")
+        return response
+    except Exception as e:
+        logger.warn(f"Unable to fetch a handle for account name {handle}: {e}")
+    return {'handle': None}
+
+
+async def fetch_handles_async(accounts_to_query):
+    # Asynchronously query all of the handles
+    logger.info(f"-> looking up account handles for the following DIDs:\n{accounts_to_query}")
+
+    client = AsyncClient()
+    await client.login(HANDLE, PASSWORD)
+
+    tasks = [fetch_handle_from_did_async(client, handle) for handle in accounts_to_query]
+    responses = await asyncio.gather(*tasks)
+    logger.info(responses)
+
+    return {did: response['handle'] for did, response in zip(accounts_to_query, responses) if response is not None}
+
+
+def fetch_handles(account_dids):
+    return asyncio.run(fetch_handles_async(account_dids))
