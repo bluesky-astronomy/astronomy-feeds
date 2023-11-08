@@ -1,0 +1,1 @@
+"""Quick emergency script for updating DID documents as PDS changes happen."""
