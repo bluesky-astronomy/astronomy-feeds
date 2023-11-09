@@ -1,7 +1,8 @@
 import random
 
 PINNED_POSTS = {
-    "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdpeduzh272i": 1.0,  # Don't change your handle
+    "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdqrzm3f662e": 1.0,  # I'm wrong, feel free to change lol
+    # "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdpeduzh272i": 1.0,  # Don't change your handle
     # "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kc632qlmnm2j": 1.0,  # Signup instructions
     # "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdheyu7hct24": 1.0,  # Exoplanet feed announcement
     # "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdhfpnyeff2c": 0.5,  # Like the feed pls
