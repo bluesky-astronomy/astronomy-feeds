@@ -11,6 +11,7 @@ from atproto.xrpc_client.models.common import XrpcError
 from server.data_filter import operations_callback
 from astrofeed_lib.config import SERVICE_DID
 
+
 import logging
 import traceback
 
@@ -27,7 +28,17 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
         'follows': {'created': [], 'deleted': []},
     }
 
-    car = CAR.from_bytes(commit.blocks)
+    # Try to decode
+    try:
+        car = CAR.from_bytes(commit.blocks)
+    except Exception as e:
+        logger.info("EXCEPTION while attempting to decode commit.blocks")
+        traceback.print_exception(e)
+        logger.info("commit.repo: ", commit.repo)
+        logger.info("commit.ops: ", commit.ops)
+        logger.info("commit.blocks: ", commit.blocks)
+        car = None
+
     for op in commit.ops:
         uri = AtUri.from_str(f'at://{commit.repo}/{op.path}')
 
@@ -35,7 +46,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
             # not supported yet
             continue
 
-        if op.action == 'create':
+        if op.action == 'create' and car is not None:
             if not op.cid:
                 continue
 
