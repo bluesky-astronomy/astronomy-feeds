@@ -24,7 +24,7 @@ class PostList:
         """Generic refreshing post list. Tries to reduce number of required query operations!"""
         self.last_query_time = time.time()
         self.query_interval = query_interval
-        self.posts = None
+        self.posts = set()
         self.max_post_age = max_post_age
         if with_database_closing:
             self.query_database = self.query_database_with_closing
@@ -46,7 +46,7 @@ class PostList:
 
     def get_posts(self) -> set:
         is_overdue = time.time() - self.last_query_time > self.query_interval
-        if is_overdue or self.posts is None:
+        if is_overdue or len(self.posts) == 0:
             self.query_database()
             self.last_query_time = time.time()
         return self.posts
