@@ -22,19 +22,19 @@ HOSTNAME: str = "feed-all.astronomy.blue"
 # A short name for the record that will show in urls
 # Lowercase with no spaces.
 # Ex: whats-hot
-RECORD_NAME: str = "astro-all"
+RECORD_NAME: str = "astrophotos"
 
 # A display name for your feed
 # Ex: What's Hot
-DISPLAY_NAME: str = "Astrosky"
+DISPLAY_NAME: str = "Astrophotography"
 
 # (Optional) A description of your feed
 # Ex: Top trending content from the whole network
-DESCRIPTION: str = "All posts from the astronomy community on Bluesky - on or off topic!\nAny astronomer can register to post here: https://signup.astronomy.blue"
+DESCRIPTION: str = "Astrophotography posts on Bluesky! Part of the Astronomy feeds network.\nAstronomers can sign up to post here: https://signup.astronomy.blue\nContains posts from registered users with #astrophotography or #astrophotos."
 
 # (Optional) The path to an image to be used as your feed's avatar
 # Ex: ./path/to/avatar.jpeg
-AVATAR_PATH: str = "../images/astro-all.jpg"
+AVATAR_PATH: str = "../images/astrophotos.jpg"
 
 # (Optional). Only use this if you want a service did different from did:web
 SERVICE_DID: str = ""
@@ -77,7 +77,7 @@ def main():
     )
 
     print("Successfully published!")
-    print("Feed URI (put in uri env var):", response.uri)
+    print('Feed URI (put in "WHATS_ALF_URI" env var):', response.uri)
 
 
 if __name__ == "__main__":

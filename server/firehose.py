@@ -147,7 +147,7 @@ def _run(stream_stop_event=None):
     print(f"Running firehose for {SERVICE_DID}")
 
     # This is the client used to subscribe to the firehose from the atproto lib.
-    client = FirehoseSubscribeReposClient(None)
+    client = FirehoseSubscribeReposClient(base_uri="wss://bsky.network/xrpc")  # )
 
     # Setup workers to analyse and process posts (i.e. this is done as separately as possible to atproto post ingestion)
     # TODO: multi-workers are currently NOT supported! Only 1 worker is allowed at this time.
