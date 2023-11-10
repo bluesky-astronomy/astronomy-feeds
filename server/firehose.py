@@ -29,15 +29,22 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     }
 
     # Try to decode
-    try:
-        car = CAR.from_bytes(commit.blocks)
-    except Exception as e:
-        logger.info("EXCEPTION while attempting to decode commit.blocks")
-        traceback.print_exception(e)
-        logger.info("commit.repo: ", commit.repo)
-        logger.info("commit.ops: ", commit.ops)
-        logger.info("commit.blocks: ", commit.blocks)
-        car = None
+    # print("commit.repo: ", commit.repo)
+    # print("commit.ops: ", commit.ops)
+    # print("commit.blocks: ", commit.blocks)
+    # try:
+    #     car = CAR.from_bytes(commit.blocks)
+    # except Exception as e:
+    #     logger.info("EXCEPTION while attempting to decode commit.blocks")
+    #     traceback.print_exception(e)
+    #     print("commit.repo: ", commit.repo)
+    #     print("commit.ops: ", commit.ops)
+    #     print("commit.blocks: ", commit.blocks)
+    #     car = None
+
+    if commit.blocks == b'' or len(commit.ops) == 0:
+        return operation_by_type
+    car = CAR.from_bytes(commit.blocks)
 
     for op in commit.ops:
         uri = AtUri.from_str(f'at://{commit.repo}/{op.path}')
@@ -147,7 +154,7 @@ def _run(stream_stop_event=None):
     print(f"Running firehose for {SERVICE_DID}")
 
     # This is the client used to subscribe to the firehose from the atproto lib.
-    client = FirehoseSubscribeReposClient()#base_uri="wss://bsky.network/xrpc")  # )
+    client = FirehoseSubscribeReposClient(base_uri="wss://bsky.network/xrpc")  # )
 
     # Setup workers to analyse and process posts (i.e. this is done as separately as possible to atproto post ingestion)
     # TODO: multi-workers are currently NOT supported! Only 1 worker is allowed at this time.
