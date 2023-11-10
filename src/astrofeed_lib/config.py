@@ -28,7 +28,7 @@ FEED_TERMS = {
     "all": None,
     "astro": {"emoji": ["🔭"], "words": ["#astro", "#astronomy"]},
     "exoplanets": {"emoji": ["🪐"], "words": ["#exoplanet", "#exoplanets"]},
-    # "astrophotos": {"emoji": ["🔭📷"], "words": ["#astrophotos", "#astrophotography"]},
+    "astrophotos": {"emoji": [], "words": ["#astrophotos", "#astrophotography"]},
 }
 
 # Dict containing all feeds *to be published*! key:value pairs of the name as published and internal (short) name.

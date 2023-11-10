@@ -68,11 +68,11 @@ def label_post(labels, post, words, feed, terms, database_feed_prefix: str = "fe
 
 
 def _emoji_in_post(terms, post):
-    return any([True for emoji in terms["emoji"] if emoji in post])
+    return any([emoji in post for emoji in terms["emoji"]])
 
 
 def _word_in_post(terms, words):
-    return any([True for word in words if word in terms["words"]])
+    return any([word in terms["words"] for word in words])
 
 
 def post_in_feeds(post: str, database_feed_prefix: str = "feed_") -> dict:
