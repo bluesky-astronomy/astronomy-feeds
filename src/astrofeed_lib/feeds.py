@@ -1,6 +1,6 @@
 """Set of functions specifying everything about all feeds."""
 import re
-import peewee
+import emoji
 from .config import FEED_TERMS
 
 
@@ -21,6 +21,10 @@ def remove_punctuation_from_post(post: str) -> str:
     return "".join([x if x not in PUNCTUATION else " " for x in post.lower()])
 
 
+def remove_emoji_from_post(post: str) -> str:
+    return emoji.replace_emoji(post, replace='')
+
+
 def cleaned_word_list(post: str) -> list:
     """Generates a list of all words in a post. 
     
@@ -31,6 +35,7 @@ def cleaned_word_list(post: str) -> list:
     """
     post = remove_links_from_post(post)
     post = remove_punctuation_from_post(post)
+    post = remove_emoji_from_post(post)
     return [f" {word} " for word in post.split()]
 
 
