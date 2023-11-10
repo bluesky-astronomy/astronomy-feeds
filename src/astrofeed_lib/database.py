@@ -28,6 +28,7 @@ class Post(BaseModel):
     feed_all = peewee.BooleanField(default=False)
     feed_astro = peewee.BooleanField(default=False)
     feed_exoplanets = peewee.BooleanField(default=False)
+    feed_astrophotos = peewee.BooleanField(default=False)
     # reply_parent = peewee.CharField(null=True, default=None)
     # reply_root = peewee.CharField(null=True, default=None)
 
