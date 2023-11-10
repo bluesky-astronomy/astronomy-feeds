@@ -59,7 +59,7 @@ def main():
     if AVATAR_PATH:
         with open(AVATAR_PATH, "rb") as f:
             avatar_data = f.read()
-            avatar_blob = client.com.atproto.repo.upload_blob(avatar_data, timeout=600).blob
+            avatar_blob = client.com.atproto.repo.upload_blob(avatar_data, timeout=30).blob
 
     response = client.com.atproto.repo.put_record(
         models.ComAtprotoRepoPutRecord.Data(
