@@ -17,7 +17,7 @@ PUNCTUATION = list(r"""!"$%&'()*+,-./:;<=>?@[\]^_`{|}~""") + ["\n", "\r"]
 
 
 def remove_punctuation_from_post(post: str) -> str:
-    """Removes all punctuation from a post - EXCEPT hashtags!"""
+    """Removes all punctuation from a post - EXCEPT hashtags! Also converts post to lowercase."""
     return "".join([x if x not in PUNCTUATION else " " for x in post.lower()])
 
 
