@@ -71,7 +71,7 @@ def operations_callback(ops: dict) -> None:
     valid_posts = [post for post in ops['posts']['created'] if post['author'] in valid_dids]
 
     # Classify valid posts into feed categories
-    feed_counts = None
+    feed_counts = {}
     for created_post in valid_posts:
         # Basic post info to add to the database
         post_text = created_post['record']['text']
@@ -88,8 +88,11 @@ def operations_callback(ops: dict) -> None:
         posts_to_create.append(post_dict)
 
         # Count how many posts we have
-        if feed_counts is None:
+        # Initialise the dict if we're here the first time (not done above for optimization reasons)
+        if len(feed_counts) == 0:
             feed_counts = {key: 0 for key in feed_labels}
+
+        # Add feed labelling to said dict
         for a_key in feed_labels:
             feed_counts[a_key] += feed_labels[a_key]
 
