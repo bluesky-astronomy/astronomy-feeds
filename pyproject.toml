@@ -1,0 +1,37 @@
+# From https://github.com/pypa/sampleproject/blob/main/pyproject.toml
+
+[project]
+name = "astrobot_lib"  # Required
+version = "0.0.1"  # Required
+description = "Common functions for making bots for the Astronomy feeds & Bluesky."  # Optional
+readme = "README.md" # Optional
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+keywords = ["bluesky", "astronomy"]  # Optional
+authors = [
+  {name = "Emily L. Hunt", email = "emily.hunt.physics@gmail.com" } # Optional
+]
+maintainers = [
+  {name = "Emily L. Hunt", email = "emily.hunt.physics@gmail.com" } # Optional
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Build Tools",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3 :: Only",
+]
+dependencies = [ # Optional
+  # "atproto==0.0.30", - assumed to be inherited from astrofeed-lib
+  "astrofeed_lib @ git+https://github.com/bluesky-astronomy/astrofeed-lib",
+]
+
+[project.urls]  # Optional
+"Homepage" = "https://astronomy.blue/"
+"Bug Reports" = "https://github.com/bluesky-astronomy/astrobot-lib"
+
+[build-system]
+requires = ["setuptools>=43.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
