@@ -70,7 +70,7 @@ async def send_post(
     root_post: models.ComAtprotoRepoStrongRef.Main | None = None,
     parent_post: models.ComAtprotoRepoStrongRef.Main | None = None,
 ):
-    """Uploads a post (including an image!) to the Bluesky network."""
+    """Uploads a post (including an image, if desired!) to the Bluesky network."""
     check_post_text(text)
     check_post_image(image, image_alt)
     reply_info = get_reply_info(root_post, parent_post)
@@ -99,7 +99,7 @@ def convert_string_into_thread(
 
 async def send_thread(
     client: AsyncClient,
-    posts: str | list[str],
+    posts: list[str],
     images: dict[int, str] = None,
     image_alts: dict[int, str] = None,
     root_post: models.ComAtprotoRepoStrongRef.Main | None = None,
@@ -108,13 +108,18 @@ async def send_thread(
     """Sends a thread of posts, automatically splitting up long text into a thread!
     # Todo: consider type checking as Sequence, not list (not sure how)
     """
-    # Todo: split string arguments
+    # Todo: allow posts to be just a string that we split automatically
     # Todo: check that all iterables have same length, if lists specified
     # Todo: if dicts specified, check that there are enough posts for all of them
     # Todo: check that images iterable matches image_alts iterable. Consider making it just one parameter instead?
     for post_number, a_post in enumerate(posts):
-        root_post, parent_post = send_post(client, a_post, image=images.get(post_number), image_alts=image_alts.get(post_number), root_post=root_post, parent_post=parent_post)
+        root_post, parent_post = send_post(
+            client,
+            a_post,
+            image=images.get(post_number),
+            image_alts=image_alts.get(post_number),
+            root_post=root_post,
+            parent_post=parent_post,
+        )
 
     return root_post, parent_post
-
-
