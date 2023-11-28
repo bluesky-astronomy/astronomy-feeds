@@ -20,7 +20,7 @@ class BaseModel(peewee.Model):
 
 # Todo should set attributes based on feeds / have some way to add new columns to the mysql db
 class Post(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.now, index=True)
+    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
     uri = peewee.CharField(index=True)
     cid = peewee.CharField(index=True)
     author = peewee.CharField()
@@ -44,7 +44,7 @@ class Account(BaseModel):
     did = peewee.CharField(default="not set")
     is_valid = peewee.BooleanField()
     feed_all = peewee.BooleanField(default=False)  # Also implicitly includes allowing feed_astro
-    indexed_at = peewee.DateTimeField(default=datetime.now)
+    indexed_at = peewee.DateTimeField(default=datetime.utcnow)
 
 
 if db.is_closed():
