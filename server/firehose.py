@@ -92,7 +92,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
-def _worker_loop(receiver, cursor):
+def _worker_loop(receiver, cursor, update_cursor_in_database=True):
     logger.info("-> Firehose worker process started")
     while True:
         # Wait for the multiprocessing.connection.Connection to contain something. This is blocking, btw!
@@ -106,8 +106,11 @@ def _worker_loop(receiver, cursor):
         if commit.seq % 100 == 0:
             cursor.value = commit.seq
             # x = time.time()
-            db.connect(reuse_if_open=True)  # Todo: not sure if needed
-            SubscriptionState.update(cursor=commit.seq).where(SubscriptionState.service == SERVICE_DID).execute()
+            if update_cursor_in_database:
+                db.connect(reuse_if_open=True)  # Todo: not sure if needed
+                SubscriptionState.update(cursor=commit.seq).where(SubscriptionState.service == SERVICE_DID).execute()
+            else:
+                logger.info(f"Cursor: {commit.seq}")
             # db.close()
             # print(time.time() - x)
 
@@ -120,23 +123,24 @@ def _worker_loop(receiver, cursor):
         #     print(f'New post in the network! Langs: {post_langs}. Text: {post_msg}')
 
 
-def worker_main(receiver, cursor) -> None:
+def worker_main(receiver, cursor, update_cursor_in_database=True, dump_posts_on_fail=False) -> None:
     """Main worker handler! Automatically reboots when done."""
     reboots = 0
     while True:
         try:
-            _worker_loop(receiver, cursor)
+            _worker_loop(receiver, cursor, update_cursor_in_database=update_cursor_in_database)
         except Exception as e:  # Todo: not good to catch all but it will do I guess
             logger.info(f"EXCEPTION IN FIREHOSE WORKER: {e}")
             traceback.print_exception(e)
 
         # Clear the pipe so that the next worker doesn't get swamped
-        logger.info("Clearing out connection to parent thread")
-        messages_dumped = 0
-        while receiver.poll():
-            receiver.recv()
-            messages_dumped += 1
-        logger.info(f"Lost {messages_dumped} messages")
+        if dump_posts_on_fail:
+            logger.info("Clearing out connection to parent thread")
+            messages_dumped = 0
+            while receiver.poll():
+                receiver.recv()
+                messages_dumped += 1
+            logger.info(f"Lost {messages_dumped} messages")
 
         reboots += 1
         logger.info(f"Reboot count: {reboots}")
@@ -181,7 +185,7 @@ def _run(stream_stop_event=None):
         SubscriptionState.create(service=SERVICE_DID, cursor=0)
 
     # Optionally, manually set a cursor
-    # params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=379649600)
+    # params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=376765400)
     
     # This is the client used to subscribe to the firehose from the atproto lib.
     client = FirehoseSubscribeReposClient(params, base_uri="wss://bsky.network/xrpc")  # )
@@ -191,7 +195,9 @@ def _run(stream_stop_event=None):
     #       There are too many things that need to be thread-safed for it to get implemented right now...
     #       Also: AWS doesn't support Queue and Pool objects, so it takes a lot more manual coding (sad.)
     receiver, pipe = multiprocessing.Pipe(duplex=False)
-    worker = multiprocessing.Process(target=worker_main, args=(receiver, cursor))
+    worker = multiprocessing.Process(
+        target=worker_main, args=(receiver, cursor), kwargs=dict(update_cursor_in_database=True)
+    )
 
     # The handler below tells the client what to do when a new commit is encountered
     def on_message_handler(message: MessageFrame) -> None:
