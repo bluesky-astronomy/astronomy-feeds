@@ -10,11 +10,12 @@ from atproto.xrpc_client.models.common import XrpcError
 
 from server.data_filter import operations_callback
 from astrofeed_lib.config import SERVICE_DID
-from astrofeed_lib.database import SubscriptionState
+from astrofeed_lib.database import SubscriptionState, db
 
 
 import logging
 import traceback
+import time
 
 
 logger = logging.getLogger(__name__)
@@ -104,7 +105,11 @@ def _worker_loop(receiver, cursor):
         # Update stored state every ~100 events
         if commit.seq % 100 == 0:
             cursor.value = commit.seq
+            # x = time.time()
+            db.connect(reuse_if_open=True)  # Todo: not sure if needed
             SubscriptionState.update(cursor=commit.seq).where(SubscriptionState.service == SERVICE_DID).execute()
+            # db.close()
+            # print(time.time() - x)
 
         operations_callback(_get_ops_by_type(commit))
 
@@ -176,7 +181,7 @@ def _run(stream_stop_event=None):
         SubscriptionState.create(service=SERVICE_DID, cursor=0)
 
     # cursor.value = 379476800
-    params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=379476800)
+    params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=379649600)
     
     # This is the client used to subscribe to the firehose from the atproto lib.
     client = FirehoseSubscribeReposClient(params, base_uri="wss://bsky.network/xrpc")  # )
