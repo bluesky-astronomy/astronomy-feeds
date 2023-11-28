@@ -64,7 +64,7 @@ post_list = PostList(with_database_closing=True)
 post_list.get_posts()  # Initial get
 
 
-def operations_callback(ops: dict) -> None:
+def operations_callback(ops: dict, cursor: int) -> None:
     # See how many posts are valid
     posts_to_create = []
     valid_dids = account_list.get_accounts()
@@ -75,7 +75,7 @@ def operations_callback(ops: dict) -> None:
     for created_post in valid_posts:
         # Don't add a post if it already exists (e.g. if we're looping over the firehose)
         if created_post['uri'] in post_list.get_posts():
-            logger.info(f'Ignored duplicate post')
+            logger.info(f'Ignored duplicate post (cursor={cursor})')
             continue
 
         # Basic post info to add to the database
@@ -111,7 +111,7 @@ def operations_callback(ops: dict) -> None:
         if posts_to_delete:
             Post.delete().where(Post.uri.in_(posts_to_delete))
             post_list.remove_posts(posts_to_delete)
-            logger.info(f'Deleted posts: {len(posts_to_delete)}')
+            logger.info(f'Deleted posts: {len(posts_to_delete)} (cursor={cursor})')
 
         if posts_to_create:
             with db.atomic():
@@ -119,6 +119,6 @@ def operations_callback(ops: dict) -> None:
                     Post.create(**post_dict)
             post_list.add_posts([x['uri'] for x in posts_to_create])
             feed_counts_string = ", ".join([f"{key[5:]}-{feed_counts[key]}" for key in feed_counts])
-            logger.info(f'Added posts: {feed_counts_string}')
+            logger.info(f'Added posts: {feed_counts_string} (cursor={cursor})')
 
         db.close()

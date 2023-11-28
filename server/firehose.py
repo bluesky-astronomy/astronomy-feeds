@@ -111,7 +111,7 @@ def _worker_loop(receiver, cursor):
             # db.close()
             # print(time.time() - x)
 
-        operations_callback(_get_ops_by_type(commit))
+        operations_callback(_get_ops_by_type(commit), commit.seq)
 
         # ops = _get_ops_by_type(commit)
         # for post in ops['posts']['created']:
@@ -180,8 +180,8 @@ def _run(stream_stop_event=None):
         print("Generating a cursor for the first time...")
         SubscriptionState.create(service=SERVICE_DID, cursor=0)
 
-    # cursor.value = 379476800
-    params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=379649600)
+    # Optionally, manually set a cursor
+    # params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=379649600)
     
     # This is the client used to subscribe to the firehose from the atproto lib.
     client = FirehoseSubscribeReposClient(params, base_uri="wss://bsky.network/xrpc")  # )
@@ -201,7 +201,6 @@ def _run(stream_stop_event=None):
         if cursor.value:
             current_cursor = cursor.value
             cursor.value = 0
-            print(current_cursor)
             client.update_params(models.ComAtprotoSyncSubscribeRepos.Params(cursor=current_cursor))
 
     worker.start()
