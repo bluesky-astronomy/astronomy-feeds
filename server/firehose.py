@@ -10,6 +10,7 @@ from atproto.xrpc_client.models.common import XrpcError
 
 from server.data_filter import operations_callback
 from astrofeed_lib.config import SERVICE_DID
+from astrofeed_lib.database import SubscriptionState
 
 
 import logging
@@ -90,7 +91,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
-def _worker_loop(receiver):
+def _worker_loop(receiver, cursor):
     logger.info("-> Firehose worker process started")
     while True:
         # Wait for the multiprocessing.connection.Connection to contain something. This is blocking, btw!
@@ -99,6 +100,11 @@ def _worker_loop(receiver):
         commit = parse_subscribe_repos_message(message)
         if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
             continue
+        
+        # Update stored state every ~100 events
+        if commit.seq % 100 == 0:
+            cursor.value = commit.seq
+            SubscriptionState.update(cursor=commit.seq).where(SubscriptionState.service == SERVICE_DID).execute()
 
         operations_callback(_get_ops_by_type(commit))
 
@@ -109,12 +115,12 @@ def _worker_loop(receiver):
         #     print(f'New post in the network! Langs: {post_langs}. Text: {post_msg}')
 
 
-def worker_main(receiver) -> None:
+def worker_main(receiver, cursor) -> None:
     """Main worker handler! Automatically reboots when done."""
     reboots = 0
     while True:
         try:
-            _worker_loop(receiver)
+            _worker_loop(receiver, cursor)
         except Exception as e:  # Todo: not good to catch all but it will do I guess
             logger.info(f"EXCEPTION IN FIREHOSE WORKER: {e}")
             traceback.print_exception(e)
@@ -153,19 +159,45 @@ def run(stream_stop_event=None):
 def _run(stream_stop_event=None):
     print(f"Running firehose for {SERVICE_DID}")
 
+    # Get initial cursor value
+    start_cursor = SubscriptionState.get(SubscriptionState.service == SERVICE_DID).cursor
+    params = None
+    cursor = multiprocessing.Value('i', 0)
+    if start_cursor:
+        if start_cursor is not None:
+            params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=start_cursor)
+            cursor = multiprocessing.Value('i', start_cursor)
+        else:
+            print("Saved cursor was invalid!", start_cursor)
+
+    # If there isn't one, then set one up
+    if not start_cursor:
+        print("Generating a cursor for the first time...")
+        SubscriptionState.create(service=SERVICE_DID, cursor=0)
+
+    # cursor.value = 379476800
+    params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=379476800)
+    
     # This is the client used to subscribe to the firehose from the atproto lib.
-    client = FirehoseSubscribeReposClient(base_uri="wss://bsky.network/xrpc")  # )
+    client = FirehoseSubscribeReposClient(params, base_uri="wss://bsky.network/xrpc")  # )
 
     # Setup workers to analyse and process posts (i.e. this is done as separately as possible to atproto post ingestion)
     # TODO: multi-workers are currently NOT supported! Only 1 worker is allowed at this time.
     #       There are too many things that need to be thread-safed for it to get implemented right now...
     #       Also: AWS doesn't support Queue and Pool objects, so it takes a lot more manual coding (sad.)
     receiver, pipe = multiprocessing.Pipe(duplex=False)
-    worker = multiprocessing.Process(target=worker_main, args=(receiver,))
+    worker = multiprocessing.Process(target=worker_main, args=(receiver, cursor))
 
     # The handler below tells the client what to do when a new commit is encountered
     def on_message_handler(message: MessageFrame) -> None:
         pipe.send(message)
+
+        # Update local client cursor value
+        if cursor.value:
+            current_cursor = cursor.value
+            cursor.value = 0
+            print(current_cursor)
+            client.update_params(models.ComAtprotoSyncSubscribeRepos.Params(cursor=current_cursor))
 
     worker.start()
     client.start(on_message_handler)

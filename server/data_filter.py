@@ -42,7 +42,7 @@ class PostList:
 
     def post_query(self):
         """Intended to be overwritten! Should return a set of posts."""
-        return {uri for uri in Post.select(Post.uri).where(Post.indexed_at > datetime.now() - self.max_post_age)}
+        return {post.uri for post in Post.select().where(Post.indexed_at > datetime.now() - self.max_post_age)}
 
     def get_posts(self) -> set:
         is_overdue = time.time() - self.last_query_time > self.query_interval
@@ -73,6 +73,11 @@ def operations_callback(ops: dict) -> None:
     # Classify valid posts into feed categories
     feed_counts = {}
     for created_post in valid_posts:
+        # Don't add a post if it already exists (e.g. if we're looping over the firehose)
+        if created_post['uri'] in post_list.get_posts():
+            logger.info(f'Ignored duplicate post')
+            continue
+
         # Basic post info to add to the database
         post_text = created_post['record']['text']
         post_dict = {
