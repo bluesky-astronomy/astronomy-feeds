@@ -24,50 +24,43 @@ logging.basicConfig(level=logging.INFO)
 
 def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict:  # noqa: C901
     operation_by_type = {
-        'posts': {'created': [], 'deleted': []},
-        'reposts': {'created': [], 'deleted': []},
-        'likes': {'created': [], 'deleted': []},
-        'follows': {'created': [], 'deleted': []},
+        "posts": {"created": [], "deleted": []},
+        "reposts": {"created": [], "deleted": []},
+        "likes": {"created": [], "deleted": []},
+        "follows": {"created": [], "deleted": []},
     }
 
-    # Try to decode
-    # print("commit.repo: ", commit.repo)
-    # print("commit.ops: ", commit.ops)
-    # print("commit.blocks: ", commit.blocks)
-    # try:
-    #     car = CAR.from_bytes(commit.blocks)
-    # except Exception as e:
-    #     logger.info("EXCEPTION while attempting to decode commit.blocks")
-    #     traceback.print_exception(e)
-    #     print("commit.repo: ", commit.repo)
-    #     print("commit.ops: ", commit.ops)
-    #     print("commit.blocks: ", commit.blocks)
-    #     car = None
-
-    if commit.blocks == b'' or len(commit.ops) == 0:
+    # Handle occasional empty commit (not in ATProto spec but seems to happen sometimes.
+    # Can be a blank binary string sometimes, for no reason)
+    if not commit.blocks:
         return operation_by_type
+    
     car = CAR.from_bytes(commit.blocks)
 
     for op in commit.ops:
-        uri = AtUri.from_str(f'at://{commit.repo}/{op.path}')
+        uri = AtUri.from_str(f"at://{commit.repo}/{op.path}")
 
-        if op.action == 'update':
+        if op.action == "update":
             # not supported yet
             continue
 
-        if op.action == 'create' and car is not None:
+        if op.action == "create" and car is not None:
             if not op.cid:
                 continue
 
-            create_info = {'uri': str(uri), 'cid': str(op.cid), 'author': commit.repo}
+            create_info = {"uri": str(uri), "cid": str(op.cid), "author": commit.repo}
 
             record_raw_data = car.blocks.get(op.cid)
             if not record_raw_data:
                 continue
 
             record = get_or_create(record_raw_data, strict=False)
-            if uri.collection == ids.AppBskyFeedPost and is_record_type(record, ids.AppBskyFeedPost):
-                operation_by_type['posts']['created'].append({'record': record, **create_info})
+            if uri.collection == ids.AppBskyFeedPost and is_record_type(
+                record, ids.AppBskyFeedPost
+            ):
+                operation_by_type["posts"]["created"].append(
+                    {"record": record, **create_info}
+                )
 
             # The following types of event don't need to be tracked by the feed right now, and are removed.
             # elif uri.collection == ids.AppBskyFeedLike and is_record_type(record, ids.AppBskyFeedLike):
@@ -77,9 +70,9 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
             # elif uri.collection == ids.AppBskyGraphFollow and is_record_type(record, ids.AppBskyGraphFollow):
             #     operation_by_type['follows']['created'].append({'record': record, **create_info})
 
-        if op.action == 'delete':
+        if op.action == "delete":
             if uri.collection == ids.AppBskyFeedPost:
-                operation_by_type['posts']['deleted'].append({'uri': str(uri)})
+                operation_by_type["posts"]["deleted"].append({"uri": str(uri)})
 
             # The following types of event don't need to be tracked by the feed right now.
             # elif uri.collection == ids.AppBskyFeedLike:
@@ -92,7 +85,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
-def _worker_loop(receiver, cursor, update_cursor_in_database=True):
+def _worker_loop(receiver, cursor, worker_time, update_cursor_in_database=True):
     logger.info("-> Firehose worker process started")
     while True:
         # Wait for the multiprocessing.connection.Connection to contain something. This is blocking, btw!
@@ -101,34 +94,38 @@ def _worker_loop(receiver, cursor, update_cursor_in_database=True):
         commit = parse_subscribe_repos_message(message)
         if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
             continue
-        
+
         # Update stored state every ~100 events
         if commit.seq % 100 == 0:
             cursor.value = commit.seq
-            # x = time.time()
             if update_cursor_in_database:
                 db.connect(reuse_if_open=True)  # Todo: not sure if needed
-                SubscriptionState.update(cursor=commit.seq).where(SubscriptionState.service == SERVICE_DID).execute()
+                SubscriptionState.update(cursor=commit.seq).where(
+                    SubscriptionState.service == SERVICE_DID
+                ).execute()
             else:
                 logger.info(f"Cursor: {commit.seq}")
-            # db.close()
-            # print(time.time() - x)
-
         operations_callback(_get_ops_by_type(commit), commit.seq)
-
-        # ops = _get_ops_by_type(commit)
-        # for post in ops['posts']['created']:
-        #     post_msg = post['record'].text
-        #     post_langs = post['record'].langs
-        #     print(f'New post in the network! Langs: {post_langs}. Text: {post_msg}')
+        worker_time.value = time.time()
 
 
-def worker_main(receiver, cursor, update_cursor_in_database=True, dump_posts_on_fail=False) -> None:
+def worker_main(
+    receiver,
+    cursor,
+    worker_time,
+    update_cursor_in_database=True,
+    dump_posts_on_fail=False,
+) -> None:
     """Main worker handler! Automatically reboots when done."""
     reboots = 0
     while True:
         try:
-            _worker_loop(receiver, cursor, update_cursor_in_database=update_cursor_in_database)
+            _worker_loop(
+                receiver,
+                cursor,
+                worker_time,
+                update_cursor_in_database=update_cursor_in_database,
+            )
         except Exception as e:  # Todo: not good to catch all but it will do I guess
             logger.info(f"EXCEPTION IN FIREHOSE WORKER: {e}")
             traceback.print_exception(e)
@@ -143,62 +140,126 @@ def worker_main(receiver, cursor, update_cursor_in_database=True, dump_posts_on_
             logger.info(f"Lost {messages_dumped} messages")
 
         reboots += 1
-        logger.info(f"Reboot count: {reboots}")
+        logger.info(f"Worker reboot count: {reboots}")
 
 
-def run(stream_stop_event=None):
-    """Continually the firehose and processes posts from on the network."""
-    while True:
-        # Run the firehose! (_run is the main function here)
-        try:
-            _run(stream_stop_event=stream_stop_event)
-
-        # Try to handle ConsumerTooSlow exceptions. These can happen if the network is very busy or if there's a bad
-        # internet connection. In this case, we'll try to just restart the firehose.
-        except FirehoseError as e:
-            if e.args:
-                xrpc_error = e.args[0]
-                if isinstance(xrpc_error, XrpcError) and xrpc_error.error == 'ConsumerTooSlow':
-                    logger.warn('Reconnecting to Firehose due to ConsumerTooSlow...')
-                    continue
-
-            raise e
-
-
-def _run(stream_stop_event=None):
-    print(f"Running firehose for {SERVICE_DID}")
-
-    # Get initial cursor value
-    start_cursor = SubscriptionState.get(SubscriptionState.service == SERVICE_DID).cursor
-    params = None
-    cursor = multiprocessing.Value('i', 0)
+def get_start_cursor():
+    # Get current saved cursor value
+    start_cursor = SubscriptionState.get(
+        SubscriptionState.service == SERVICE_DID
+    ).cursor
     if start_cursor:
-        if start_cursor is not None:
-            params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=start_cursor)
-            cursor = multiprocessing.Value('i', start_cursor)
-        else:
-            print("Saved cursor was invalid!", start_cursor)
+        if not isinstance(start_cursor, int):
+            raise ValueError(f"Saved cursor with value '{start_cursor}' is invalid.")
+        return start_cursor
 
-    # If there isn't one, then set one up
-    if not start_cursor:
-        print("Generating a cursor for the first time...")
-        SubscriptionState.create(service=SERVICE_DID, cursor=0)
+    # If there isn't one, then make sure the DB has a cursor
+    logger.info("Generating a cursor for the first time...")
+    SubscriptionState.create(service=SERVICE_DID, cursor=0)
+    return None
 
-    # Optionally, manually set a cursor
-    # params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=376765400)
+
+def get_client(
+    start_cursor: int | None = None, base_uri: str = "wss://bsky.network/xrpc"
+):
+    if start_cursor is None:
+        start_cursor = get_start_cursor()
+    params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=start_cursor)
+    return FirehoseSubscribeReposClient(params, base_uri=base_uri)
+
+
+def run(watchdog_interval=300):
+    """Continually runs the firehose and processes posts from on the network.
     
-    # This is the client used to subscribe to the firehose from the atproto lib.
-    client = FirehoseSubscribeReposClient(params, base_uri="wss://bsky.network/xrpc")  # )
+    Incorporates watchdog functionality, which checks that all worker subprocesses are
+    still running once every watchdog_interval seconds. The firehose will stop if this
+    happens.
+    """
+    post_worker, client_worker, firehose_time, worker_time = start_firehose()
+    while True:
+        time.sleep(watchdog_interval)
+        current_time = time.time()
 
-    # Setup workers to analyse and process posts (i.e. this is done as separately as possible to atproto post ingestion)
-    # TODO: multi-workers are currently NOT supported! Only 1 worker is allowed at this time.
-    #       There are too many things that need to be thread-safed for it to get implemented right now...
-    #       Also: AWS doesn't support Queue and Pool objects, so it takes a lot more manual coding (sad.)
+        # Checks
+        errors = []
+        if not client_worker.is_alive():
+            errors.append("Client worker died.")
+        if firehose_time.value < current_time - watchdog_interval:
+            errors.append("Client worker hung.")
+        if not post_worker.is_alive():
+            errors.append("Post worker died.")
+        if worker_time.value < current_time - watchdog_interval:
+            errors.append("Post worker hung.")
+
+        # Restart if necessary
+        if errors:
+            stop_firehose(post_worker, client_worker, errors)
+
+
+def start_firehose():
+    # Initialise shared resources/pipes
+    cursor = multiprocessing.Value("i", 0)
+    firehose_time = multiprocessing.Value("i", time.time())
+    worker_time = multiprocessing.Value("i", time.time())
     receiver, pipe = multiprocessing.Pipe(duplex=False)
-    worker = multiprocessing.Process(
-        target=worker_main, args=(receiver, cursor), kwargs=dict(update_cursor_in_database=True)
+
+    # Start subprocesses
+    post_worker = start_post_worker(cursor, receiver, worker_time)
+    client_worker = start_client_worker(cursor, pipe, firehose_time)
+
+    # Return stuff that the watchdog will need to check
+    return (
+        post_worker,
+        client_worker,
+        firehose_time,
+        worker_time,
     )
 
+
+def stop_firehose(post_worker, client_worker, errors):
+    # Kill child processes
+    try: 
+        post_worker.kill()
+    except Exception as e:
+        pass
+    try: 
+        client_worker.kill()
+    except Exception as e:
+        pass
+    
+    # Raise overall error
+    raise RuntimeError(
+        "Firehose encountered a critical error and will stop. Reasons: \n"
+        + "\n".join(errors)
+    )
+
+
+def start_post_worker(cursor, receiver, latest_worker_event_time):
+    logger.info("Starting new post processing worker...")
+    post_worker = multiprocessing.Process(
+        target=worker_main,
+        args=(receiver, cursor, latest_worker_event_time),
+        kwargs=dict(update_cursor_in_database=True),
+    )
+    post_worker.start()
+    return post_worker
+
+
+def start_client_worker(cursor, pipe, latest_firehose_event_time):
+    logger.info("Starting new firehose client worker...")
+    client_worker = multiprocessing.Process(
+        target=client_main, args=(cursor, pipe, latest_firehose_event_time)
+    )
+    client_worker.start()
+    return client_worker
+
+
+def _is_client_too_slow_error(e):
+    xrpc_error = e.args[0]
+    return isinstance(xrpc_error, XrpcError) and xrpc_error.error == "ConsumerTooSlow"
+
+
+def client_main(cursor, pipe, firehose_time):
     # The handler below tells the client what to do when a new commit is encountered
     def on_message_handler(message: MessageFrame) -> None:
         pipe.send(message)
@@ -207,7 +268,17 @@ def _run(stream_stop_event=None):
         if cursor.value:
             current_cursor = cursor.value
             cursor.value = 0
-            client.update_params(models.ComAtprotoSyncSubscribeRepos.Params(cursor=current_cursor))
+            client.update_params(
+                models.ComAtprotoSyncSubscribeRepos.Params(cursor=current_cursor)
+            )
+        firehose_time.value = time.time()
 
-    worker.start()
-    client.start(on_message_handler)
+    while True:
+        client = get_client()
+        try:
+            client.start(on_message_handler)
+        except FirehoseError as e:
+            if not _is_client_too_slow_error(e):
+                raise e
+            logger.warn("Reconnecting to Firehose due to ConsumerTooSlow...")
+            continue
