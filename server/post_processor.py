@@ -3,6 +3,8 @@ added to the feeds.
 """
 import logging
 import time
+from multiprocessing.sharedctypes import Synchronized
+from multiprocessing.connection import Connection
 from atproto import CAR, AtUri
 from atproto.xrpc_client.models import get_or_create, ids, is_record_type
 from atproto.firehose import parse_subscribe_repos_message
@@ -106,11 +108,11 @@ def _process_posts(receiver, cursor, worker_time, update_cursor_in_database=True
 
 
 def run_post_processor(
-    receiver,
-    cursor,
-    worker_time,
-    update_cursor_in_database=True,
-    dump_posts_on_fail=False,
+    receiver: Connection,
+    cursor: Synchronized,
+    worker_time: Synchronized,
+    update_cursor_in_database: bool = True,
+    dump_posts_on_fail: bool = False,
 ) -> None:
     """Main worker handler!
 

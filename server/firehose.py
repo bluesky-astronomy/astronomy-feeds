@@ -12,6 +12,10 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+BASE_URI = "wss://bsky.network/xrpc"  # Which relay to fetch commits from
+CURSOR_OVERRIDE = 611949491  # Can be used to set a different start value of cursor
+
+
 def _create_shared_resources():
     """Creates resources that are shared between subprocesses."""
     cursor = multiprocessing.Value("i", 0)
@@ -27,6 +31,7 @@ def _start_client_worker(cursor, pipe, latest_firehose_event_time):
     client_worker = multiprocessing.Process(
         target=run_client,
         args=(cursor, pipe, latest_firehose_event_time),
+        kwargs=dict(start_cursor=CURSOR_OVERRIDE, base_uri=BASE_URI),
         name="Client worker",
     )
     client_worker.start()
@@ -68,7 +73,7 @@ def _stop_workers(post_worker, client_worker):
         pass
 
 
-def run(watchdog_interval=300, startup_sleep=10):
+def run(watchdog_interval: int | float = 300, startup_sleep: int | float = 10):
     """Continually runs the firehose and processes posts from on the network.
 
     Incorporates watchdog functionality, which checks that all worker subprocesses are

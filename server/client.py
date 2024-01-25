@@ -1,5 +1,7 @@
 """Code for client that connects to firehose."""
 import logging
+from multiprocessing.sharedctypes import Synchronized
+from multiprocessing.connection import Connection
 import time
 from atproto.exceptions import FirehoseError
 from atproto.firehose import FirehoseSubscribeReposClient
@@ -44,7 +46,13 @@ def _is_client_too_slow_error(e):
     return isinstance(xrpc_error, XrpcError) and xrpc_error.error == "ConsumerTooSlow"
 
 
-def run_client(cursor, pipe, firehose_time):
+def run_client(
+    cursor: Synchronized,  # Return value of multiprocessing.Value
+    pipe: Connection,
+    firehose_time: Synchronized,  # Return value of multiprocessing.Value
+    start_cursor: int | None = None,
+    base_uri: str = "wss://bsky.network/xrpc",
+):
     """Primary function for running the client that connects to Bluesky. New commits are
     immediately sent to the separate post processing worker.
     """
@@ -67,7 +75,7 @@ def run_client(cursor, pipe, firehose_time):
     # Continually restarts the client if ConsumerTooSlow errors are encountered. This
     # can happen due to the Bluesky network being busy or internet connection issues.
     while True:
-        client = _get_client()
+        client = _get_client(start_cursor=start_cursor, base_uri=base_uri)
 
         try:
             logger.info("... firehose client worker started")
