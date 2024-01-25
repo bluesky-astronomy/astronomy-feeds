@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 BASE_URI = "wss://bsky.network/xrpc"  # Which relay to fetch commits from
-CURSOR_OVERRIDE = 611949491  # Can be used to set a different start value of cursor
+CURSOR_OVERRIDE = None  # Can be used to set a different start value of cursor
 
 
 def _create_shared_resources():
