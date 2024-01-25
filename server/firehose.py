@@ -12,7 +12,6 @@ from server.data_filter import operations_callback
 from astrofeed_lib.config import SERVICE_DID
 from astrofeed_lib.database import SubscriptionState, db
 
-
 import logging
 import traceback
 import time
@@ -34,7 +33,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     # Can be a blank binary string sometimes, for no reason)
     if not commit.blocks:
         return operation_by_type
-    
+
     car = CAR.from_bytes(commit.blocks)
 
     for op in commit.ops:
@@ -86,7 +85,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
 
 
 def _worker_loop(receiver, cursor, worker_time, update_cursor_in_database=True):
-    logger.info("-> Firehose worker process started")
+    logger.info("... post processing worker started")
     while True:
         # Wait for the multiprocessing.connection.Connection to contain something. This is blocking, btw!
         message = receiver.recv()
@@ -116,7 +115,11 @@ def worker_main(
     update_cursor_in_database=True,
     dump_posts_on_fail=False,
 ) -> None:
-    """Main worker handler! Automatically reboots when done."""
+    """Main worker handler!
+
+    Currently, on an exception when handling a post, the worker will restart (skipping
+    that post). This should be very rare.
+    """
     reboots = 0
     while True:
         try:
@@ -168,69 +171,45 @@ def get_client(
     return FirehoseSubscribeReposClient(params, base_uri=base_uri)
 
 
-def run(watchdog_interval=300):
-    """Continually runs the firehose and processes posts from on the network.
-    
-    Incorporates watchdog functionality, which checks that all worker subprocesses are
-    still running once every watchdog_interval seconds. The firehose will stop if this
-    happens.
-    """
-    post_worker, client_worker, firehose_time, worker_time = start_firehose()
-    while True:
-        time.sleep(watchdog_interval)
-        current_time = time.time()
-
-        # Checks
-        errors = []
-        if not client_worker.is_alive():
-            errors.append("Client worker died.")
-        if firehose_time.value < current_time - watchdog_interval:
-            errors.append("Client worker hung.")
-        if not post_worker.is_alive():
-            errors.append("Post worker died.")
-        if worker_time.value < current_time - watchdog_interval:
-            errors.append("Post worker hung.")
-
-        # Restart if necessary
-        if errors:
-            stop_firehose(post_worker, client_worker, errors)
-
-
 def start_firehose():
     # Initialise shared resources/pipes
     cursor = multiprocessing.Value("i", 0)
-    firehose_time = multiprocessing.Value("i", time.time())
-    worker_time = multiprocessing.Value("i", time.time())
+    client_time = multiprocessing.Value("d", time.time())
+    post_time = multiprocessing.Value("d", time.time())
     receiver, pipe = multiprocessing.Pipe(duplex=False)
 
     # Start subprocesses
-    post_worker = start_post_worker(cursor, receiver, worker_time)
-    client_worker = start_client_worker(cursor, pipe, firehose_time)
+    client_worker = start_client_worker(cursor, pipe, client_time)
+    post_worker = start_post_worker(cursor, receiver, post_time)
 
     # Return stuff that the watchdog will need to check
     return (
         post_worker,
         client_worker,
-        firehose_time,
-        worker_time,
+        client_time,
+        post_time,
     )
 
 
-def stop_firehose(post_worker, client_worker, errors):
+def stop_firehose(post_worker, client_worker, errors, start_time):
     # Kill child processes
-    try: 
+    try:
         post_worker.kill()
     except Exception as e:
         pass
-    try: 
+    try:
         client_worker.kill()
     except Exception as e:
         pass
-    
+
+    uptime = time.time() - start_time
+
     # Raise overall error
     raise RuntimeError(
-        "Firehose encountered a critical error and will stop. Reasons: \n"
+        "Firehose workers encountered critical errors and appear to be non-functioning."
+        " The watchdog will now stop the firehose. Worker errors: \n"
         + "\n".join(errors)
+        + f"\nTotal uptime was {uptime/60**2/24:.3f} days ({uptime:.0f} seconds)."
     )
 
 
@@ -240,6 +219,7 @@ def start_post_worker(cursor, receiver, latest_worker_event_time):
         target=worker_main,
         args=(receiver, cursor, latest_worker_event_time),
         kwargs=dict(update_cursor_in_database=True),
+        name="Post processing worker",
     )
     post_worker.start()
     return post_worker
@@ -248,10 +228,46 @@ def start_post_worker(cursor, receiver, latest_worker_event_time):
 def start_client_worker(cursor, pipe, latest_firehose_event_time):
     logger.info("Starting new firehose client worker...")
     client_worker = multiprocessing.Process(
-        target=client_main, args=(cursor, pipe, latest_firehose_event_time)
+        target=client_main,
+        args=(cursor, pipe, latest_firehose_event_time),
+        name="Client worker",
     )
     client_worker.start()
     return client_worker
+
+
+def run(watchdog_interval=30, startup_sleep=10):
+    """Continually runs the firehose and processes posts from on the network.
+
+    Incorporates watchdog functionality, which checks that all worker subprocesses are
+    still running once every watchdog_interval seconds. The firehose will stop if this
+    happens.
+    """
+    start_time = time.time()
+    post_worker, client_worker, client_time, post_time = start_firehose()
+    # We wait a bit for our first check. This should be enough time for the system to
+    # start and get settled.
+    time.sleep(startup_sleep)
+
+    while True:
+        current_time = time.time()
+
+        # Checks
+        errors = []
+        if not client_worker.is_alive():
+            errors.append("-> RuntimeError: Client worker died.")
+        if client_time.value < current_time - watchdog_interval:
+            errors.append("-> RuntimeError: Client worker hung.")
+        if not post_worker.is_alive():
+            errors.append("-> RuntimeError: Post worker died.")
+        if post_time.value < current_time - watchdog_interval:
+            errors.append("-> RuntimeError: Post worker hung.")
+
+        # Restart if necessary
+        if errors:
+            stop_firehose(post_worker, client_worker, errors, start_time)
+        
+        time.sleep(watchdog_interval)
 
 
 def _is_client_too_slow_error(e):
@@ -276,6 +292,7 @@ def client_main(cursor, pipe, firehose_time):
     while True:
         client = get_client()
         try:
+            logger.info("... firehose client worker started")
             client.start(on_message_handler)
         except FirehoseError as e:
             if not _is_client_too_slow_error(e):
