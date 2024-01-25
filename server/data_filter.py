@@ -1,3 +1,4 @@
+"""Logic for how commits are filtered."""
 import logging
 from astrofeed_lib.database import db, Post
 from astrofeed_lib.accounts import AccountList
