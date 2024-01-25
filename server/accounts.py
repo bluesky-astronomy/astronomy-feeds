@@ -26,7 +26,7 @@ def query_google_sheets():
     all_accounts = pd.read_csv(SHEET_LINK, usecols=["time", "name", "id", "valid"])
 
     # Sanitise the valid column into a boolean only (it can be blank otherwise)
-    all_accounts["valid"] = all_accounts["valid"] == True
+    all_accounts["valid"] = all_accounts["valid"] is True
     return all_accounts
 
 
@@ -54,7 +54,7 @@ def refresh_valid_accounts(limit=50):
             db.connect()
 
         # Work out which accounts are not in the account database
-        existing_handles = [account.submission_id for account in Account.select()]
+        existing_handles = [account.submission_id for account in Account.select()]  # noqa: F841
         new_accounts = (
             all_accounts.query("id not in @existing_handles").reset_index().loc[:limit]
         )

@@ -6,9 +6,8 @@ import time
 from multiprocessing.sharedctypes import Synchronized
 from multiprocessing.connection import Connection
 from atproto import CAR, AtUri
-from atproto.xrpc_client.models import get_or_create, ids, is_record_type
-from atproto.firehose import parse_subscribe_repos_message
-from atproto.xrpc_client import models
+from atproto import parse_subscribe_repos_message
+from atproto import models
 from astrofeed_lib.config import SERVICE_DID
 from astrofeed_lib.database import SubscriptionState, db
 from server.data_filter import operations_callback
@@ -51,10 +50,10 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
             if not record_raw_data:
                 continue
 
-            record = get_or_create(record_raw_data, strict=False)
-            if uri.collection == ids.AppBskyFeedPost and is_record_type(
+            record = models.get_or_create(record_raw_data, strict=False)
+            if uri.collection == models.ids.AppBskyFeedPost and models.is_record_type(
                 record,  # type: ignore
-                ids.AppBskyFeedPost,
+                models.ids.AppBskyFeedPost,
             ):
                 operation_by_type["posts"]["created"].append(
                     {"record": record, **create_info}
@@ -69,7 +68,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
             #     operation_by_type['follows']['created'].append({'record': record, **create_info})
 
         if op.action == "delete":
-            if uri.collection == ids.AppBskyFeedPost:
+            if uri.collection == models.ids.AppBskyFeedPost:
                 operation_by_type["posts"]["deleted"].append({"uri": str(uri)})
 
             # The following types of event don't need to be tracked by the feed right now.

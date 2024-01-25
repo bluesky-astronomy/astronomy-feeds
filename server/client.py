@@ -4,10 +4,10 @@ from multiprocessing.sharedctypes import Synchronized
 from multiprocessing.connection import Connection
 import time
 from atproto.exceptions import FirehoseError
-from atproto.firehose import FirehoseSubscribeReposClient
-from atproto.firehose.models import MessageFrame
-from atproto.xrpc_client import models
-from atproto.xrpc_client.models.common import XrpcError
+from atproto import FirehoseSubscribeReposClient
+from atproto import firehose_models
+from atproto import models
+from atproto_client.models.common import XrpcError
 from astrofeed_lib.config import SERVICE_DID
 from astrofeed_lib.database import SubscriptionState
 
@@ -57,7 +57,7 @@ def run_client(
     immediately sent to the separate post processing worker.
     """
 
-    def on_message_handler(message: MessageFrame) -> None:
+    def on_message_handler(message: firehose_models.MessageFrame) -> None:
         """This handler tells the client what to do when a new commit is encountered."""
         # Send it to post processing worker to handle
         pipe.send(message)
