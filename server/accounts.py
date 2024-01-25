@@ -26,7 +26,7 @@ def query_google_sheets():
     all_accounts = pd.read_csv(SHEET_LINK, usecols=["time", "name", "id", "valid"])
 
     # Sanitise the valid column into a boolean only (it can be blank otherwise)
-    all_accounts["valid"] = all_accounts["valid"] is True
+    all_accounts["valid"] = all_accounts["valid"] == True  # noqa: E712 (as pandas True IS NOT True, as Pandas is a special fucking piece of shit and I need to switch to using polars ARGH)
     return all_accounts
 
 
