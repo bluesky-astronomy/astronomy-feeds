@@ -1,4 +1,4 @@
-from .database import db, Account, Post
+from .database import Account, Post
 from .accounts import AccountList
 from datetime import datetime
 from typing import Optional

@@ -81,7 +81,7 @@ async def fetch_handle_from_did_async(client, did):
         logger.info(f"Found handle for {did}")
         return response
     except Exception as e:
-        logger.warn(f"Unable to fetch a handle for account name {handle}: {e}")
+        logger.warn(f"Unable to fetch a handle for account name {did}: {e}")
     return {'handle': None}
 
 
