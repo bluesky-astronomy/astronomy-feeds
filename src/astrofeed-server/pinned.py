@@ -1,9 +1,9 @@
 import random
 
 PINNED_POSTS = {
-    "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kc632qlmnm2j": 1.0,  # Signup instructions
-    "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdheyu7hct24": 1.0,  # Exoplanet feed announcement
-    "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdtlml2mvf2z": 1.0,  # Astrophotography feed announcement
+    "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kc632qlmnm2j": 1.5,  # Signup instructions
+    "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdheyu7hct24": 0.5,  # Exoplanet feed announcement
+    "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdtlml2mvf2z": 0.5,  # Astrophotography feed announcement
     "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kdhfpnyeff2c": 0.5,  # Like the feed pls
 }
 
