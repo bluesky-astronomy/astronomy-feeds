@@ -74,14 +74,15 @@ def _process_commit(
     # Update stored state every ~100 events
     if commit.seq % 100 == 0:
         cursor.value = commit.seq
-        if update_cursor_in_database and commit.seq % 1000:
-            db.connect(reuse_if_open=True)
-            SubscriptionState.update(cursor=commit.seq).where(
-                SubscriptionState.service == SERVICE_DID
-            ).execute()
-            db.close()
-        else:
-            logger.info(f"Cursor: {commit.seq}")
+        if commit.seq % 1000 == 0:
+            if update_cursor_in_database:
+                db.connect(reuse_if_open=True)
+                SubscriptionState.update(cursor=commit.seq).where(
+                    SubscriptionState.service == SERVICE_DID
+                ).execute()
+                db.close()
+            else:
+                logger.info(f"Cursor: {commit.seq}")
 
     # Notify the manager process of either a) a new post, or b) that we're done with
     # this commit
@@ -232,7 +233,7 @@ def _write_ops_per_second_to_log(
         logger.info(f"Running at {total_ops / measurement_interval:.2f} ops/second")
         total_ops = 0
         measurement_time += measurement_interval
-    return total_ops
+    return total_ops, measurement_time
 
 
 def _update_process_state(
@@ -273,7 +274,7 @@ def run_commit_processor_multithreaded(
     worker_time: Synchronized,
     n_workers: int = 2,
     update_cursor_in_database: bool = True,
-    measurement_interval: int | float = 5,
+    measurement_interval: int | float = 60,
     account_update_interval: int | float = 600,
     post_update_interval: int | float = 86400,
 ) -> None:
@@ -313,7 +314,7 @@ def run_commit_processor_multithreaded(
         )
         _assign_message_to_process(available_connections, running_connections, message)
         current_time = _update_parent_watchdog(worker_time)
-        total_ops = _write_ops_per_second_to_log(
+        total_ops, measurement_time = _write_ops_per_second_to_log(
             measurement_interval, measurement_time, total_ops, current_time
         )
         next_account_update_time, next_post_update_time = _refresh_process_information(
