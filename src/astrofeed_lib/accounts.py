@@ -11,11 +11,12 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-class AccountList:
+class AccountQuery:
     def __init__(self, with_database_closing=False, flags=None) -> None:
-        """Generic refreshing account list. Tries to reduce number of required query operations!"""
+        """Generic refreshing account list. Will return all accounts that have flags
+        matching the defined 'flags' parameter.
+        """
         self.accounts = None
-        self.last_query_time = time.time()
         self.flags = flags
         if with_database_closing:
             self.query_database = self.query_database_with_closing
@@ -37,6 +38,20 @@ class AccountList:
         if self.flags is not None:
             query = query.where(*self.flags)
         return {account.did for account in query}
+        
+    def get_accounts(self) -> set:
+        self.query_database()
+        return self.accounts  # type: ignore (because pylance is a silly thing here. this should always be a set)
+
+
+class CachedAccountQuery(AccountQuery):
+    def __init__(self, with_database_closing=False, flags=None, query_interval: int = 60 * 60 * 24) -> None:
+        """Generic refreshing account list. Will return all accounts that have flags
+        matching the defined 'flags' parameter.
+        """
+        super.__init__(with_database_closing=with_database_closing, flags=flags)
+        self.query_interval = query_interval
+        self.last_query_time = time.time()
         
     def get_accounts(self) -> set:
         is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL

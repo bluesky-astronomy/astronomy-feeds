@@ -1,18 +1,20 @@
 from .database import Account, Post
-from .accounts import AccountList
+from .accounts import CachedAccountQuery
 from datetime import datetime
 from typing import Optional
 
 
-VALID_ACCOUNTS = AccountList(with_database_closing=False, flags=[Account.is_valid])
+VALID_ACCOUNTS = CachedAccountQuery(
+    with_database_closing=False, flags=[Account.is_valid]
+)
 
 CURSOR_END_OF_FEED = "eof"
 
 
 def _select_posts(feed, valid_dids, limit):
     feed_boolean = getattr(Post, "feed_" + feed)
-    return (Post
-        .select()
+    return (
+        Post.select()
         .where(Post.author.in_(valid_dids), feed_boolean)
         .order_by(Post.indexed_at.desc())
         .limit(limit)
@@ -20,14 +22,17 @@ def _select_posts(feed, valid_dids, limit):
 
 
 def _create_feed(posts):
-    """Turns list of posts into a sorted """
-    return [{'post': post.uri} for post in posts]
+    """Turns list of posts into a sorted"""
+    return [{"post": post.uri} for post in posts]
 
 
 def _handle_cursor(cursor, posts):
     """Handles cursor operations if one is included in the request"""
     timestamp, cid = unpack_cursor(cursor)
-    posts = posts.where(((Post.indexed_at == timestamp) & (Post.cid < cid)) | (Post.indexed_at < timestamp))
+    posts = posts.where(
+        ((Post.indexed_at == timestamp) & (Post.cid < cid))
+        | (Post.indexed_at < timestamp)
+    )
     return posts
 
 
@@ -40,9 +45,9 @@ def _move_cursor_to_last_post(posts):
 
 def unpack_cursor(cursor):
     """Converts a feed cursor into a timestamp and a cid for a post."""
-    cursor_parts = cursor.split('::')
+    cursor_parts = cursor.split("::")
     if len(cursor_parts) != 2:
-        raise ValueError('Malformed cursor')
+        raise ValueError("Malformed cursor")
     indexed_at, cid = cursor_parts
     timestamp = datetime.fromtimestamp(int(indexed_at) / 1000)
     return timestamp, cid
@@ -57,8 +62,8 @@ def get_posts(feed: str, cursor: Optional[str], limit: int) -> dict:
     """Gets posts for a given feed!"""
     # Early return if the cursor is just the end of feed indicator
     if cursor == CURSOR_END_OF_FEED:
-        return {'cursor': CURSOR_END_OF_FEED, 'feed': []}
-    
+        return {"cursor": CURSOR_END_OF_FEED, "feed": []}
+
     # Setup a query that's only for valid accounts
     valid_dids = VALID_ACCOUNTS.get_accounts()
     posts = _select_posts(feed, valid_dids, limit)
@@ -71,4 +76,4 @@ def get_posts(feed: str, cursor: Optional[str], limit: int) -> dict:
     post_uris = _create_feed(posts)
     cursor = _move_cursor_to_last_post(posts)
 
-    return {'cursor': cursor, 'feed': post_uris}
+    return {"cursor": cursor, "feed": post_uris}
