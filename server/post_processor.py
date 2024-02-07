@@ -307,8 +307,10 @@ def run_commit_processor_multithreaded(
             accounts_update = ValidAccountsUpdate(account_query.get_accounts())
             for conn in parent_connections:
                 conn.send(accounts_update)
+            next_account_update_time = current_time + account_update_interval
         if current_time > next_post_update_time:
             logger.info("Refreshing list of posts.")
             posts_update = ExistingPostsUpdate(post_query.get_posts())
             for conn in parent_connections:
                 conn.send(posts_update)
+            next_post_update_time = current_time + post_update_interval
