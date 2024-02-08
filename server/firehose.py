@@ -77,7 +77,7 @@ def _stop_workers(post_worker, client_worker):
         pass
 
 
-def run(watchdog_interval: int | float = 300, startup_sleep: int | float = 10):
+def run(watchdog_interval: int | float = 60, startup_sleep: int | float = 10):
     """Continually runs the firehose and processes posts from on the network.
 
     Incorporates watchdog functionality, which checks that all worker subprocesses are
