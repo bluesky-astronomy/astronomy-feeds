@@ -18,6 +18,8 @@ CURSOR_OVERRIDE = None  # Can be used to set a different start value of cursor
 CPU_COUNT = os.getenv("FIREHOSE_WORKER_COUNT", os.cpu_count())
 if CPU_COUNT is None:
     CPU_COUNT = 1
+else:
+    CPU_COUNT = int(CPU_COUNT)
 
 
 def _create_shared_resources():
