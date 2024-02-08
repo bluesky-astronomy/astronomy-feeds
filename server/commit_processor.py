@@ -302,6 +302,8 @@ def run_commit_processor_multithreaded(
         post_update_interval,
     )
 
+    logger.info("All resources initialised. Beginning message sending process.")
+
     measurement_time = time.time() + measurement_interval
     total_ops = 0
 
@@ -342,6 +344,7 @@ def _initialise_resources(
     available_connections, running_connections = [], []
 
     # Get initial post & account query lists
+    logger.info("Fetching initial data")
     next_account_update_time = time.time() + account_update_interval
     next_post_update_time = time.time() + post_update_interval
     account_query = AccountQuery(with_database_closing=True)
@@ -351,6 +354,7 @@ def _initialise_resources(
 
     # Initialise every process
     for i in range(n_workers):
+        logger.info(f"Initialising worker {i}")
         # Make required multiprocessing resources
         parent, child = multiprocessing.Pipe()
         parent_connections.append(parent)
@@ -362,9 +366,12 @@ def _initialise_resources(
                 name=f"Commit processing worker {i}",
             )
         )
+
+        logger.info(f"Starting worker {i}")
         processes[-1].start()
 
         # Fill pipe with initial info
+        logger.info(f"Sending data to worker {i}")
         parent.send(accounts_update)
         parent.send(posts_update)
         
