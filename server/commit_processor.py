@@ -114,8 +114,10 @@ def _run_commit_processor(
                 existing_posts.add(message.uri)
             elif isinstance(message, ExistingPostsUpdate):
                 existing_posts = message.posts
+                logger.info("... received posts update")
             elif isinstance(message, ValidAccountsUpdate):
                 valid_accounts = message.accounts
+                logger.info("... received accounts update")
             else:
                 raise RuntimeError(
                     "Unidentified update received through pipe with type "
