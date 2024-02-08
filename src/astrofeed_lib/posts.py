@@ -60,7 +60,7 @@ class CachedPostQuery(PostQuery):
         """Generic refreshing post list. Uses caching to try to reduce number of
         required query operations!
         """
-        super.__init__(
+        super().__init__(
             with_database_closing=with_database_closing, max_post_age=max_post_age
         )
         self.query_interval = query_interval

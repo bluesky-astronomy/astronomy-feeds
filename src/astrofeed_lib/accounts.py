@@ -49,7 +49,7 @@ class CachedAccountQuery(AccountQuery):
         """Generic refreshing account list. Will return all accounts that have flags
         matching the defined 'flags' parameter.
         """
-        super.__init__(with_database_closing=with_database_closing, flags=flags)
+        super().__init__(with_database_closing=with_database_closing, flags=flags)
         self.query_interval = query_interval
         self.last_query_time = time.time()
         
