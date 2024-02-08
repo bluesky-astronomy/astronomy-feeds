@@ -1,16 +1,9 @@
-"""Commit processing components that work through posts and decide if they need to be
-added to the feeds.
-"""
+"""Logic for how commits are filtered."""
 import logging
-import time
-from multiprocessing.sharedctypes import Synchronized
-from multiprocessing.connection import Connection
+from astrofeed_lib.database import db, Post
+from astrofeed_lib.feeds import post_in_feeds
 from atproto import CAR, AtUri
-from atproto import parse_subscribe_repos_message
 from atproto import models
-from astrofeed_lib.config import SERVICE_DID
-from astrofeed_lib.database import SubscriptionState, db
-from server.data_filter import operations_callback
 
 
 logger = logging.getLogger(__name__)
@@ -82,65 +75,77 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
-def _process_posts(receiver, cursor, worker_time, update_cursor_in_database=True):
-    logger.info("... post processing worker started")
-    while True:
-        # Wait for the multiprocessing.connection.Connection to contain something. This is blocking, btw!
-        message = receiver.recv()
+def apply_commit(
+    commit: models.ComAtprotoSyncSubscribeRepos.Commit,
+    valid_accounts: set,
+    existing_posts: set,
+) -> list:
+    """Applies the operations in a commit based on which ones are necessary to process.
+    """
+    ops = _get_ops_by_type(commit)
+    cursor = commit.seq
 
-        commit = parse_subscribe_repos_message(message)
-        if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
+    # See how many posts are valid
+    posts_to_create = []
+    valid_posts = [
+        post for post in ops["posts"]["created"] if post["author"] in valid_accounts
+    ]
+
+    # Classify valid posts into feed categories
+    feed_counts = {}
+    for created_post in valid_posts:
+        # Don't add a post if it already exists (e.g. if we're looping over the firehose)
+        if created_post["uri"] in existing_posts:
+            logger.info(f"Ignored duplicate post (cursor={cursor})")
             continue
 
-        # Update stored state every ~100 events
-        if commit.seq % 100 == 0:
-            cursor.value = commit.seq
-            if update_cursor_in_database:
-                db.connect(reuse_if_open=True)  # Todo: not sure if needed
-                SubscriptionState.update(cursor=commit.seq).where(
-                    SubscriptionState.service == SERVICE_DID
-                ).execute()
-            else:
-                logger.info(f"Cursor: {commit.seq}")
-        operations_callback(_get_ops_by_type(commit), commit.seq)
-        worker_time.value = time.time()
+        # Basic post info to add to the database
+        post_text = created_post["record"]["text"]
+        post_dict = {
+            "uri": created_post["uri"],
+            "cid": created_post["cid"],
+            "author": created_post["author"],
+            "text": post_text,
+        }
 
+        # Add labels to the post for
+        feed_labels = post_in_feeds(post_text)
+        post_dict.update(feed_labels)
+        posts_to_create.append(post_dict)
 
-def run_post_processor(
-    receiver: Connection,
-    cursor: Synchronized,
-    worker_time: Synchronized,
-    update_cursor_in_database: bool = True,
-    dump_posts_on_fail: bool = False,
-) -> None:
-    """Main worker handler!
+        # Count how many posts we have
+        # Initialise the dict if we're here the first time (not done above for optimization reasons)
+        if len(feed_counts) == 0:
+            feed_counts = {key: 0 for key in feed_labels}
 
-    Currently, on an exception when handling a post, the worker will restart (skipping
-    that post). This should be very rare.
-    """
-    reboots = 0
-    while True:
-        try:
-            _process_posts(
-                receiver,
-                cursor,
-                worker_time,
-                update_cursor_in_database=update_cursor_in_database,
+        # Add feed labelling to said dict
+        for a_key in feed_labels:
+            feed_counts[a_key] += feed_labels[a_key]
+
+    # See if there are any posts that need deleting
+    posts_to_delete = [
+        post["uri"] for post in ops["posts"]["deleted"] if post["uri"] in existing_posts
+    ]
+
+    # Perform database operations
+    if posts_to_delete or posts_to_create:
+        db.connect(reuse_if_open=True)
+
+        if posts_to_delete:
+            Post.delete().where(Post.uri.in_(posts_to_delete))
+            logger.info(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
+
+        if posts_to_create:
+            with db.atomic():
+                for post_dict in posts_to_create:
+                    Post.create(**post_dict)
+            feed_counts_string = ", ".join(
+                [f"{key[5:]}-{feed_counts[key]}" for key in feed_counts]
             )
-        except Exception:
-            logger.exception(
-                "Post processing worker encountered an exception while processing a "
-                "post! This post will be skipped."
-            )
+            logger.info(f"Added posts: {feed_counts_string} (cursor={cursor})")
 
-        # Optionally clear the pipe so that the next worker doesn't get swamped
-        if dump_posts_on_fail:
-            logger.info("Clearing out connection to parent thread")
-            messages_dumped = 0
-            while receiver.poll():
-                receiver.recv()
-                messages_dumped += 1
-            logger.info(f"Lost {messages_dumped} messages")
+        db.close()
 
-        reboots += 1
-        logger.info(f"Worker reboot count: {reboots}")
+    if not posts_to_create:
+        return []
+    return [post["uri"] for post in posts_to_create]

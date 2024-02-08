@@ -1,11 +1,12 @@
 """Main components of the firehose. Functions here handle multiprocessing, running a
 firehose client and post processor on separate subprocesses.
 """
+import os
 import multiprocessing
 import logging
 import time
-from server.client import run_client
-from server.post_processor import run_post_processor
+from server.firehose_client import run_client
+from server.commit_processor import run_commit_processor_multithreaded
 
 
 logger = logging.getLogger(__name__)
@@ -14,6 +15,9 @@ logging.basicConfig(level=logging.INFO)
 
 BASE_URI = "wss://bsky.network/xrpc"  # Which relay to fetch commits from
 CURSOR_OVERRIDE = None  # Can be used to set a different start value of cursor
+CPU_COUNT = os.cpu_count()
+if CPU_COUNT is None:
+    CPU_COUNT = 1
 
 
 def _create_shared_resources():
@@ -42,10 +46,10 @@ def _start_post_worker(cursor, receiver, latest_worker_event_time):
     """Starts the post processing worker."""
     logger.info("Starting new post processing worker...")
     post_worker = multiprocessing.Process(
-        target=run_post_processor,
+        target=run_commit_processor_multithreaded,
         args=(receiver, cursor, latest_worker_event_time),
-        kwargs=dict(update_cursor_in_database=True),
-        name="Post processing worker",
+        kwargs=dict(update_cursor_in_database=True, n_workers=CPU_COUNT),  # CPU_COUNT
+        name="Commit processing manager",
     )
     post_worker.start()
     return post_worker
