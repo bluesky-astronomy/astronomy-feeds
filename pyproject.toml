@@ -103,7 +103,7 @@ classifiers = [  # Optional
 dependencies = [ # Optional
   "peewee>=3.16.2,<4.0",
   "pymysql>=1.1.0,<2.0",  # If using a MySQL database
-  "atproto==0.0.37",
+  "atproto==0.0.46",
   "emoji>=2.8.0,<3.0"
 ]
 
