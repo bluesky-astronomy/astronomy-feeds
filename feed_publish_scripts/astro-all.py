@@ -66,12 +66,12 @@ def main():
             repo=client.me.did,
             collection=ids.AppBskyFeedGenerator,
             rkey=RECORD_NAME,
-            record=models.AppBskyFeedGenerator.Main(
+            record=models.AppBskyFeedGenerator.Record(
                 did=feed_did,
-                displayName=DISPLAY_NAME,
+                display_name=DISPLAY_NAME,
                 description=DESCRIPTION,
                 avatar=avatar_blob,
-                createdAt=datetime.now().isoformat(),
+                created_at=datetime.now().isoformat(),
             ),
         )
     )
