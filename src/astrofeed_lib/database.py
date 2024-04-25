@@ -29,6 +29,7 @@ class Post(BaseModel):
     feed_astro = peewee.BooleanField(default=False)
     feed_exoplanets = peewee.BooleanField(default=False)
     feed_astrophotos = peewee.BooleanField(default=False)
+    # feed_moderation = peewee.BooleanField(default=False)
     # reply_parent = peewee.CharField(null=True, default=None)
     # reply_root = peewee.CharField(null=True, default=None)
 
@@ -45,6 +46,13 @@ class Account(BaseModel):
     is_valid = peewee.BooleanField()
     feed_all = peewee.BooleanField(default=False)  # Also implicitly includes allowing feed_astro
     indexed_at = peewee.DateTimeField(default=datetime.utcnow)
+
+
+# class Signups(BaseModel):
+#     did = peewee.CharField(index=True)
+#     status = peewee.CharField(index=True)
+#     uri = peewee.CharField()
+#     cid = peewee.CharField()
 
 
 if db.is_closed():
