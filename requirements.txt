@@ -1,0 +1,1 @@
+astrofeed_lib @ git+https://github.com/bluesky-astronomy/astrofeed-lib
