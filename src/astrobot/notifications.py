@@ -39,6 +39,10 @@ def get_notifications(
     return all_notifications, current_time
 
 
+def update_last_seen_time(client: Client, current_time: str):
+    client.app.bsky.notification.update_seen({"seen_at": current_time})
+
+
 def _fetch_notifications_recursive(
     client: Client, limit: int = 50, seen_at: None | str = None, fetch_all: bool = True
 ):
@@ -58,10 +62,6 @@ def _fetch_notifications_recursive(
         cursor = responses[-1].cursor
         if iso_time_to_datetime(cursor) < last_seen_time:
             return responses, last_seen_time
-
-
-def update_last_seen_time(client: Client, current_time: str):
-    client.app.bsky.notification.update_seen({"seen_at": current_time})
 
 
 def datetime_to_iso_time(date: datetime):

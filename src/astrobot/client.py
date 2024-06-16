@@ -17,8 +17,8 @@ def get_client(
 
     # Login using previous session
     session = _get_session(handle)
-    if session:
-        print("Reusing existing session")
+    if session and reuse_session:
+        # print("Reusing existing session")
         try:
             client.login(session_string=session)
             return client
@@ -26,7 +26,7 @@ def get_client(
             print(f"Unable to log in with previous session! Reason: {e}")
 
     # We revert to password login if we can't find a session or if there was an issue
-    print("Logging in with password instead...")
+    # print("Logging in with password instead...")
     password = _get_password(password_env_var)
     client.login(handle, password)
     return client
@@ -69,7 +69,7 @@ class BotSessionUpdater:
         """Callback to save session."""
         print('Session changed:', event, repr(session))
         if event in (SessionEvent.CREATE, SessionEvent.REFRESH):
-            print('Saving changed session')
+            # print('Saving changed session')
             self.save_session(session.export())
 
     def save_session(self, session_string: str) -> None:
