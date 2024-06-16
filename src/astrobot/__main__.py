@@ -25,11 +25,13 @@ while True:
         client, types=DESIRED_NOTIFICATIONS, fetch_all=True, unread_only=True
     )
 
+    print(notifications)
+
     print(f"  found {len(notifications)} unread notifications!")
     if len(notifications) > 0:
         process_commands(notifications)
 
-    update_last_seen_time(notifications_seen_at)
+    # update_last_seen_time(notifications_seen_at)
 
     # Sleep for the remainder of notification_sleep_time seconds
     print("All done! Sleeping...")
