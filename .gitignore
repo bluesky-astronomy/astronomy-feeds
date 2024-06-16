@@ -1,3 +1,8 @@
+### Unique to this module
+# Saved session files
+*.session
+
+### Default Python .gitignore
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
