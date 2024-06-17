@@ -1,6 +1,6 @@
 """Moderation-related actions."""
 
-def get_moderators() -> list[str]:
+def get_moderators() -> set[str]:
     """Returns a set containing the DIDs of all current moderators."""
     # todo
     pass
