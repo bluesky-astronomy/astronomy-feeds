@@ -28,8 +28,8 @@ while True:
     print(notifications)
 
     print(f"  found {len(notifications)} unread notifications!")
-    if len(notifications) > 0:
-        process_commands(notifications)
+    # if len(notifications) > 0:
+    #     process_commands(client, notifications)
 
     # update_last_seen_time(notifications_seen_at)
 

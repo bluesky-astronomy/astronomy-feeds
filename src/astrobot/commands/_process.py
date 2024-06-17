@@ -1,9 +1,10 @@
 """Initial entrypoints for processing commands to the bot."""
 from atproto_client.models.app.bsky.notification.list_notifications import Notification
 from ..moderation import get_moderators
+from atproto import Client
 
 
-def process_commands(notifications: list[Notification]):
+def process_commands(client: Client, notifications: list[Notification]):
     print("Processing notifications...")
 
     moderators = get_moderators()

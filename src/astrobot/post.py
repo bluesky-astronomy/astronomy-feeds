@@ -1,5 +1,6 @@
 """Standard functions for posting posts and threads on Bluesky."""
-from atproto import AsyncClient, models
+
+from atproto import Client, models, client_utils
 
 
 MAX_POST_LENGTH = 300
@@ -7,6 +8,7 @@ MAX_POST_LENGTH = 300
 
 def check_post_text(text):
     """Checks post text for Bluesky spec compliance"""
+    # todo does not support TextMaker
     if not isinstance(text, str):
         raise ValueError("post text must be a string!")
     if len(text) == 0:
@@ -62,9 +64,9 @@ def get_reply_info(root_post, parent_post):
     return models.AppBskyFeedPost.ReplyRef(parent=parent_post, root=parent_post)
 
 
-async def send_post(
-    client: AsyncClient,
-    text: str,
+def send_post(
+    client: Client,
+    text: str | client_utils.TextBuilder,
     image: str | None = None,
     image_alt: str | None = None,
     root_post: models.ComAtprotoRepoStrongRef.Main | None = None,
@@ -77,11 +79,11 @@ async def send_post(
 
     # Send an image, if desired
     if image:
-        response = await client.send_image(
+        response = client.send_image(
             text=text, image=image, image_alt=image_alt, reply_to=reply_info
         )
     else:
-        response = await client.send_post(text=text, reply_to=reply_info)
+        response = client.send_post(text=text, reply_to=reply_info)
 
     this_post = models.create_strong_ref(response)
     if root_post is None:
@@ -97,9 +99,11 @@ def convert_string_into_thread(
     pass
 
 
-async def send_thread(
-    client: AsyncClient,
-    posts: list[str],
+def send_thread(
+    client: Client,
+    posts: list[str]
+    | list[client_utils.TextBuilder]
+    | list[str | client_utils.TextBuilder],
     images: dict[int, str] = None,
     image_alts: dict[int, str] = None,
     root_post: models.ComAtprotoRepoStrongRef.Main | None = None,
