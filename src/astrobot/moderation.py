@@ -1,18 +1,21 @@
 """Moderation-related actions."""
 
-def get_moderators() -> set[str]:
+from astrofeed_lib.database import Account
+
+
+def get_moderators(minimum_level: int = 1) -> set[str]:
     """Returns a set containing the DIDs of all current moderators."""
-    # todo
-    pass
+    query = Account.select(Account.did).where(Account.mod_level >= minimum_level)
+    return {user.did for user in query.execute()}
 
 
 def ban_user(reason: str):
     """Bans a user from the Astronomy feeds."""
     # todo
-    pass
+    raise NotImplementedError("ban_user not implemented")
 
 
 def mute_user(reason: str, days: int):
     """Mutes a user from the Astronomy feeds."""
     # todo
-    pass
+    raise NotImplementedError("mute_user not implemented")

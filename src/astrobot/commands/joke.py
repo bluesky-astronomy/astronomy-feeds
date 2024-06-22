@@ -1,5 +1,8 @@
 """Tells a joke."""
+
 from __future__ import annotations
+
+from astrobot.database import new_bot_action
 from ._base import Command
 from atproto_client.models.app.bsky.notification.list_notifications import Notification
 from random import randint
@@ -33,21 +36,34 @@ jokes = [
 JOKE_INDEX = randint(0, len(jokes) - 1)
 
 
-class Joke(Command):
+class JokeCommand(Command):
     command = "joke"
 
     def __init__(self, notification: Notification):
         self.notification = notification
 
     @staticmethod
-    def is_instance_of(command: list[str], notification: Notification) -> None | Joke:
-        if command == Joke.command:
-            return Joke(notification)
-        
+    def is_instance_of(
+        words: list[str], notification: Notification
+    ) -> None | JokeCommand:
+        if words[0] == JokeCommand.command:
+            return JokeCommand(notification)
+
     def execute(self, client: Client):
         global JOKE_INDEX
         post_ref = models.create_strong_ref(self.notification)
         send_post(client, jokes[JOKE_INDEX], root_post=post_ref)
 
-        # todo
+        new_bot_action(
+            did=self.notification.author.did,
+            type=self.command,
+            stage="completed",
+            parent_uri=post_ref.uri,
+            parent_cid=post_ref.cid,
+            latest_uri=post_ref.uri,
+            latest_cid=post_ref.cid,
+            completed=True,
+        )
+
+        # todo improve this unsanctimonious use of a (*gasps*) global variable!!!
         JOKE_INDEX = (JOKE_INDEX + 1) % len(jokes)

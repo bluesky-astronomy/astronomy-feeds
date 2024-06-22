@@ -3,6 +3,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from atproto_client.models.app.bsky.notification.list_notifications import Notification
+from astrofeed_lib.database import BotActions
+
+from astrobot.commands.unrecognized import UnrecognizedCommand
 
 
 class Command(ABC):
@@ -11,9 +14,7 @@ class Command(ABC):
 
     @staticmethod
     @abstractmethod
-    def is_instance_of(
-        command: list[str], notification: Notification
-    ) -> None | Command:
+    def is_instance_of(words: list[str], notification: Notification) -> None | Command:
         """Check if a given string is a valid example of this command.
 
         If yes, then return an intialized version of this class with the command
@@ -35,10 +36,12 @@ class Command(ABC):
         pass
 
 
-class MultiStepCommand(ABC, Command):
+class MultiStepCommand(Command):
     @staticmethod
     @abstractmethod
-    def create_from_partial_step(notification: Notification) -> MultiStepCommand:
+    def create_from_partial_step(
+        notification: Notification, command_stage: str, database_entry: BotActions
+    ) -> MultiStepCommand:
         """Create a command from a notification that signals the start of a complete
         step.
         """
@@ -69,14 +72,61 @@ class CommandRegistry:
         Multi-step commands will be preserved; full reset would require additional work
         on the database.
         """
-        pass
+        if not isinstance(command, Command):
+            raise ValueError(
+                "command must be an instance of astrobot.commands._base.Command"
+            )
+        if command.command not in self._commands:
+            raise ValueError(
+                f"Command {command} ({command.command}) already exists in registry."
+            )
+        self._commands.pop([command.command])
 
-    def get_matching_command(self, notifcation: Notification):
+    def get_matching_command(self, notification: Notification, handle: str):
         """Returns the command requested by notification."""
-        if notifcation.reason != "mention":
+        if notification.reason != "mention":
             raise ValueError("notification reason must be a mention!")
-        # todo finish this - will check all commands and hence return correct one, OR return an 'undefined' command
 
-    def get_matching_multistep_command(self, notification: Notification):
-        # todo
-        pass
+        # Get all words after 'handle' in the post's text
+        words = extract_command_arguments(notification, handle)
+        if isinstance(words, UnrecognizedCommand):
+            return words
+
+        # Find a matching command
+        for command in self._commands:
+            result = self._commands[command].is_instance_of(words, notification)
+            if result is not None:
+                return result
+
+        # Otherwise, say it isn't recognized.
+        return UnrecognizedCommand(
+            notification, extra=" Reason: command not recognized."
+        )
+
+    def get_matching_multistep_command(
+        self, notification: Notification, command_type: str, command_stage: str
+    ):
+        if command_type not in self._commands:
+            raise ValueError(f"Command of type {command_type} is not in the registry!")
+        command = self._commands[command_type]
+
+        if not isinstance(command, MultiStepCommand):
+            raise ValueError(f"Command of type {command_type} is not multi-step!")
+
+        return command.create_from_partial_step(notification, command_stage)
+
+
+def extract_command_arguments(notification: Notification, handle: str):
+    """Extracts the command and any arguments from the text."""
+    words = Notification.record.text.split(" ")
+    if handle not in words:
+        return UnrecognizedCommand(notification, extra=" Reason: missing mention.")
+
+    mention_index = words.index(handle)
+
+    if mention_index >= len(words) - 1:
+        return UnrecognizedCommand(
+            notification, extra=" Reason: cannot find command after mention."
+        )
+
+    return words[mention_index + 1 :]

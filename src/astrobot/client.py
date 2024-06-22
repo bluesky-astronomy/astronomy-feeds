@@ -5,7 +5,7 @@ import os
 
 def get_client(
     handle_env_var: str, password_env_var: str, reuse_session: bool = True
-) -> Client:
+) -> tuple[Client, str]:
     """A standard function for getting a valid client - already logged in and 
     ready to go =)
     """       
@@ -29,7 +29,7 @@ def get_client(
     # print("Logging in with password instead...")
     password = _get_password(password_env_var)
     client.login(handle, password)
-    return client
+    return client, handle
 
 
 def _get_session(handle: str) -> str | None:
