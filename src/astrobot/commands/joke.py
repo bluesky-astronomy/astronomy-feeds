@@ -14,7 +14,7 @@ from atproto import Client, models
 jokes = [
     "What kind of songs do the planets like to sing? Nep-tunes!",
     "What does an astronomer blow with gum? Hubbles!",
-    "A neutrino walks into a bar...and keeps right on going.\n\nSeriously, where did you think this joke was going?",
+    "A neutrino walks into a bar... and keeps right on going.\n\nSeriously, where did you think this joke was going?",
     "Orion's Belt is a big waist of space.\n\nSorry, very average pun - only three stars.",
     "I tried looking at the solar eclipse using a colander, but I ended up straining my eyes...",
     "Why didn't the Dog Star laugh at the joke?\n\nA: It was too Sirius",
