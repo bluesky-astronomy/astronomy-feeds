@@ -42,10 +42,32 @@ class SubscriptionState(BaseModel):
 class Account(BaseModel):
     handle = peewee.CharField(index=True)
     submission_id = peewee.CharField()
-    did = peewee.CharField(default="not set")
+    did = peewee.CharField(default="not set", index=True)
     is_valid = peewee.BooleanField()
     feed_all = peewee.BooleanField(default=False)  # Also implicitly includes allowing feed_astro
     indexed_at = peewee.DateTimeField(default=datetime.utcnow)
+    mod_level = peewee.IntegerField(null=False, index=True, unique=False, default=0)
+
+
+class BotActions(BaseModel):
+    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    did = peewee.CharField(default="not set")
+    type = peewee.CharField(null=False, default="unrecognized", index=True)
+    stage = peewee.CharField(null=False, default="initial", index=True)  # Initial: command initially sent but not replied to
+    parent_uri = peewee.CharField(null=False, default="")
+    parent_cid = peewee.CharField(null=False, default="")
+    latest_uri = peewee.CharField(null=False , default="")
+    latest_cid = peewee.CharField(null=False , default="")
+    complete = peewee.BooleanField(null=False, default=False, index=True)
+
+
+class ModActions(BaseModel):
+    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    did_mod = peewee.CharField(index=True, null=False)
+    did_user = peewee.CharField(index=True)
+    action = peewee.CharField(index=True, null=False)
+    expiry = peewee.DateTimeField(index=True)
+
 
 
 # class Signups(BaseModel):
@@ -57,6 +79,6 @@ class Account(BaseModel):
 
 if db.is_closed():
     db.connect()
-    db.create_tables([Post, SubscriptionState, Account])
+    db.create_tables([Post, SubscriptionState, Account, BotActions, ModActions])
     if not db.is_closed():
         db.close()
