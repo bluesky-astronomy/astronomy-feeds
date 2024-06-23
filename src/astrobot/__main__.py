@@ -3,10 +3,8 @@
 import time
 from .client import get_client
 from .notifications import get_notifications, update_last_seen_time
-from .commands import process_commands
+from .process import process_commands
 from .config import (
-    HANDLE_ENV_VAR,
-    PASSWORD_ENV_VAR,
     DESIRED_NOTIFICATIONS,
     NOTIFICATION_SLEEP_TIME,
 )
@@ -18,20 +16,19 @@ def run_bot():
         start_time = time.time()
 
         print("Getting client...")
-        client, handle = get_client(HANDLE_ENV_VAR, PASSWORD_ENV_VAR)
+        client = get_client()
 
         print("Getting notifications...")
         notifications, notifications_seen_at = get_notifications(
             client, types=DESIRED_NOTIFICATIONS, fetch_all=True, unread_only=True
         )
 
-        print(notifications)
+        print(f"-> found {len(notifications)} unread notifications!")
+        if len(notifications) > 0:
+            process_commands(client, notifications)
 
-        print(f"  found {len(notifications)} unread notifications!")
-        # if len(notifications) > 0:
-        #     process_commands(client, notifications, handle)
-
-        # update_last_seen_time(notifications_seen_at)
+        update_last_seen_time(client, notifications_seen_at)
+        break
 
         # Sleep for the remainder of notification_sleep_time seconds
         print("All done! Sleeping...")

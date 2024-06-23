@@ -1,22 +1,21 @@
 """Standard functions for working with clients. Mostly just wraps atproto."""
 from atproto import Client, Session, SessionEvent
-import os
+from .config import HANDLE, PASSWORD
 
 
 def get_client(
-    handle_env_var: str, password_env_var: str, reuse_session: bool = True
+    reuse_session: bool = True
 ) -> tuple[Client, str]:
     """A standard function for getting a valid client - already logged in and 
     ready to go =)
     """       
     # Set up client and set it up to save its session incrementally
     client = Client()
-    handle = _get_handle(handle_env_var)
-    session_updater = BotSessionUpdater(handle)
+    session_updater = BotSessionUpdater(HANDLE)
     client.on_session_change(session_updater.on_session_change)
 
     # Login using previous session
-    session = _get_session(handle)
+    session = _get_session(HANDLE)
     if session and reuse_session:
         # print("Reusing existing session")
         try:
@@ -27,9 +26,9 @@ def get_client(
 
     # We revert to password login if we can't find a session or if there was an issue
     # print("Logging in with password instead...")
-    password = _get_password(password_env_var)
-    client.login(handle, password)
-    return client, handle
+    
+    client.login(HANDLE, PASSWORD)
+    return client
 
 
 def _get_session(handle: str) -> str | None:
@@ -38,26 +37,6 @@ def _get_session(handle: str) -> str | None:
             return f.read()
     except FileNotFoundError:
         return None
-
-
-def _get_handle(handle_env_var: str):
-    """Checks and/or gets a handle for the client from an environment variable."""
-    handle = os.getenv(handle_env_var, None)
-    if handle is None:
-        raise ValueError(
-            f"You need to set the environment variable {handle_env_var} to your handle."
-        )
-    return handle
-
-
-def _get_password(password_env_var: str):
-    """Checks and/or gets a password for the client from an environment variable."""
-    password = os.getenv(password_env_var, None)
-    if password is None:
-        raise ValueError(
-            f"You need to set the environment variable {password_env_var} to your Bluesky app password."
-        )
-    return password
 
 
 class BotSessionUpdater:

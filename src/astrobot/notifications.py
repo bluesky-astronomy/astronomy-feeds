@@ -1,5 +1,8 @@
+"""Tools for handling and subclassing notifications."""
+
 from datetime import datetime
-from atproto import Client
+from atproto import Client, models
+from atproto_client.models.app.bsky.notification.list_notifications import Notification
 
 
 ALLOWED_NOTIFICATION_TYPES = {"like", "repost", "follow", "mention", "reply", "quote"}
@@ -41,6 +44,62 @@ def get_notifications(
 
 def update_last_seen_time(client: Client, current_time: str):
     client.app.bsky.notification.update_seen({"seen_at": current_time})
+
+
+class BaseNotification:
+    def match(self, botactions):
+        """Matches a notification against a potential botaction."""
+        for action in botactions:
+            if (
+                action.latest_uri == self.target.uri
+                and action.latest_cid == self.target.cid
+            ):
+                self.action = action
+                return True
+        return False
+
+
+class MentionNotification(BaseNotification):
+    def __init__(self, notification: Notification):
+        """A mention of the bot account."""
+        from .config import HANDLE  # Imported here to prevent circular import
+        
+        self.author = notification.author
+        self.text = notification.record.text
+        self.strong_ref = models.create_strong_ref(notification)
+
+        # Also setup all of the words in the command
+        words = self.text.split(" ")
+        mention_index = words.index("@" + HANDLE)
+        self.words = words[mention_index + 1 :]
+
+        self.notification = notification  # full notification, shouldn't need accessing
+
+    def match(self, *args):
+        raise NotImplementedError(
+            "Mentions should never need matching, so this function is deactivated."
+        )
+
+
+class LikeNotification(BaseNotification):
+    def __init__(self, notification: Notification):
+        """A like from another user to a post made by the bot."""
+        self.author = notification.author
+        self.target = notification.record.subject
+        self.action = None
+
+        self.notification = notification  # full notification, shouldn't need accessing
+
+
+class ReplyNotification(BaseNotification):
+    def __init__(self, notification: Notification):
+        "A reply from another user to a post made by the bot."
+        self.author = notification.author
+        self.target = notification.record.reply.parent
+        self.strong_ref = models.create_strong_ref(notification)
+        self.action = None
+
+        self.notification = notification  # full notification, shouldn't need accessing
 
 
 def _fetch_notifications_recursive(

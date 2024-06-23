@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from astrobot.database import new_bot_action
 from ._base import Command
-from atproto_client.models.app.bsky.notification.list_notifications import Notification
 from random import randint
 from ..post import send_post
-from atproto import Client, models
+from atproto import Client
+from ..notifications import MentionNotification
 
 
 # i am so sorry
@@ -39,30 +39,29 @@ JOKE_INDEX = randint(0, len(jokes) - 1)
 class JokeCommand(Command):
     command = "joke"
 
-    def __init__(self, notification: Notification):
+    def __init__(self, notification: MentionNotification):
         self.notification = notification
 
     @staticmethod
     def is_instance_of(
-        words: list[str], notification: Notification
+        notification: MentionNotification
     ) -> None | JokeCommand:
-        if words[0] == JokeCommand.command:
+        if notification.words[0] == JokeCommand.command:
             return JokeCommand(notification)
 
     def execute(self, client: Client):
         global JOKE_INDEX
-        post_ref = models.create_strong_ref(self.notification)
-        send_post(client, jokes[JOKE_INDEX], root_post=post_ref)
+        send_post(client, jokes[JOKE_INDEX], root_post=self.notification.strong_ref)
 
         new_bot_action(
             did=self.notification.author.did,
             type=self.command,
             stage="completed",
-            parent_uri=post_ref.uri,
-            parent_cid=post_ref.cid,
-            latest_uri=post_ref.uri,
-            latest_cid=post_ref.cid,
-            completed=True,
+            parent_uri=self.notification.strong_ref.uri,
+            parent_cid=self.notification.strong_ref.cid,
+            latest_uri=self.notification.strong_ref.uri,
+            latest_cid=self.notification.strong_ref.cid,
+            complete=True,
         )
 
         # todo improve this unsanctimonious use of a (*gasps*) global variable!!!

@@ -1,0 +1,69 @@
+"""A registry of all commands."""
+from astrobot.commands.unrecognized import UnrecognizedCommand
+from ._base import Command, MultiStepCommand
+from ..notifications import LikeNotification, ReplyNotification, MentionNotification
+
+
+class CommandRegistry:
+    def __init__(self):
+        """Basic class to handle all"""
+        self._commands = {}
+
+    def register_command(self, command):
+        """Registers a command as possible for users to execute."""
+        if not issubclass(command, Command):
+            raise ValueError(
+                "command must be an instance of astrobot.commands._base.Command"
+            )
+        if command.command in self._commands:
+            raise ValueError(
+                f"Command {command} ({command.command}) already exists in registry."
+            )
+        self._commands[command.command] = command
+
+    def deregister_command(self, command):
+        """De-registers a command from the registry. After this point, it will not be
+        possible for users to use without re-registering.
+
+        Multi-step commands will be preserved; full reset would require additional work
+        on the database.
+        """
+        if not issubclass(command, Command):
+            raise ValueError(
+                "command must be an instance of astrobot.commands._base.Command"
+            )
+        if command.command not in self._commands:
+            raise ValueError(
+                f"Command {command} ({command.command}) already exists in registry."
+            )
+        self._commands.pop([command.command])
+
+    def get_matching_command(self, notification: MentionNotification):
+        """Returns the command requested by notification."""
+        if len(notification.words) == 0:
+            return UnrecognizedCommand(
+                notification, extra=" Reason: no command specified."
+            )
+
+        # Find a matching command
+        for command in self._commands:
+            result = self._commands[command].is_instance_of(notification)
+            if result is not None:
+                return result
+
+        # Otherwise, say it isn't recognized.
+        return UnrecognizedCommand(
+            notification, extra=" Reason: command not recognized."
+        )
+
+    def get_matching_multistep_command(
+        self, notification: LikeNotification | ReplyNotification
+    ):
+        if notification.action.type not in self._commands:
+            raise ValueError(f"Command of type {notification.action.type} is not in the registry!")
+        command = self._commands[notification.action.type]
+
+        if not issubclass(command, MultiStepCommand):
+            raise ValueError(f"Command of type {notification.action.type} is not multi-step!")
+
+        return command.create_from_partial_step(notification)
