@@ -15,6 +15,7 @@ def get_notifications(
     seen_at: str | None = None,
     fetch_all: bool = True,
     unread_only: bool = True,
+    reversed: bool = True,
 ) -> None:
     """Gets all current notifications attached to a client."""
     current_time = client.get_current_time_iso()
@@ -38,6 +39,9 @@ def get_notifications(
             for n in all_notifications
             if iso_time_to_datetime(n.indexed_at) > last_seen_time
         ]
+
+    if reversed:
+        all_notifications.reverse()
 
     return all_notifications, current_time
 
