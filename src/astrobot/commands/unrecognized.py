@@ -6,7 +6,7 @@ from astrobot.notifications import MentionNotification
 from ._base import Command
 from ..post import send_post
 from ..database import new_bot_action
-from atproto import Client, models
+from atproto import Client
 
 
 unrecognized_command_text = "Sorry, but I don't recognize that command."
@@ -26,24 +26,26 @@ class UnrecognizedCommand(Command):
         )
 
     @staticmethod
-    def is_instance_of(
-        notification: MentionNotification
-    ) -> None | UnrecognizedCommand:
-        # For this class only, this method is not actually really intended... 
+    def is_instance_of(notification: MentionNotification) -> None | UnrecognizedCommand:
+        # For this class only, this method is not actually really intended...
         # ... but we'll return it anyway! WE MUST OBEY THE INTERFACE (ABC) SPEC!!!!!!!!
         return UnrecognizedCommand(notification)
 
     def execute(self, client: Client):
-        post_ref = models.create_strong_ref(self.notification.notification)
-        send_post(client, unrecognized_command_text + self.extra, root_post=post_ref)
+        send_post(
+            client,
+            unrecognized_command_text + self.extra,
+            root_post=self.notification.root_ref,
+            parent_post=self.notification.parent_ref,
+        )
 
         new_bot_action(
             did=self.notification.author.did,
             type=self.command,
             stage="completed",
-            parent_uri=self.notification.strong_ref.uri,
-            parent_cid=self.notification.strong_ref.cid,
-            latest_uri=self.notification.strong_ref.uri,
-            latest_cid=self.notification.strong_ref.cid,
+            parent_uri=self.notification.parent_ref.uri,
+            parent_cid=self.notification.parent_ref.cid,
+            latest_uri=self.notification.parent_ref.uri,
+            latest_cid=self.notification.parent_ref.cid,
             complete=True,
         )

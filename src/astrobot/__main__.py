@@ -23,6 +23,8 @@ def run_bot():
             client, types=DESIRED_NOTIFICATIONS, fetch_all=True, unread_only=True
         )
 
+        print(notifications)
+
         print(f"-> found {len(notifications)} unread notifications!")
         if len(notifications) > 0:
             process_commands(client, notifications)

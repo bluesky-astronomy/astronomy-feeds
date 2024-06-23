@@ -53,7 +53,7 @@ class CommandRegistry:
 
         # Otherwise, say it isn't recognized.
         return UnrecognizedCommand(
-            notification, extra=" Reason: command not recognized."
+            notification, extra=" Reason: command not in list."
         )
 
     def get_matching_multistep_command(

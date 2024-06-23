@@ -61,7 +61,7 @@ def get_reply_info(root_post, parent_post):
     root_post, parent_post = check_post_reply_info(root_post, parent_post)
     if root_post is None:
         return None
-    return models.AppBskyFeedPost.ReplyRef(parent=parent_post, root=parent_post)
+    return models.AppBskyFeedPost.ReplyRef(parent=parent_post, root=root_post)
 
 
 def send_post(
