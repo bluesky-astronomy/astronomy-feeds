@@ -23,14 +23,11 @@ def run_bot():
             client, types=DESIRED_NOTIFICATIONS, fetch_all=True, unread_only=True
         )
 
-        print(notifications)
-
         print(f"-> found {len(notifications)} unread notifications!")
         if len(notifications) > 0:
             process_commands(client, notifications)
 
         update_last_seen_time(client, notifications_seen_at)
-        break
 
         # Sleep for the remainder of notification_sleep_time seconds
         print("All done! Sleeping...")

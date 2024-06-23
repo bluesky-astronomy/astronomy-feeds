@@ -67,7 +67,7 @@ class MentionNotification(BaseNotification):
     def __init__(self, notification: Notification):
         """A mention of the bot account."""
         from .config import HANDLE  # Imported here to prevent circular import
-        
+
         self.author = notification.author
         self.text = notification.record.text
         self.parent_ref, self.root_ref = _get_strong_refs(notification)
@@ -90,7 +90,10 @@ class LikeNotification(BaseNotification):
         """A like from another user to a post made by the bot."""
         self.author = notification.author
         self.target = notification.record.subject
-        self.parent_ref, self.root_ref = models.create_strong_ref(self.target), None  # Todo: there is no easy way to get root refs! As likes only reference the post itself and NOT its root.
+        self.parent_ref, self.root_ref = (
+            models.create_strong_ref(self.target),
+            None,
+        )  # Todo: there is no easy way to get root refs! As likes only reference the post itself and NOT its root.
         self.action = None
 
         self.notification = notification  # full notification, shouldn't need accessing
@@ -108,12 +111,13 @@ class ReplyNotification(BaseNotification):
 
 
 # atproto.xrpc_client.models.com.atproto.repo.strong_ref.Main
-def _get_strong_refs(notification: MentionNotification | ReplyNotification) -> list[models.ComAtprotoRepoStrongRef.Main]:
+def _get_strong_refs(
+    notification: MentionNotification | ReplyNotification,
+) -> list[models.ComAtprotoRepoStrongRef.Main]:
     parent_ref = models.create_strong_ref(notification)
     if notification.record.reply is None:
         return parent_ref, parent_ref
     return parent_ref, models.create_strong_ref(notification.record.reply.root)
-
 
 
 def _fetch_notifications_recursive(

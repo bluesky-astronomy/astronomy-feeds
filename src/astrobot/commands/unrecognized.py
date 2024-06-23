@@ -39,13 +39,4 @@ class UnrecognizedCommand(Command):
             parent_post=self.notification.parent_ref,
         )
 
-        new_bot_action(
-            did=self.notification.author.did,
-            type=self.command,
-            stage="completed",
-            parent_uri=self.notification.parent_ref.uri,
-            parent_cid=self.notification.parent_ref.cid,
-            latest_uri=self.notification.parent_ref.uri,
-            latest_cid=self.notification.parent_ref.cid,
-            complete=True,
-        )
+        new_bot_action(self)
