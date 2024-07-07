@@ -81,14 +81,17 @@ def _execute_get_moderator(command: SignupCommand, client: Client):
     update_bot_action(command, "get_moderator", parent.uri, parent.cid)
 
 
-# COMPLETE_POSTS = [
-#     "Congratulations! 🎉 You're now signed up to the Astronomy feeds, and can post to them.\n\nHere's all the information you need to know:",
-#     "Firstly, there are multiple feeds in the network, covering many topics - from the general Astronomy feed to specific topics like Exoplanets. Here's a list of all of them:",
-#     client_utils.TextBuilder()
-# ]
+COMPLETE_POSTS = [
+    "Congratulations! 🎉 You're now signed up to the Astronomy feeds, and can post to them.\n\nHere's all the information you need to know:",
+    "Firstly, there are multiple feeds in the network, covering many topics - from the general Astronomy feed to specific topics like Exoplanets. Here's a list of all of them:",
+    client_utils.TextBuilder().text("If you ever have any problems, you can get in touch with the moderation account ").mention("account", "did:plc:ko747jc5ma4iarwwfwrlv2ct").text(". Also, ").mention("account", "did:plc:jcoy7v3a2t4rcfdh6i4kza25").text(" is the admin of the feeds, and can help with technical issues."),
+    client_utils.TextBuilder().text("Thanks so much for signing up!")
+    # + add a link to my starter pack, to the official astronomy.blue account, to the website, and maybe also my blog post
+]
 
 # COMPLETE_QUOTES = {
-#     1: models.ComAtprotoRepoStrongRef.Main()
+#     # @emily.space thread of all feeds, with details:
+#     1: models.ComAtprotoRepoStrongRef.Main(uri="at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kkri5olz3526", cid="bafyreicgwczccg7sfn33hd7mydr4xwgmam57nqzjruaxmob5pa7x76ivea")
 # }
 
 
