@@ -40,8 +40,8 @@ def new_bot_action(
             did=command.notification.author.did,
             type=command.command,
             stage=stage,
-            parent_uri=command.notification.parent_ref.uri,
-            parent_cid=command.notification.parent_ref.cid,
+            parent_uri=command.notification.parent_ref.uri,  # This is a mis-nomer, should be root! Sorry =(
+            parent_cid=command.notification.parent_ref.cid,  # This is a mis-nomer, should be root! Sorry =(
             latest_uri=latest_uri,
             latest_cid=latest_cid,
             complete=complete,
