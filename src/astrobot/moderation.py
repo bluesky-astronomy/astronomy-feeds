@@ -11,6 +11,10 @@ class CachedModeratorList(CachedAccountQuery):
 
     def account_query(self):
         return get_moderators(self.minimum_level)
+    
+
+# Setup list of moderators
+MODERATORS = CachedModeratorList(minimum_level=1)
 
 
 def get_moderators(minimum_level: int = 1) -> set[str]:

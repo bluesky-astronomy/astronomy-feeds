@@ -16,8 +16,24 @@ REQUIRED_BOT_ACTION_FIELDS = [
 ]
 
 
-def new_bot_action(command, stage="complete", complete=True):
-    """Save a new bot action to the database."""
+def new_bot_action(
+    command,
+    stage: str = "complete",
+    latest_uri: None | str = None,
+    latest_cid: None | str = None,
+):
+    """Save a new bot action to the database. Defaults to stage='complete', which marks
+    the action as already completed in the database.
+    """
+    complete = False
+    if stage == "complete":
+        complete = True
+
+    if latest_uri is None:
+        latest_uri = command.notification.parent_ref.uri
+    if latest_cid is None:
+        latest_cid = command.notification.parent_ref.uri
+
     db.connect(reuse_if_open=True)
     with db.atomic():
         BotActions.create(
@@ -26,11 +42,24 @@ def new_bot_action(command, stage="complete", complete=True):
             stage=stage,
             parent_uri=command.notification.parent_ref.uri,
             parent_cid=command.notification.parent_ref.cid,
-            latest_uri=command.notification.parent_ref.uri,
-            latest_cid=command.notification.parent_ref.cid,
+            latest_uri=latest_uri,
+            latest_cid=latest_cid,
             complete=complete,
         )
 
+
+def update_bot_action(command, stage, latest_uri, latest_cid):
+    """Updates the stage of an existing bot action."""
+    action = command.action
+    action.stage = stage
+    action.complete = stage == "complete"
+    action.latest_uri = latest_uri
+    action.latest_cid = latest_cid
+
+    db.connect(reuse_if_open=True)
+    # Todo: not sure if atomic is needed here
+    with db.atomic():
+        action.save()
 
 def new_mod_action(
     did_mod: str, did_user: str, action: str, expiry: None | datetime.datetime = None

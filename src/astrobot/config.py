@@ -3,7 +3,6 @@
 import os
 from .commands import CommandRegistry
 from .commands.joke import JokeCommand
-from .moderation import CachedModeratorList
 
 
 def _get_handle(handle_env_var: str):
@@ -35,6 +34,3 @@ PASSWORD = _get_password("ASTROBOT_PASSWORD")  # Name of password environment va
 # Setup command registry
 COMMAND_REGISTRY = CommandRegistry()
 COMMAND_REGISTRY.register_command(JokeCommand)
-
-# Setup list of moderators
-MODERATORS = CachedModeratorList(minimum_level=1)

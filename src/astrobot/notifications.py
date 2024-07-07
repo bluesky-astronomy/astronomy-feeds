@@ -106,6 +106,8 @@ class ReplyNotification(BaseNotification):
         self.target = notification.record.reply.parent
         self.parent_ref, self.root_ref = _get_strong_refs(notification)
         self.action = None
+        
+        self.words = [w.lower() for w in self.text.split(" ")]
 
         self.notification = notification  # full notification, shouldn't need accessing
 
