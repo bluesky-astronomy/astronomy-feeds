@@ -2,7 +2,6 @@
 
 from astrofeed_lib.accounts import CachedAccountQuery
 from astrofeed_lib.database import Account
-import datetime
 from astrobot.database import new_mod_action, new_signup
 
 
