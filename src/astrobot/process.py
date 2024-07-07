@@ -64,7 +64,7 @@ def _look_for_updates_to_multistep_commands(
         return []
 
     # Limit to just those that match an action
-    good_notifications = [n.match(actions) for n in good_notifications]
+    good_notifications = [n for n in good_notifications if n.match(actions)]
     if len(good_notifications) == 0:
         return []
 

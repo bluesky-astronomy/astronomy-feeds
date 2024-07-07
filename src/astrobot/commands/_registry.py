@@ -1,4 +1,6 @@
 """A registry of all commands."""
+
+import warnings
 from astrobot.commands.unrecognized import UnrecognizedCommand
 from ._base import Command, MultiStepCommand
 from ..notifications import LikeNotification, ReplyNotification, MentionNotification
@@ -52,18 +54,23 @@ class CommandRegistry:
                 return result
 
         # Otherwise, say it isn't recognized.
-        return UnrecognizedCommand(
-            notification, extra=" Reason: command not in list."
-        )
+        return UnrecognizedCommand(notification, extra=" Reason: command not in list.")
 
     def get_matching_multistep_command(
         self, notification: LikeNotification | ReplyNotification
     ):
         if notification.action.type not in self._commands:
-            raise ValueError(f"Command of type {notification.action.type} is not in the registry!")
+            warnings.warn(
+                f"Command of type {notification.action.type} is not in the registry! "
+                "It may have been disabled.",
+                RuntimeWarning,
+            )
         command = self._commands[notification.action.type]
 
         if not issubclass(command, MultiStepCommand):
-            raise ValueError(f"Command of type {notification.action.type} is not multi-step!")
+            # If this ever happens, then it means the database had an error!
+            raise ValueError(
+                f"Command of type {notification.action.type} is not multi-step!"
+            )
 
         return command.create_from_partial_step(notification)

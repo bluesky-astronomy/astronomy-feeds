@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from atproto_client.models.app.bsky.notification.list_notifications import Notification
 from atproto import Client
 from ..notifications import LikeNotification, ReplyNotification, MentionNotification
 
