@@ -1,7 +1,7 @@
 """A collection of all database actions for things the bot needs to do."""
 
 import datetime
-from astrofeed_lib.database import BotActions, ModActions, db
+from astrofeed_lib.database import BotActions, ModActions, db, Account
 
 
 REQUIRED_BOT_ACTION_FIELDS = [
@@ -61,14 +61,23 @@ def update_bot_action(command, stage, latest_uri, latest_cid):
     with db.atomic():
         action.save()
 
+
 def new_mod_action(
     did_mod: str, did_user: str, action: str, expiry: None | datetime.datetime = None
 ):
+    """Register a new bot action in the database."""
     db.connect(reuse_if_open=True)
     with db.atomic():
         ModActions.create(
             did_mod=did_mod, did_user=did_user, action=action, expiry=expiry
         )
+
+
+def new_signup(did, handle, valid=True):
+    """Register a new account in the database."""
+    db.connect(reuse_if_open=True)
+    with db.atomic():
+        Account.create(handle=handle, did=did, is_valid=valid, feed_all=valid)
 
 
 def get_outstanding_bot_actions(uris: None | list[str]) -> list:
