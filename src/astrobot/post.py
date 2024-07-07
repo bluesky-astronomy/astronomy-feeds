@@ -64,6 +64,15 @@ def get_reply_info(root_post, parent_post):
     return models.AppBskyFeedPost.ReplyRef(parent=parent_post, root=root_post)
 
 
+def get_embed_info(embed, quote):
+    # Quote post gets priority
+    if isinstance(quote, models.ComAtprotoRepoStrongRef.Main):
+        return models.AppBskyEmbedRecord.Main(record=quote)
+    if isinstance(embed, models.AppBskyEmbedExternal.External):
+        return models.AppBskyEmbedExternal.Main(external=embed)
+    return None
+
+
 def send_post(
     client: Client,
     text: str | client_utils.TextBuilder,
@@ -71,6 +80,8 @@ def send_post(
     image_alt: str | None = None,
     root_post: models.ComAtprotoRepoStrongRef.Main | None = None,
     parent_post: models.ComAtprotoRepoStrongRef.Main | None = None,
+    embed: models.AppBskyEmbedExternal.External | None = None,
+    quote: models.ComAtprotoRepoStrongRef.Main | None = None,
 ):
     """Uploads a post (including an image, if desired!) to the Bluesky network."""
     check_post_text(text)
@@ -83,7 +94,8 @@ def send_post(
             text=text, image=image, image_alt=image_alt, reply_to=reply_info
         )
     else:
-        response = client.send_post(text=text, reply_to=reply_info)
+        embed_info = get_embed_info(embed, quote)
+        response = client.send_post(text=text, reply_to=reply_info, embed=embed_info)
 
     this_post = models.create_strong_ref(response)
     if root_post is None:
@@ -104,17 +116,28 @@ def send_thread(
     posts: list[str]
     | list[client_utils.TextBuilder]
     | list[str | client_utils.TextBuilder],
-    images: dict[int, str] = None,
-    image_alts: dict[int, str] = None,
+    images: dict[int, str] | None = None,
+    image_alts: dict[int, str] | None = None,
     root_post: models.ComAtprotoRepoStrongRef.Main | None = None,
     parent_post: models.ComAtprotoRepoStrongRef.Main | None = None,
+    embeds: dict[int, str] | None = None,
+    quotes: dict[int, str] | None = None,
 ):
     """Sends a thread of posts, automatically splitting up long text into a thread!
     # Todo: consider type checking as Sequence, not list (not sure how)
     """
+    # Initialise some things so that they're dicts and have a .has method
+    if images is None:
+        images = dict()
+    if image_alts is None:
+        image_alts = dict()
+    if embeds is None:
+        embeds = dict()
+    if quotes is None:
+        quotes = dict()
+
     # Todo: allow posts to be just a string that we split automatically
     # Todo: check that all iterables have same length, if lists specified
-    # Todo: if dicts specified, check that there are enough posts for all of them
     # Todo: check that images iterable matches image_alts iterable. Consider making it just one parameter instead?
     for post_number, a_post in enumerate(posts):
         root_post, parent_post = send_post(
@@ -124,6 +147,8 @@ def send_thread(
             image_alts=image_alts.get(post_number),
             root_post=root_post,
             parent_post=parent_post,
+            embed=embeds.get(post_number),
+            quote=quotes.get(post_number)
         )
 
     return root_post, parent_post
