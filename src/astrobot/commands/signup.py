@@ -64,6 +64,8 @@ def _execute_rules_sent(command: SignupCommand, client: Client):
             "You are already signed up to the feed and should be able to post to them! "
             "You can find instructions here:",
             quote=COMPLETE_QUOTES[1],
+            root_post=command.notification.root_ref,
+            parent_post=command.notification.parent_ref,
         )
         new_bot_action(
             command, latest_cid=parent.cid, latest_uri=parent.uri
@@ -98,7 +100,7 @@ def _execute_get_description(command: SignupCommand, client: Client):
     if not any([x in valid_yes for x in command.notification.words]):
         root, parent = send_post(
             client,
-            "That doesn't look like a valid yes. If you meant for it to be, you can try to reply to that post again with a 'yes'.",
+            "That doesn't look like a valid yes.\n\nIf you meant for it to be, you can try to reply to that post again with a 'yes'.\n\nIf you don't accept the rules, then you won't be able to post to the feed.",
             root_post=command.notification.root_ref,
             parent_post=command.notification.parent_ref,
         )
@@ -113,7 +115,7 @@ def _execute_get_description(command: SignupCommand, client: Client):
     update_bot_action(command, "get_description", parent.uri, parent.cid)
 
 
-MODERATOR_TEXT = "Thanks! The last step now is to get a moderator to approve your signup. I'll mention them here to get their attention: "
+MODERATOR_TEXT = "Thanks! The last step now is to get a moderator to approve your signup. I'll mention them here to get their attention:"
 
 
 def _execute_get_moderator(command: SignupCommand, client: Client):
@@ -125,7 +127,7 @@ def _execute_get_moderator(command: SignupCommand, client: Client):
     text_builder.text(MODERATOR_TEXT)
     # Todo: this could overflow the post length limit if we get too many mods!
     for moderator in MODERATORS.get_accounts():
-        text_builder.mention("account", moderator)
+        text_builder.mention(" (tag)", moderator)
 
     # Send it!
     root, parent = send_post(
@@ -215,8 +217,8 @@ def _execute_complete(
     # TODO: uncomment when command is reliable enough
     signup_user(
         command.notification.action.did,
-        handle,
         command.notification.author.did,
+        handle=handle,
         valid=True,
     )
 
