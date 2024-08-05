@@ -120,6 +120,7 @@ class ReplyNotification(BaseNotification):
     def __init__(self, notification: Notification):
         "A reply from another user to a post made by the bot."
         self.author = notification.author
+        self.text = notification.record.text
         self.target = notification.record.reply.parent
         self.parent_ref, self.root_ref = _get_strong_refs(notification)
         self.action = None

@@ -27,7 +27,7 @@ def _get_password(password_env_var: str):
 
 
 # Typical config options
-NOTIFICATION_SLEEP_TIME = 30
+NOTIFICATION_SLEEP_TIME = 10
 DESIRED_NOTIFICATIONS = {"like", "mention", "reply"}
 HANDLE = _get_handle("ASTROBOT_HANDLE")  # Name of handle environment variable
 PASSWORD = _get_password("ASTROBOT_PASSWORD")  # Name of password environment variable

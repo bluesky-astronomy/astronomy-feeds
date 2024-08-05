@@ -1,14 +1,17 @@
 """Standard functions for posting posts and threads on Bluesky."""
 
 from atproto import Client, models, client_utils
-
+import warnings
 
 MAX_POST_LENGTH = 300
 
 
 def check_post_text(text):
     """Checks post text for Bluesky spec compliance"""
-    # todo does not support TextMaker
+    # Todo is this function super necessary? I think the checking in atproto is already very good!
+    # Assume that it's fine if it's a TextBuilder
+    if isinstance(text, client_utils.TextBuilder):
+        return
     if not isinstance(text, str):
         raise ValueError("post text must be a string!")
     if len(text) == 0:
@@ -23,10 +26,11 @@ def check_post_image(image, image_alt):
     """Check that there's valid image and valid alt text if an image is specified"""
     if image is None:
         return
-    if not isinstance(image, str):
-        raise ValueError("image must be a string representation of the image's data!")
+    # Todo: probably not needed; 
+    # if not isinstance(image, bytes):
+    #     raise ValueError("image must be a bytes representation of the image's data!")
     if not isinstance(image_alt, str):
-        raise ValueError("You must specify alt text when uploading an image!")
+        warnings.warn(UserWarning("An image post is missing alt text."))
 
 
 def check_post_reply_info(root_post, parent_post):
@@ -144,7 +148,7 @@ def send_thread(
             client,
             a_post,
             image=images.get(post_number),
-            image_alts=image_alts.get(post_number),
+            image_alt=image_alts.get(post_number),
             root_post=root_post,
             parent_post=parent_post,
             embed=embeds.get(post_number),

@@ -28,8 +28,8 @@ class Command(ABC):
     def execute(self, client: Client):
         """Executes the next step of a given command, or update to a command."""
         if (reason := self.user_cannot_use_command()):
-            self.execute_no_permissions(self, client, reason)
-        self.execute_good_permissions
+            self.execute_no_permissions(client, reason)
+        self.execute_good_permissions(client)
 
     def user_cannot_use_command(
         self

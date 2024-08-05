@@ -1,3 +1,7 @@
+### Hide IDE-related things
+.vscode
+
+
 ### Unique to this module
 # Saved session files
 *.session

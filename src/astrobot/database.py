@@ -1,6 +1,7 @@
 """A collection of all database actions for things the bot needs to do."""
 
 import datetime
+import warnings
 from astrofeed_lib.database import BotActions, ModActions, db, Account
 
 
@@ -14,6 +15,13 @@ REQUIRED_BOT_ACTION_FIELDS = [
     "latest_cid",
     "complete",
 ]
+
+
+def fetch_account_entry_for_did(did):
+    """Checks to see if a user is already signed up to the feeds."""
+    db.connect(reuse_if_open=True)
+    return [x for x in Account.select().where(Account.did == did)]
+
 
 
 def new_bot_action(
@@ -53,7 +61,7 @@ def new_bot_action(
 
 def update_bot_action(command, stage, latest_uri, latest_cid):
     """Updates the stage of an existing bot action."""
-    action = command.action
+    action = command.notification.action
     action.stage = stage
     action.complete = stage == "complete"
     action.latest_uri = latest_uri
@@ -79,6 +87,25 @@ def new_mod_action(
 def new_signup(did, handle, valid=True):
     """Register a new account in the database."""
     db.connect(reuse_if_open=True)
+    # Last check to see if this account is already signed up - we won't add them again!
+    account_entries = fetch_account_entry_for_did(did)
+    already_signed_up = any(
+        [account.is_valid for account in account_entries]
+    )
+    if already_signed_up:
+        warnings.warn(f"Account {handle} is already signed up to the feeds! Unable to sign them up.")
+        return
+    
+    # Sign up a previously not validated account
+    if not already_signed_up and len(account_entries) > 0:
+        entry = account_entries[0]
+        entry.is_valid = valid
+        entry.feed_all = valid
+        with db.atomic():
+            entry.save()
+        return
+
+    # OR, create a new signup!
     with db.atomic():
         Account.create(handle=handle, did=did, is_valid=valid, feed_all=valid)
 

@@ -7,7 +7,7 @@ from astrobot.database import new_mod_action, new_signup
 
 class CachedModeratorList(CachedAccountQuery):
     def account_query(self):
-        return get_moderators(self.minimum_level)
+        return get_moderators()
     
     def get_accounts_above_level(self, minimum_level: int) -> set[str]:
         """Wraps get_accounts and returns only moderators with the desired minimum

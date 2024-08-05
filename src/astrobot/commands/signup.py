@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from astrobot.database import new_bot_action, update_bot_action
+from astrobot.database import (
+    new_bot_action,
+    update_bot_action,
+    fetch_account_entry_for_did,
+)
 from importlib import resources
 from astrobot import data
 
@@ -15,13 +19,13 @@ from typing import Callable
 
 
 RULES_POSTS = [
-    "Thank you for your interest in signing up to the Astronomy feeds! There are a few steps to this that I'll guide you through in this thread.\n\nThis bot is experimental; if you have any issues, please tag (at)emily.space, the bot's maintainer.",
+    "Thank you for your interest in signing up to the Astronomy feeds! There are a few steps to this that I'll guide you through in this thread.\n\nThis bot is experimental; if you have any issues, please tag @emily.space, the bot's maintainer.",
     "Firstly, you need to agree to the rules below:\n\nIf you agree to follow them, then reply to this post with a 'yes'.",
 ]
 
 rules_image_file = resources.files(data) / "rules.png"
 with rules_image_file.open("rb") as f:
-    rules_image = rules_image_file.read()
+    rules_image = f.read()
 
 RULES_IMAGES = {1: rules_image}
 
@@ -48,6 +52,24 @@ If you ever have any concerns or issues, get in touch with @moderation.astronomy
 
 def _execute_rules_sent(command: SignupCommand, client: Client):
     print(f"SignupCommand: Sending feed rules to {command.notification.author.handle}")
+    # Check if account already signed up
+    account_entries = fetch_account_entry_for_did(command.notification.author.did)
+    already_signed_up = any(
+        [account.is_valid for account in account_entries]
+    )  # N.B. this is False if len(account_entries) == 0
+    if already_signed_up:
+        root, parent = send_post(
+            client,
+            "You are already signed up to the feed and should be able to post to them! "
+            "You can find instructions here:",
+            quote=COMPLETE_QUOTES[1],
+        )
+        new_bot_action(
+            command, latest_cid=parent.cid, latest_uri=parent.uri
+        )
+        return
+    
+    # Otherwise, start the process!
     root, parent = send_thread(
         client,
         RULES_POSTS,
@@ -70,9 +92,9 @@ def _execute_get_description(command: SignupCommand, client: Client):
     )
 
     # Check to see if they replied with yes
-    # Todo: could be more sophisticated here, e.g. if a smartass replies 'no'
+    # Todo: could be more sophisticated here, e.g. if a smartass replies 'no' we probably don't want to have the bot act like an idiot and ask them to say yes
     valid_yes = {"yes", "y", "ye", "yeah", "yess", "yes.", "yes,", "yes!"}
-    if command.notification.words not in valid_yes:
+    if not any([x in valid_yes for x in command.notification.words]):
         root, parent = send_post(
             client,
             "That doesn't look like a valid yes. If you meant for it to be, you can try to reply to that post again with a 'yes'.",
@@ -136,7 +158,7 @@ COMPLETE_POSTS = [
     .text(" is the admin of the feeds, and can help with technical issues."),
     # 4
     client_utils.TextBuilder().text(
-        "Thanks so much for signing up! Let us know if you have any suggestions on how to improve the feeds or the community here."
+        "Thanks so much for signing up! Let us know if you have any suggestions on how to improve the feeds or the community here.\n\nIMPORTANT: It can take up to 10 minutes for the server to refresh before you can post to the feed."
     ),
 ]
 
@@ -149,8 +171,21 @@ COMPLETE_QUOTES = {
 }
 
 
-def _execute_complete(command: SignupCommand, client: Client):
+def _execute_complete(
+    command: SignupCommand, client: Client, reply_in_thread: bool = True
+):
     print(f"SignupCommand: signing up {command.notification.author.handle}")
+
+    # Since we take a LikeNotification which doesn't define root_ref, if we want to
+    # continue replying in the thread then we'll have to get root_ref
+    parent_ref, root_ref = None, None
+    if reply_in_thread:
+        command.notification.fetch_root_ref()
+        parent_ref, root_ref = (
+            command.notification.parent_ref,
+            command.notification.root_ref,
+        )
+
     # Get the original account's handle for nice formatting reasons + db reasons
     response = client.com.atproto.repo.describe_repo(
         params={"repo": command.notification.action.did}
@@ -160,7 +195,7 @@ def _execute_complete(command: SignupCommand, client: Client):
     # Dynamically make a first post that includes their name
     first_post = [
         client_utils.TextBuilder()
-        .mention(handle, command.notification.action.did)
+        .mention("@" + handle, command.notification.action.did)
         .text(
             ", congratulations! 🎉 You're now signed up to the Astronomy feeds, and can post to them.\n\nHere's all the information you need to know:"
         ),
@@ -171,11 +206,12 @@ def _execute_complete(command: SignupCommand, client: Client):
         client,
         first_post + COMPLETE_POSTS,
         quotes=COMPLETE_QUOTES,
-        # root_post=root_ref,
-        # parent_post=command.notification.parent_ref,
+        root_post=root_ref,
+        parent_post=parent_ref,
     )
 
     # Sign them up
+    # TODO: uncomment when command is reliable enough
     signup_user(
         command.notification.action.did,
         handle,
