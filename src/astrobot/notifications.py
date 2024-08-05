@@ -75,7 +75,8 @@ class MentionNotification(BaseNotification):
         self.parent_ref, self.root_ref = _get_strong_refs(notification)
 
         # Also setup all of the words in the command
-        words = [w.lower() for w in self.text.split(" ")]
+        words = [w.lower() for w in self.text.replace("\n", " ").split(" ")]
+        
         mention_index = words.index("@" + HANDLE)
         self.words = words[mention_index + 1 :]
 
@@ -125,7 +126,7 @@ class ReplyNotification(BaseNotification):
         self.parent_ref, self.root_ref = _get_strong_refs(notification)
         self.action = None
 
-        self.words = [w.lower() for w in self.text.split(" ")]
+        self.words = [w.lower() for w in self.text.replace("\n", " ").split(" ")]
 
         self.notification = notification  # full notification, shouldn't need accessing
 
