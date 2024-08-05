@@ -47,7 +47,7 @@ class JokeCommand(Command):
         if notification.words[0] == JokeCommand.command:
             return JokeCommand(notification)
 
-    def execute(self, client: Client):
+    def execute_good_permissions(self, client: Client):
         global JOKE_INDEX
         send_post(
             client,

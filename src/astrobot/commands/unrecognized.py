@@ -31,7 +31,7 @@ class UnrecognizedCommand(Command):
         # ... but we'll return it anyway! WE MUST OBEY THE INTERFACE (ABC) SPEC!!!!!!!!
         return UnrecognizedCommand(notification)
 
-    def execute(self, client: Client):
+    def execute_good_permissions(self, client: Client):
         send_post(
             client,
             unrecognized_command_text + self.extra,
