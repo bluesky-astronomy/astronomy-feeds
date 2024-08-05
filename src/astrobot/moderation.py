@@ -6,22 +6,24 @@ from astrobot.database import new_mod_action, new_signup
 
 
 class CachedModeratorList(CachedAccountQuery):
-    def __init__(self, minimum_level: int = 1, query_interval=60 * 10, **kwargs):
-        super().__init__(query_interval=query_interval, **kwargs)
-        self.minimum_level = minimum_level
-
     def account_query(self):
         return get_moderators(self.minimum_level)
+    
+    def get_accounts_above_level(self, minimum_level: int) -> set[str]:
+        """Wraps get_accounts and returns only moderators with the desired minimum
+        level.
+        """
+        return {did for did, level in self.get_accounts() if level >= minimum_level}
 
 
 # Setup list of moderators
-MODERATORS = CachedModeratorList(minimum_level=1)
+MODERATORS = CachedModeratorList()
 
 
-def get_moderators(minimum_level: int = 1) -> set[str]:
+def get_moderators() -> dict[str, int]:
     """Returns a set containing the DIDs of all current moderators."""
-    query = Account.select(Account.did).where(Account.mod_level >= minimum_level)
-    return {user.did for user in query.execute()}
+    query = Account.select(Account.did).where(Account.mod_level >= 1)
+    return {user.did: user.mod_level for user in query.execute()}
 
 
 def ban_user(did: str, did_mod: str, reason: str):
