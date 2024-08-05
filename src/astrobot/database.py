@@ -21,6 +21,7 @@ def new_bot_action(
     stage: str = "complete",
     latest_uri: None | str = None,
     latest_cid: None | str = None,
+    authorized: bool = True,
 ):
     """Save a new bot action to the database. Defaults to stage='complete', which marks
     the action as already completed in the database.
@@ -34,6 +35,7 @@ def new_bot_action(
     if latest_cid is None:
         latest_cid = command.notification.parent_ref.uri
 
+
     db.connect(reuse_if_open=True)
     with db.atomic():
         BotActions.create(
@@ -45,6 +47,7 @@ def new_bot_action(
             latest_uri=latest_uri,
             latest_cid=latest_cid,
             complete=complete,
+            authorized=authorized,
         )
 
 
