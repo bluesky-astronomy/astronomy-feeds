@@ -52,11 +52,12 @@ If you ever have any concerns or issues, get in touch with @moderation.astronomy
 
 def _execute_rules_sent(command: SignupCommand, client: Client):
     print(f"SignupCommand: Sending feed rules to {command.notification.author.handle}")
-    # Check if account already signed up
     account_entries = fetch_account_entry_for_did(command.notification.author.did)
     already_signed_up = any(
         [account.is_valid for account in account_entries]
     )  # N.B. this is False if len(account_entries) == 0
+
+    # Check if account already signed up
     if already_signed_up:
         root, parent = send_post(
             client,
