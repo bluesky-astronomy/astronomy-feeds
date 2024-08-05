@@ -159,7 +159,7 @@ COMPLETE_POSTS = [
     .text(" is the admin of the feeds, and can help with technical issues."),
     # 4
     client_utils.TextBuilder().text(
-        "Thanks so much for signing up! Let us know if you have any suggestions on how to improve the feeds or the community here.\n\nIMPORTANT: It can take up to 10 minutes for the server to refresh before you can post to the feed."
+        "Thanks so much for signing up! Let us know if you have any suggestions on how to improve the feeds or the community here.\n\nIMPORTANT: It can take up to 2 minutes for the server to refresh before you can post to the feed."
     ),
 ]
 
@@ -181,7 +181,7 @@ def _execute_complete(
     # continue replying in the thread then we'll have to get root_ref
     parent_ref, root_ref = None, None
     if reply_in_thread:
-        command.notification.fetch_root_ref()
+        command.notification.fetch_root_ref(client)
         parent_ref, root_ref = (
             command.notification.parent_ref,
             command.notification.root_ref,
