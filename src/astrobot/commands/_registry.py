@@ -23,6 +23,11 @@ class CommandRegistry:
             )
         self._commands[command.command] = command
 
+    def register_commands(self, commands: list):
+        """Registers a list of commands as possible for users to execute."""
+        for command in commands:
+            self.register_command(command)
+
     def deregister_command(self, command):
         """De-registers a command from the registry. After this point, it will not be
         possible for users to use without re-registering.
