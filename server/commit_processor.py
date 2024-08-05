@@ -277,7 +277,7 @@ def run_commit_processor_multithreaded(
     n_workers: int = 2,
     update_cursor_in_database: bool = True,
     measurement_interval: int | float = 60,
-    account_update_interval: int | float = 600,
+    account_update_interval: int | float = 60,
     post_update_interval: int | float = 86400,
 ) -> None:
     """Runs multiple commit processing processes at once. Effectively a reimplementation
