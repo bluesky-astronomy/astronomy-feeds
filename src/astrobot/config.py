@@ -3,6 +3,7 @@
 import os
 from .commands import CommandRegistry
 from .commands.joke import JokeCommand
+from .commands.signup import SignupCommand
 
 
 def _get_handle(handle_env_var: str):
@@ -33,4 +34,4 @@ PASSWORD = _get_password("ASTROBOT_PASSWORD")  # Name of password environment va
 
 # Setup command registry
 COMMAND_REGISTRY = CommandRegistry()
-COMMAND_REGISTRY.register_command(JokeCommand)
+COMMAND_REGISTRY.register_commands([JokeCommand, ])

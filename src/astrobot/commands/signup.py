@@ -1,8 +1,11 @@
-"""Signs a user up to the feed."""
+"""Signs a user up to the feed. Probably the most complicated command the bot can do!"""
 
 from __future__ import annotations
 
 from astrobot.database import new_bot_action, update_bot_action
+from importlib import resources
+from astrobot import data
+
 from ._base import MultiStepCommand
 from ..post import send_post, send_thread
 from atproto import Client, models, client_utils
@@ -12,13 +15,35 @@ from typing import Callable
 
 
 RULES_POSTS = [
-    "Thank you for your interest in signing up to the Astronomy feeds! There are a few steps to this that I'll guide you through.\n\nThis bot is experimental; if you have any issues, please tag (at)emily.space, the bot's maintainer.\n\nFirstly, you'll need to agree to the rules of the feeds:",
-    "1. You must be a professional, amateur, aspiring, or in-training astronomer to join.\n\nIt's also absolutely ok if you left academia but still want to sign up - you are still an astronomer and you are welcome here!",
-    "2. Be respectful of others in the community.\n\nWe won't tolerate discrimination of any kind; that means no racism, sexism, homophobia, transphobia, ableism, or any other kind of discrimination.",
-    "3. Content that you post to the feeds must be appropriate for them.\n\nThat means:\n- No misinformation/impersonation\n- No spamming\n-No off-topic posts.",
-    "4. Attribute content that is not your own!\n\nIf content is not your own, then you must credit the original author. Where possible, you should link to the original author's content.",
-    "If you agree to all of the above, then reply to this post with a 'yes'.",
+    "Thank you for your interest in signing up to the Astronomy feeds! There are a few steps to this that I'll guide you through in this thread.\n\nThis bot is experimental; if you have any issues, please tag (at)emily.space, the bot's maintainer.",
+    "Firstly, you need to agree to the rules below:\n\nIf you agree to follow them, then reply to this post with a 'yes'.",
 ]
+
+rules_image_file = resources.files(data) / "rules.png"
+with rules_image_file.open("rb") as f:
+    rules_image = rules_image_file.read()
+
+RULES_IMAGES = {1: rules_image}
+
+RULES_IMAGES_ALTS = {
+    1: """Astronomy Feed Rules
+
+Anyone posting to the Astronomy feeds must follow the rules below:
+
+1. You must be a professional, amateur, or student astronomer to post to the feeds.
+It's also ok if you left academia but still want to sign up. You are still an astronomer and you are welcome here!
+
+2. Be respectful of others in the community.
+We won't tolerate discrimination of any kind; that means no racism, sexism, homophobia, transphobia, ableism, or any other kind of discrimination.
+
+3. Content that you post to the feeds must be appropriate, accurate, and not spam.
+No misinformation/impersonation, no spamming, and no off-topic posts. Ask a moderator if you aren't sure.
+
+4. Attribute content that is not your own.
+You must credit the original author of any content you post. Where possible, you should link to the original author's content.
+
+If you ever have any concerns or issues, get in touch with @moderation.astronomy.blue or @emily.space."""
+}
 
 
 def _execute_rules_sent(command: SignupCommand, client: Client):
@@ -26,6 +51,8 @@ def _execute_rules_sent(command: SignupCommand, client: Client):
     root, parent = send_thread(
         client,
         RULES_POSTS,
+        images=RULES_IMAGES,
+        image_alts=RULES_IMAGES_ALTS,
         root_post=command.notification.root_ref,
         parent_post=command.notification.parent_ref,
     )
@@ -44,8 +71,14 @@ def _execute_get_description(command: SignupCommand, client: Client):
 
     # Check to see if they replied with yes
     # Todo: could be more sophisticated here, e.g. if a smartass replies 'no'
-    valid_yes = {"yes", "y", "ye", "yeah", "yess", "yes.", "yes,"}
+    valid_yes = {"yes", "y", "ye", "yeah", "yess", "yes.", "yes,", "yes!"}
     if command.notification.words not in valid_yes:
+        root, parent = send_post(
+            client,
+            "That doesn't look like a valid yes. If you meant for it to be, you can try to reply to that post again with a 'yes'.",
+            root_post=command.notification.root_ref,
+            parent_post=command.notification.parent_ref,
+        )
         return
 
     root, parent = send_post(
@@ -57,7 +90,7 @@ def _execute_get_description(command: SignupCommand, client: Client):
     update_bot_action(command, "get_description", parent.uri, parent.cid)
 
 
-MODERATOR_TEXT = "Thanks! The last step now is to get input from a moderator. I'll mention them here to get their attention: "
+MODERATOR_TEXT = "Thanks! The last step now is to get a moderator to approve your signup. I'll mention them here to get their attention: "
 
 
 def _execute_get_moderator(command: SignupCommand, client: Client):
@@ -82,54 +115,76 @@ def _execute_get_moderator(command: SignupCommand, client: Client):
 
 
 COMPLETE_POSTS = [
-    "Congratulations! 🎉 You're now signed up to the Astronomy feeds, and can post to them.\n\nHere's all the information you need to know:",
-    "Firstly, there are multiple feeds in the network, covering many topics - from the general Astronomy feed to specific topics like Exoplanets. Here's a list of all of them:",
-    client_utils.TextBuilder().text("If you ever have any problems, you can get in touch with the moderation account ").mention("account", "did:plc:ko747jc5ma4iarwwfwrlv2ct").text(". Also, ").mention("account", "did:plc:jcoy7v3a2t4rcfdh6i4kza25").text(" is the admin of the feeds, and can help with technical issues."),
-    client_utils.TextBuilder().text("Thanks so much for signing up!")
-    # + add a link to my starter pack, to the official astronomy.blue account, to the website, and maybe also my blog post
+    # 0 is made dynamically in the function
+    # 1
+    "Firstly, there are multiple feeds in the network that you can post to, covering many topics - from the general Astronomy feed to specific topics like Exoplanets. Here's a list of all of them:",
+    # 2
+    client_utils.TextBuilder()
+    .text("Secondly, if you're new to Bluesky, then you may want to check out ")
+    .link("this blog post", "https://emilydoesastro.com/posts/230824-bluesky-signup/")
+    .text(" with tips on how to get started here, as well as our ")
+    .link("starter pack", "https://bsky.app/starter-pack/emily.space/3kvvsi4qacz2p")
+    .text(" with feeds and accounts to follow."),
+    # 3
+    client_utils.TextBuilder()
+    .text(
+        "Finally, if you ever have any problems, you can get in touch with the moderation account "
+    )
+    .mention("@moderation.astronomy.blue", "did:plc:ko747jc5ma4iarwwfwrlv2ct")
+    .text(". Also, ")
+    .mention("@emily.space", "did:plc:jcoy7v3a2t4rcfdh6i4kza25")
+    .text(" is the admin of the feeds, and can help with technical issues."),
+    # 4
+    client_utils.TextBuilder().text(
+        "Thanks so much for signing up! Let us know if you have any suggestions on how to improve the feeds or the community here."
+    ),
 ]
 
-# COMPLETE_QUOTES = {
-#     # @emily.space thread of all feeds, with details:
-#     1: models.ComAtprotoRepoStrongRef.Main(uri="at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kkri5olz3526", cid="bafyreicgwczccg7sfn33hd7mydr4xwgmam57nqzjruaxmob5pa7x76ivea")
-# }
+COMPLETE_QUOTES = {
+    # @emily.space thread of all feeds, with details:
+    1: models.ComAtprotoRepoStrongRef.Main(
+        uri="at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kkri5olz3526",
+        cid="bafyreicgwczccg7sfn33hd7mydr4xwgmam57nqzjruaxmob5pa7x76ivea",
+    )
+}
 
 
-def _execute_complete():
-    pass
+def _execute_complete(command: SignupCommand, client: Client):
+    print(f"SignupCommand: signing up {command.notification.author.handle}")
+    # Get the original account's handle for nice formatting reasons + db reasons
+    response = client.com.atproto.repo.describe_repo(
+        params={"repo": command.notification.action.did}
+    )
+    handle = response["handle"]
 
-# def _execute_complete(command: SignupCommand, client: Client):
-#     print(f"SignupCommand: signing up {command.notification.author.handle}")
-#     # Since the notification type is a like and that doesn't define root ref, we need to
-#     # manually make one first
-#     root_ref = models.ComAtprotoRepoStrongRef.Main(
-#         cid=command.notification.action.parent_cid,
-#         uri=command.notification.action.parent_uri,
-#     )
+    # Dynamically make a first post that includes their name
+    first_post = [
+        client_utils.TextBuilder()
+        .mention(handle, command.notification.action.did)
+        .text(
+            ", congratulations! 🎉 You're now signed up to the Astronomy feeds, and can post to them.\n\nHere's all the information you need to know:"
+        ),
+    ]
 
-#     # Then, send all info to the user
-#     root, parent = send_post(
-#         client,
-#         text_builder,
-#         root_post=root_ref,
-#         parent_post=command.notification.parent_ref,
-#     )
+    # Then, send that first post + some other info ones
+    root, parent = send_thread(
+        client,
+        first_post + COMPLETE_POSTS,
+        quotes=COMPLETE_QUOTES,
+        # root_post=root_ref,
+        # parent_post=command.notification.parent_ref,
+    )
 
-#     # Sign them up (we grab their handle again first)
-#     response = client.com.atproto.repo.describe_repo(
-#         params={"repo": command.notification.action.did}
-#     )
-#     handle = response["handle"]
+    # Sign them up
+    signup_user(
+        command.notification.action.did,
+        handle,
+        command.notification.author.did,
+        valid=True,
+    )
 
-#     signup_user(
-#         command.notification.action.did,
-#         handle,
-#         command.notification.author.did,
-#         valid=True,
-#     )
-
-#     # Finish this multi-step bot action.
-#     update_bot_action(command, "complete", parent.uri, parent.cid)
+    # Finish this multi-step bot action.
+    update_bot_action(command, "complete", parent.uri, parent.cid)
 
 
 class SignupCommand(MultiStepCommand):
@@ -207,6 +262,6 @@ class SignupCommand(MultiStepCommand):
         )
         return None
 
-    def execute(self, client: Client):
+    def execute_good_permissions(self, client: Client):
         """Execute the command. Defined in __init__."""
         return self.execute_command(self, client)
