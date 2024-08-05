@@ -127,7 +127,8 @@ def _execute_get_moderator(command: SignupCommand, client: Client):
     text_builder.text(MODERATOR_TEXT)
     # Todo: this could overflow the post length limit if we get too many mods!
     for moderator in MODERATORS.get_accounts():
-        text_builder.mention(" (tag)", moderator)
+        text_builder.text(" ")
+        text_builder.mention("(tag)", moderator)
 
     # Send it!
     root, parent = send_post(
