@@ -59,6 +59,7 @@ class BotActions(BaseModel):
     latest_uri = peewee.CharField(null=False , default="")
     latest_cid = peewee.CharField(null=False , default="")
     complete = peewee.BooleanField(null=False, default=False, index=True)
+    authorized = peewee.BooleanField(null=False, index=True, default=True)
 
 
 class ModActions(BaseModel):
