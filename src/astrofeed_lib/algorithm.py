@@ -5,7 +5,7 @@ from typing import Optional
 
 
 VALID_ACCOUNTS = CachedAccountQuery(
-    with_database_closing=False, flags=[Account.is_valid]
+    with_database_closing=False, flags=[Account.is_valid], query_interval=60
 )
 
 CURSOR_END_OF_FEED = "eof"
