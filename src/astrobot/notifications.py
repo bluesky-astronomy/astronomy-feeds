@@ -94,8 +94,8 @@ class LikeNotification(BaseNotification):
         self.target = notification.record.subject
         self.parent_ref, self.root_ref = (
             models.create_strong_ref(self.target),
-            None,
-        )  # Todo: there is no easy way to get root refs! As likes only reference the post itself and NOT its root.
+            None,  # Must be set with a later call to fetch_root_ref
+        )
         self.action = None
 
         self.notification = notification  # full notification, shouldn't need accessing
