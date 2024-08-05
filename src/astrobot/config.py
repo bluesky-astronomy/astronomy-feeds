@@ -34,4 +34,4 @@ PASSWORD = _get_password("ASTROBOT_PASSWORD")  # Name of password environment va
 
 # Setup command registry
 COMMAND_REGISTRY = CommandRegistry()
-COMMAND_REGISTRY.register_commands([JokeCommand, ])
+COMMAND_REGISTRY.register_commands([JokeCommand, SignupCommand])
