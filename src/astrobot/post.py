@@ -148,7 +148,19 @@ def send_thread(
             root_post=root_post,
             parent_post=parent_post,
             embed=embeds.get(post_number),
-            quote=quotes.get(post_number)
+            quote=quotes.get(post_number),
         )
 
     return root_post, parent_post
+
+
+def get_post(client: Client, reference):
+    """Fetch a post on the Bluesky network based on its uri and cid. Differs from the
+    native atproto implementation which makes this a little harder.
+
+    Reference must have fields 'uri' and 'cid'.
+    """
+    # bit sketch but it works, don't @ me
+    repo, collection, record_key = reference.uri.replace("at://", "").split("/")
+
+    return client.get_post(record_key, repo, reference.cid)

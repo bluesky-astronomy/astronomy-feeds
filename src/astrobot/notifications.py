@@ -3,6 +3,8 @@
 from datetime import datetime
 from atproto import Client, models
 from atproto_client.models.app.bsky.notification.list_notifications import Notification
+from astrobot.post import get_post
+import warnings
 
 
 ALLOWED_NOTIFICATION_TYPES = {"like", "repost", "follow", "mention", "reply", "quote"}
@@ -98,6 +100,21 @@ class LikeNotification(BaseNotification):
 
         self.notification = notification  # full notification, shouldn't need accessing
 
+    def fetch_root_ref(self, client: Client):
+        """Fetches the root reference of the thread this post is in. By default,
+        self.root_ref is None, as the notification does not include that information;
+        this function performs a manual lookup on the network to get the root ref.
+        """
+        post_response = get_post(client, self.notification.record.subject)
+        if not hasattr(post_response.value, "reply"):
+            warnings.warn(
+                "LikeNotification.fetch_root_ref: post that was liked is not actually "
+                "a reply to anything, so unable to fetch root ref to post."
+            )
+            self.root_ref = self.parent_ref
+            return
+        self.root_ref = models.create_strong_ref(post_response.value.reply.root)
+
 
 class ReplyNotification(BaseNotification):
     def __init__(self, notification: Notification):
@@ -106,7 +123,7 @@ class ReplyNotification(BaseNotification):
         self.target = notification.record.reply.parent
         self.parent_ref, self.root_ref = _get_strong_refs(notification)
         self.action = None
-        
+
         self.words = [w.lower() for w in self.text.split(" ")]
 
         self.notification = notification  # full notification, shouldn't need accessing
