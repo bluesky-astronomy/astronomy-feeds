@@ -59,7 +59,8 @@ class CommandRegistry:
                 return result
 
         # Otherwise, say it isn't recognized.
-        return UnrecognizedCommand(notification, extra=" Reason: command not in list.")
+        commands_as_list = ", ".join([f"'{x}'" for x in self._commands.keys()])
+        return UnrecognizedCommand(notification, extra=f"\n\nValid commands: {commands_as_list}")  # Todo could overflow post limit when more added; also will contain mod commands
 
     def get_matching_multistep_command(
         self, notification: LikeNotification | ReplyNotification
