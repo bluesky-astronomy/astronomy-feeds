@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from astrofeed_lib import config
 from astrofeed_lib.database import db
 from astrofeed_lib.algorithm import get_posts
-from astrofeed_server.pinned import add_pinned_post_to_feed
+from .pinned import add_pinned_post_to_feed
 
 
 app = Flask(__name__)
