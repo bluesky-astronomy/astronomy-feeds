@@ -11,11 +11,12 @@ VALID_ACCOUNTS = CachedAccountQuery(
 CURSOR_END_OF_FEED = "eof"
 
 
-def _select_posts(feed, valid_dids, limit):
+def _select_posts(feed, limit):
     feed_boolean = getattr(Post, "feed_" + feed)
     return (
-        Post.select()
-        .where(Post.author.in_(valid_dids), feed_boolean)
+        Post.select(Post.indexed_at, Post.uri, Post.cid)
+        .join(Account, on=(Account.did == Post.author))
+        .where(Account.is_valid, feed_boolean)
         .order_by(Post.indexed_at.desc())
         .limit(limit)
     )
@@ -65,8 +66,8 @@ def get_posts(feed: str, cursor: Optional[str], limit: int) -> dict:
         return {"cursor": CURSOR_END_OF_FEED, "feed": []}
 
     # Setup a query that's only for valid accounts
-    valid_dids = VALID_ACCOUNTS.get_accounts()
-    posts = _select_posts(feed, valid_dids, limit)
+    # valid_dids = VALID_ACCOUNTS.get_accounts()
+    posts = _select_posts(feed, limit)
 
     # If the client specified a cursor, limit the posts to within some time range
     if cursor:
