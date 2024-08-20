@@ -2,7 +2,14 @@ from flask import Flask, jsonify, request
 from astrofeed_lib import config
 from astrofeed_lib.database import db
 from astrofeed_lib.algorithm import get_posts
-from .pinned import add_pinned_post_to_feed
+
+# Haven't yet worked out how to get a local Flask debug with VS Code to like a relative
+# import, and how to get a Gunicorn running server on Digital Ocean to not *need* one =(
+# TODO: make this less of a hack
+try: 
+    from .pinned import add_pinned_post_to_feed
+except ModuleNotFoundError:
+    from astrofeed_server.pinned import add_pinned_post_to_feed
 
 
 app = Flask(__name__)
