@@ -18,7 +18,6 @@ class BaseModel(peewee.Model):
         database = db
 
 
-# Todo should set attributes based on feeds / have some way to add new columns to the mysql db
 class Post(BaseModel):
     indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
     uri = peewee.CharField(index=True)
