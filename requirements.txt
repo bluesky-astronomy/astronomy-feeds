@@ -1,2 +1,1 @@
 astrofeed_lib @ git+https://github.com/bluesky-astronomy/astrofeed-lib
-pandas>=2.0,<3.0
