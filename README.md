@@ -14,7 +14,7 @@ Create a fresh virtual environment with the Python version defined in runtime.tx
 
 ## Running the app
 
-You can start the webapp with the 'run' script, or the command
+You can start the app with the 'run' script, or the command
 
 ```
 python -m astrofeed_firehose

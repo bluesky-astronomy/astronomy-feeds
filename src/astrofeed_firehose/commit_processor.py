@@ -11,7 +11,7 @@ from atproto import models
 from atproto.exceptions import ModelError
 from astrofeed_lib.config import SERVICE_DID
 from astrofeed_lib.database import SubscriptionState, db
-from server.commit import apply_commit
+from astrofeed_firehose.commit import apply_commit
 from astrofeed_lib.accounts import AccountQuery
 from astrofeed_lib.posts import PostQuery
 

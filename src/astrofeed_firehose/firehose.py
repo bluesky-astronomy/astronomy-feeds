@@ -5,8 +5,8 @@ import os
 import multiprocessing
 import logging
 import time
-from server.firehose_client import run_client
-from server.commit_processor import run_commit_processor_multithreaded
+from astrofeed_firehose.firehose_client import run_client
+from astrofeed_firehose.commit_processor import run_commit_processor_multithreaded
 
 
 logger = logging.getLogger(__name__)
