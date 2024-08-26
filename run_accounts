@@ -1,6 +1,0 @@
-#!/bin/bash
-echo "Starting account management service..."
-python -c "
-import server.accounts
-server.accounts.refresh_valid_accounts()
-"
