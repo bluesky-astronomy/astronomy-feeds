@@ -1,7 +1,7 @@
 [project]
-name = "astrofeed_server"  # Required
+name = "astrofeed_firehose"  # Required
 version = "0.0.1"  # Required
-description = "The Flask server for the Astronomy feeds."
+description = "The Bluesky firehose consumer for the Astronomy feeds."
 readme = "README.md" # Optional
 requires-python = ">=3.11"
 license = {file = "LICENSE"}
@@ -23,13 +23,11 @@ classifiers = [
 ]
 dependencies = [
   "astrofeed_lib@git+https://github.com/bluesky-astronomy/astrofeed-lib",
-  "Flask>=2.3.2,<3.0",
-  "gunicorn>=20.1.0,",
 ]
 
 [project.urls]
 "Homepage" = "https://astronomy.blue/"
-"Bug Reports" = "https://github.com/bluesky-astronomy/astrofeed-server"
+"Bug Reports" = "https://github.com/bluesky-astronomy/astronomy-feeds"
 
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]

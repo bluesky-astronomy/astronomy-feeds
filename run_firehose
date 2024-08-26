@@ -1,6 +1,0 @@
-#!/bin/bash
-echo "Starting firehose..."
-python -c "
-import server.firehose
-server.firehose.run()
-"
