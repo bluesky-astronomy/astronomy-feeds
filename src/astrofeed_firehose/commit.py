@@ -1,78 +1,51 @@
 """Logic for how commits are filtered."""
+
 import logging
-from astrofeed_lib.database import db, Post
+from astrofeed_lib.config import SERVICE_DID
+from astrofeed_lib.database import SubscriptionState, db, Post
 from astrofeed_lib.feeds import post_in_feeds
-from atproto import CAR, AtUri
+from atproto import CAR, AtUri, parse_subscribe_repos_message
 from atproto import models
+from atproto.exceptions import ModelError
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict:  # noqa: C901
-    """Sorts all commits/operations by type into a convenient to process dictionary."""
-    operation_by_type = {
-        "posts": {"created": [], "deleted": []},
-        "reposts": {"created": [], "deleted": []},
-        "likes": {"created": [], "deleted": []},
-        "follows": {"created": [], "deleted": []},
-    }
+def _process_commit(
+    message, cursor, valid_accounts, existing_posts, update_cursor_in_database=True
+):
+    """Attempt to process a single commit. Returns a list of any new posts to add."""
+    # Skip any commits that do not pass this model (which can occur sometimes)
+    try:
+        commit = parse_subscribe_repos_message(message)
+    except ModelError:
+        logger.exception("Unable to process a commit due to validation issue")
+        return []
 
-    # Handle occasional empty commit (not in ATProto spec but seems to happen sometimes.
-    # Can be a blank binary string sometimes, for no reason)
-    if not commit.blocks:
-        return operation_by_type
+    # Final check that this is in fact a commit, and not e.g. a handle change
+    if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
+        return []
 
-    car = CAR.from_bytes(commit.blocks)  # type: ignore
+    new_posts = apply_commit(commit, valid_accounts, existing_posts)
 
-    for op in commit.ops:
-        uri = AtUri.from_str(f"at://{commit.repo}/{op.path}")
+    # Update stored state every ~100 events
+    if commit.seq % 100 == 0:
+        cursor.value = commit.seq
+        if commit.seq % 1000 == 0:
+            if update_cursor_in_database:
+                db.connect(reuse_if_open=True)
+                SubscriptionState.update(cursor=commit.seq).where(
+                    SubscriptionState.service == SERVICE_DID
+                ).execute()
+                db.close()
+            else:
+                logger.info(f"Cursor: {commit.seq}")
 
-        if op.action == "update":
-            # not supported yet
-            continue
-
-        if op.action == "create" and car is not None:
-            if not op.cid:
-                continue
-
-            create_info = {"uri": str(uri), "cid": str(op.cid), "author": commit.repo}
-
-            record_raw_data = car.blocks.get(op.cid)
-            if not record_raw_data:
-                continue
-
-            record = models.get_or_create(record_raw_data, strict=False)
-            if uri.collection == models.ids.AppBskyFeedPost and models.is_record_type(
-                record,  # type: ignore
-                models.ids.AppBskyFeedPost,
-            ):
-                operation_by_type["posts"]["created"].append(
-                    {"record": record, **create_info}
-                )
-
-            # The following types of event don't need to be tracked by the feed right now, and are removed.
-            # elif uri.collection == ids.AppBskyFeedLike and is_record_type(record, ids.AppBskyFeedLike):
-            #     operation_by_type['likes']['created'].append({'record': record, **create_info})
-            # elif uri.collection == ids.AppBskyFeedRepost and is_record_type(record, ids.AppBskyFeedRepost):
-            #     operation_by_type['reposts']['created'].append({'record': record, **create_info})
-            # elif uri.collection == ids.AppBskyGraphFollow and is_record_type(record, ids.AppBskyGraphFollow):
-            #     operation_by_type['follows']['created'].append({'record': record, **create_info})
-
-        if op.action == "delete":
-            if uri.collection == models.ids.AppBskyFeedPost:
-                operation_by_type["posts"]["deleted"].append({"uri": str(uri)})
-
-            # The following types of event don't need to be tracked by the feed right now.
-            # elif uri.collection == ids.AppBskyFeedLike:
-            #     operation_by_type['likes']['deleted'].append({'uri': str(uri)})
-            # elif uri.collection == ids.AppBskyFeedRepost:
-            #     operation_by_type['reposts']['deleted'].append({'uri': str(uri)})
-            # elif uri.collection == ids.AppBskyGraphFollow:
-            #     operation_by_type['follows']['deleted'].append({'uri': str(uri)})
-
-    return operation_by_type
+    # Notify the manager process of either a) a new post, or b) that we're done with
+    # this commit
+    return new_posts
 
 
 def apply_commit(
@@ -80,8 +53,7 @@ def apply_commit(
     valid_accounts: set,
     existing_posts: set,
 ) -> list:
-    """Applies the operations in a commit based on which ones are necessary to process.
-    """
+    """Applies the operations in a commit based on which ones are necessary to process."""
     ops = _get_ops_by_type(commit)
     cursor = commit.seq
 
@@ -149,3 +121,68 @@ def apply_commit(
     if not posts_to_create:
         return []
     return [post["uri"] for post in posts_to_create]
+
+
+def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict:  # noqa: C901
+    """Sorts all commits/operations by type into a convenient to process dictionary."""
+    operation_by_type = {
+        "posts": {"created": [], "deleted": []},
+        "reposts": {"created": [], "deleted": []},
+        "likes": {"created": [], "deleted": []},
+        "follows": {"created": [], "deleted": []},
+    }
+
+    # Handle occasional empty commit (not in ATProto spec but seems to happen sometimes.
+    # Can be a blank binary string sometimes, for no reason)
+    if not commit.blocks:
+        return operation_by_type
+
+    car = CAR.from_bytes(commit.blocks)  # type: ignore
+
+    for op in commit.ops:
+        uri = AtUri.from_str(f"at://{commit.repo}/{op.path}")
+
+        if op.action == "update":
+            # not supported yet
+            continue
+
+        if op.action == "create" and car is not None:
+            if not op.cid:
+                continue
+
+            create_info = {"uri": str(uri), "cid": str(op.cid), "author": commit.repo}
+
+            record_raw_data = car.blocks.get(op.cid)
+            if not record_raw_data:
+                continue
+
+            record = models.get_or_create(record_raw_data, strict=False)
+            if uri.collection == models.ids.AppBskyFeedPost and models.is_record_type(
+                record,  # type: ignore
+                models.ids.AppBskyFeedPost,
+            ):
+                operation_by_type["posts"]["created"].append(
+                    {"record": record, **create_info}
+                )
+
+            # The following types of event don't need to be tracked by the feed right now, and are removed.
+            # elif uri.collection == ids.AppBskyFeedLike and is_record_type(record, ids.AppBskyFeedLike):
+            #     operation_by_type['likes']['created'].append({'record': record, **create_info})
+            # elif uri.collection == ids.AppBskyFeedRepost and is_record_type(record, ids.AppBskyFeedRepost):
+            #     operation_by_type['reposts']['created'].append({'record': record, **create_info})
+            # elif uri.collection == ids.AppBskyGraphFollow and is_record_type(record, ids.AppBskyGraphFollow):
+            #     operation_by_type['follows']['created'].append({'record': record, **create_info})
+
+        if op.action == "delete":
+            if uri.collection == models.ids.AppBskyFeedPost:
+                operation_by_type["posts"]["deleted"].append({"uri": str(uri)})
+
+            # The following types of event don't need to be tracked by the feed right now.
+            # elif uri.collection == ids.AppBskyFeedLike:
+            #     operation_by_type['likes']['deleted'].append({'uri': str(uri)})
+            # elif uri.collection == ids.AppBskyFeedRepost:
+            #     operation_by_type['reposts']['deleted'].append({'uri': str(uri)})
+            # elif uri.collection == ids.AppBskyGraphFollow:
+            #     operation_by_type['follows']['deleted'].append({'uri': str(uri)})
+
+    return operation_by_type

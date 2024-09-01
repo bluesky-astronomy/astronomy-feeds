@@ -7,7 +7,7 @@ import multiprocessing
 import logging
 import time
 from astrofeed_firehose.firehose_client import run_client
-from astrofeed_firehose.commit_processor import run_commit_processor_multithreaded
+from astrofeed_firehose.commit_processor import run_commit_processor
 
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def _start_post_worker(cursor, receiver, latest_worker_event_time):
     """Starts the post processing worker."""
     logger.info("Starting new post processing worker...")
     post_worker = multiprocessing.Process(
-        target=run_commit_processor_multithreaded,
+        target=run_commit_processor,
         args=(receiver, cursor, latest_worker_event_time),
         kwargs=dict(update_cursor_in_database=True, n_workers=CPU_COUNT),  # CPU_COUNT
         name="Commit processing manager",
