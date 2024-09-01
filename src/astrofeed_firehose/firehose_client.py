@@ -3,7 +3,6 @@ import logging
 from multiprocessing.sharedctypes import Synchronized
 from multiprocessing.connection import Connection
 import time
-from unittest import findTestCases
 from atproto.exceptions import FirehoseError
 from atproto import FirehoseSubscribeReposClient
 from atproto import firehose_models
@@ -11,7 +10,6 @@ from atproto import models
 from atproto_client.models.common import XrpcError
 from astrofeed_lib.config import SERVICE_DID
 from astrofeed_lib.database import SubscriptionState
-import comm
 
 
 logger = logging.getLogger(__name__)
