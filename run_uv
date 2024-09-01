@@ -1,0 +1,9 @@
+#!/bin/bash
+echo "Starting astrofeed-firehose..."
+
+while true
+do
+uv run python -m astrofeed_firehose
+echo "Process crashed! Restarting..."
+sleep 1
+done
