@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "Starting astrofeed-firehose..."
+
+export FIREHOSE_WORKER_COUNT=6
+while true
+do
+python -m astrofeed_firehose
+echo "Process crashed! Restarting..."
+sleep 1
+done
