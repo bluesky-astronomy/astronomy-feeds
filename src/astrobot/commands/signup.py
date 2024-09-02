@@ -12,7 +12,7 @@ from astrobot import data
 
 from ._base import MultiStepCommand
 from ..post import send_post, send_thread
-from atproto import Client, models, client_utils
+from atproto import Client, models, client_utils, IdResolver
 from ..notifications import MentionNotification, LikeNotification, ReplyNotification
 from ..moderation import MODERATORS, signup_user
 from typing import Callable
@@ -67,11 +67,9 @@ def _execute_rules_sent(command: SignupCommand, client: Client):
             root_post=command.notification.root_ref,
             parent_post=command.notification.parent_ref,
         )
-        new_bot_action(
-            command, latest_cid=parent.cid, latest_uri=parent.uri
-        )
+        new_bot_action(command, latest_cid=parent.cid, latest_uri=parent.uri)
         return
-    
+
     # Otherwise, start the process!
     root, parent = send_thread(
         client,
@@ -191,10 +189,9 @@ def _execute_complete(
         )
 
     # Get the original account's handle for nice formatting reasons + db reasons
-    response = client.com.atproto.repo.describe_repo(
-        params={"repo": command.notification.action.did}
+    handle = (
+        IdResolver(timeout=30).did.resolve(command.notification.action.did).get_handle()
     )
-    handle = response["handle"]
 
     # Dynamically make a first post that includes their name
     first_post = [
