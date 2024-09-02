@@ -22,7 +22,7 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
-  "astrofeed_lib @ git+https://github.com/bluesky-astronomy/astrofeed-lib.git @ 93cdff2",
+  "astrofeed_lib @ https://github.com/bluesky-astronomy/astrofeed-lib/archive/0.0.2.zip",
   "uvloop>=0.20"
 ]
 
