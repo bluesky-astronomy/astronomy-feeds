@@ -3,7 +3,7 @@ name = "astrofeed_lib"
 version = "0.0.1"
 description = "Common functions for working with the Astronomy feeds, including the database and feed spec."  # Optional
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12,<3.13"
 license = {file = "LICENSE"}
 keywords = ["bluesky", "astronomy"]
 authors = [
@@ -18,14 +18,15 @@ classifiers = [
   "Topic :: Software Development :: Build Tools",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
   "peewee>=3.16.2,<4.0",
   "pymysql>=1.1.0,<2.0",  # If using a MySQL database
-  "atproto==0.0.48",
-  "emoji>=2.8.0,<3.0"
+  "atproto==0.0.52",
+  "emoji>=2.8.0,<3.0",
+  "websockets>=13.0"  # Has a faster async implementation than others
 ]
 
 [project.urls]
