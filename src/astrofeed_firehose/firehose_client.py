@@ -11,7 +11,7 @@ from atproto import models
 from atproto_client.models.common import XrpcError
 from astrofeed_lib.config import SERVICE_DID
 from astrofeed_lib.database import SubscriptionState
-import asyncio
+import uvloop
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ def run_client(
     start_cursor: int | None = None,
     base_uri: str = "wss://bsky.network/xrpc",
 ):
-    asyncio.run(
+    uvloop.run(
         run_client_async(
             cursor, pipe, firehose_time, start_cursor=start_cursor, base_uri=base_uri
         )
