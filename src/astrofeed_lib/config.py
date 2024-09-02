@@ -25,10 +25,27 @@ FEED_URI = "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/"
 # won't match #spacecraft, but it would if it was in the emoji section)
 FEED_TERMS = {
     # "EXAMPLE": {"emoji": [], "words": []},
+    # MAIN FEEDS
     "all": None,
     "astro": {"emoji": ["🔭"], "words": ["#astro", "#astronomy"]},
-    "exoplanets": {"emoji": ["🪐"], "words": ["#exoplanet", "#exoplanets"]},
     "astrophotos": {"emoji": [], "words": ["#astrophoto", "#astrophotos", "#astrophotography"]},
+    
+    # ASTRONOMY TOPICS
+    # "cosmology": {"emoji": [], "words": ["#cosmology"]},
+    "exoplanets": {"emoji": ["🪐"], "words": ["#exoplanet", "#exoplanets"]},
+    # "extragalactic": {"emoji": [], "words": ["#extragalactic"]},
+    # "highenergy": {"emoji": [], "words": ["#highenergyastro"]},
+    # "instrumentation": {"emoji": [], "words": ["#instrumentation"]},
+    # "methods": {"emoji": [], "words": ["#astromethods"]},
+    # "milkyway": {"emoji": [], "words": ["#milkyway"]},
+    # "planetary": {"emoji": [], "words": ["#planetaryscience", "#planetsci"]},
+    # "radio": {"emoji": [], "words": ["#radioastronomy", "#radioastro"]},
+    # "solar": {"emoji": [], "words": ["#solarastronomy", "#solarastro", "#thesun"]},
+    # "stellar": {"emoji": [], "words": ["#stars", "#stellarastrononomy", "#stellarastro"]},
+
+    # ASTRONOMY / OTHER
+    # "history": {"emoji": [], "words": ["#astrohistory"]},
+    # "questions": {"emoji": [], "words": ["#askanastronomer"]},
 }
 
 # Dict containing all feeds *to be published*! key:value pairs of the name as published and internal (short) name.
