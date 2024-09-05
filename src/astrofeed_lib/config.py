@@ -44,7 +44,8 @@ FEED_TERMS = {
     # "stellar": {"emoji": [], "words": ["#stars", "#stellarastrononomy", "#stellarastro"]},
 
     # ASTRONOMY / OTHER
-    # "history": {"emoji": [], "words": ["#astrohistory"]},
+    # "education": {"emoji": [], "words": ["#astroeducation", "#astroedu"]},
+    # "history": {"emoji": [], "words": ["#astrohistory", "#historyofastronomy"]},
     # "questions": {"emoji": [], "words": ["#askanastronomer"]},
 }
 
