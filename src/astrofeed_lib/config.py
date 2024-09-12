@@ -31,21 +31,21 @@ FEED_TERMS = {
     "astrophotos": {"emoji": [], "words": ["#astrophoto", "#astrophotos", "#astrophotography"]},
     
     # ASTRONOMY TOPICS
-    # "cosmology": {"emoji": [], "words": ["#cosmology"]},
+    "cosmology": {"emoji": [], "words": ["#cosmology"]},
     "exoplanets": {"emoji": ["🪐"], "words": ["#exoplanet", "#exoplanets"]},
-    # "extragalactic": {"emoji": [], "words": ["#extragalactic"]},
-    # "highenergy": {"emoji": [], "words": ["#highenergyastro"]},
-    # "instrumentation": {"emoji": [], "words": ["#instrumentation"]},
-    # "methods": {"emoji": [], "words": ["#astromethods"]},
-    # "milkyway": {"emoji": [], "words": ["#milkyway"]},
-    # "planetary": {"emoji": [], "words": ["#planetaryscience", "#planetsci"]},
-    # "radio": {"emoji": [], "words": ["#radioastronomy", "#radioastro"]},
+    "extragalactic": {"emoji": [], "words": ["#extragalactic"]},
+    "highenergy": {"emoji": [], "words": ["#highenergyastro"]},
+    "instrumentation": {"emoji": [], "words": ["#instrumentation"]},
+    "methods": {"emoji": [], "words": ["#astromethods", "#astrocoding", "#astrocode"]},
+    "milkyway": {"emoji": [], "words": ["#milkyway"]},
+    "planetary": {"emoji": [], "words": ["#planetaryscience", "#planetsci"]},
+    "radio": {"emoji": [], "words": ["#radioastronomy", "#radioastro"]},
     # "solar": {"emoji": [], "words": ["#solarastronomy", "#solarastro", "#thesun"]},
-    # "stellar": {"emoji": [], "words": ["#stars", "#stellarastrononomy", "#stellarastro"]},
+    "stellar": {"emoji": [], "words": ["#stars", "#stellarastrononomy", "#stellarastro"]},
 
     # ASTRONOMY / OTHER
-    # "education": {"emoji": [], "words": ["#astroeducation", "#astroedu"]},
-    # "history": {"emoji": [], "words": ["#astrohistory", "#historyofastronomy"]},
+    "education": {"emoji": [], "words": ["#astroeducation", "#astroedu"]},
+    "history": {"emoji": [], "words": ["#astrohistory", "#historyofastronomy"]},
     # "questions": {"emoji": [], "words": ["#askanastronomer"]},
 }
 

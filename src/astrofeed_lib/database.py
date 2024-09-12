@@ -24,10 +24,29 @@ class Post(BaseModel):
     cid = peewee.CharField(index=True)
     author = peewee.CharField(index=True)
     text = peewee.CharField()
+
+    # Feed booleans
+    # Main feeds
     feed_all = peewee.BooleanField(default=False, index=True)
     feed_astro = peewee.BooleanField(default=False, index=True)
-    feed_exoplanets = peewee.BooleanField(default=False, index=True)
     feed_astrophotos = peewee.BooleanField(default=False, index=True)
+    
+    # Astronomy topics
+    feed_cosmology = peewee.BooleanField(default=False, index=True)
+    feed_exoplanets = peewee.BooleanField(default=False, index=True)
+    feed_extragalactic = peewee.BooleanField(default=False, index=True)
+    feed_highenergy = peewee.BooleanField(default=False, index=True)
+    feed_instrumentation = peewee.BooleanField(default=False, index=True)
+    feed_methods = peewee.BooleanField(default=False, index=True)
+    feed_milkyway = peewee.BooleanField(default=False, index=True)
+    feed_planetary = peewee.BooleanField(default=False, index=True)
+    feed_radio = peewee.BooleanField(default=False, index=True)
+    feed_stellar = peewee.BooleanField(default=False, index=True)
+
+    # Astrononmy / other
+    feed_education = peewee.BooleanField(default=False, index=True)
+    feed_history = peewee.BooleanField(default=False, index=True)
+
     # feed_moderation = peewee.BooleanField(default=False)
     # reply_parent = peewee.CharField(null=True, default=None)
     # reply_root = peewee.CharField(null=True, default=None)
