@@ -59,6 +59,23 @@ class CachedAccountQuery(AccountQuery):
             self.query_database()
             self.last_query_time = time.time()
         return self.accounts  # type: ignore (because pylance is a silly thing here. this should always be a set)
+    
+
+class CachedModeratorList(CachedAccountQuery):
+    def account_query(self):
+        return get_moderators()
+    
+    def get_accounts_above_level(self, minimum_level: int) -> set[str]:
+        """Wraps get_accounts and returns only moderators with the desired minimum
+        level.
+        """
+        return {did for did, level in self.get_accounts() if level >= minimum_level}
+
+
+def get_moderators() -> dict[str, int]:
+    """Returns a set containing the DIDs of all current moderators."""
+    query = Account.select(Account.did).where(Account.mod_level >= 1)  # type: ignore
+    return {user.did: user.mod_level for user in query.execute()}
 
 
 async def fetch_handle(client, handle):
