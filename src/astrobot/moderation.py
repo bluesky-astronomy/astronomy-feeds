@@ -18,7 +18,7 @@ class CachedModeratorList(CachedAccountQuery):
 
 
 # Setup list of moderators
-MODERATORS = CachedModeratorList()
+MODERATORS = CachedModeratorList(query_interval=60)
 
 
 def get_moderators() -> dict[str, int]:
