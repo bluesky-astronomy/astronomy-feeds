@@ -6,6 +6,7 @@ from astrobot.database import new_mod_action, new_signup
 
 
 class CachedModeratorList(CachedAccountQuery):
+    """#TODO: migrate to astrofeed_lib version"""
     def account_query(self):
         return get_moderators()
     
