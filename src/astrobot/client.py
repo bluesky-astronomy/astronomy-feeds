@@ -8,6 +8,8 @@ def get_client(
 ) -> tuple[Client, str]:
     """A standard function for getting a valid client - already logged in and 
     ready to go =)
+
+    # Todo: migrate to using the astrofeed_lib version of this method
     """       
     # Set up client and set it up to save its session incrementally
     client = Client()
