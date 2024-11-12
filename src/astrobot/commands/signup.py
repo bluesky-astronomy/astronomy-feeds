@@ -20,7 +20,8 @@ from typing import Callable
 
 RULES_POSTS = [
     "Thank you for your interest in signing up to the Astronomy feeds! There are a few steps to this that I'll guide you through in this thread.\n\nThis bot is experimental; if you have any issues, please tag @emily.space, the bot's maintainer.",
-    "Firstly, you need to agree to the rules below:\n\nIf you agree to follow them, then reply to this post with a 'yes'.",
+    "Firstly, please note that you only need to sign up to the feed if you'd like to post to it. Anyone on Bluesky can read the feed!\n\nIn addition, you must be a professional, amateur, or student astronomer to post to the feeds. (It's also ok if you left academia but still want to sign up!)",
+    "If the above is ok and you still want to sign up, then you'll need to agree to the feed rules below:\n\nIf you agree to follow them, then reply to this post with a 'yes'.",
 ]
 
 rules_image_file = resources.files(data) / "rules.png"
@@ -212,7 +213,6 @@ def _execute_complete(
     )
 
     # Sign them up
-    # TODO: uncomment when command is reliable enough
     signup_user(
         command.notification.action.did,
         command.notification.author.did,
