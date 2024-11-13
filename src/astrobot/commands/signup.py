@@ -31,7 +31,7 @@ with rules_image_file.open("rb") as f:
 RULES_IMAGES = {2: rules_image}
 
 RULES_IMAGES_ALTS = {
-    1: """Astronomy Feed Rules
+    2: """Astronomy Feed Rules
 
 Anyone posting to the Astronomy feeds must follow the rules below:
 
