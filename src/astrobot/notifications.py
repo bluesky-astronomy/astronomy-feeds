@@ -52,6 +52,14 @@ def update_last_seen_time(client: Client, current_time: str):
     client.app.bsky.notification.update_seen({"seen_at": current_time})
 
 
+def get_words(text):
+    # Remove linebreaks and upper case letters
+    text = text.replace("\n", " ").lower()
+    
+    # Split into words. Groups of more than 1 space are removed by `if len(w) > 0`.
+    return [w for w in text.split(" ") if len(w) > 0]
+
+
 class BaseNotification:
     def match(self, botactions):
         """Matches a notification against a potential botaction."""
@@ -75,7 +83,7 @@ class MentionNotification(BaseNotification):
         self.parent_ref, self.root_ref = _get_strong_refs(notification)
 
         # Also setup all of the words in the command
-        words = [w.lower() for w in self.text.replace("\n", " ").split(" ")]
+        words = get_words(self.text)
         
         mention_index = words.index("@" + HANDLE)
         self.words = words[mention_index + 1 :]
@@ -126,7 +134,7 @@ class ReplyNotification(BaseNotification):
         self.parent_ref, self.root_ref = _get_strong_refs(notification)
         self.action = None
 
-        self.words = [w.lower() for w in self.text.replace("\n", " ").split(" ")]
+        self.words = get_words(self.text)
 
         self.notification = notification  # full notification, shouldn't need accessing
 
