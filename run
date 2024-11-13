@@ -1,3 +1,5 @@
 #!/bin/bash
 echo "Starting astrobot..."
-python -m astrobot
+# python -m astrobot
+echo "Bot encountered an unhandled exception. Sleeping to avoid spam if it's bad..."
+sleep 1d
