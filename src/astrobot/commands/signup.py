@@ -28,7 +28,7 @@ rules_image_file = resources.files(data) / "rules.png"
 with rules_image_file.open("rb") as f:
     rules_image = f.read()
 
-RULES_IMAGES = {1: rules_image}
+RULES_IMAGES = {2: rules_image}
 
 RULES_IMAGES_ALTS = {
     1: """Astronomy Feed Rules
