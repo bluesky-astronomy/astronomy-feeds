@@ -85,8 +85,13 @@ class MentionNotification(BaseNotification):
         # Also setup all of the words in the command
         words = get_words(self.text)
         
-        mention_index = words.index("@" + HANDLE)
-        self.words = words[mention_index + 1 :]
+        try:
+            mention_index = words.index("@" + HANDLE)
+        except ValueError:
+            print(f"Mention not found in post with text: {self.text}")
+            self.words = ["ValueError_No_Mention_Found"]
+        else:
+            self.words = words[mention_index + 1 :]
 
         self.notification = notification  # full notification, shouldn't need accessing
 
