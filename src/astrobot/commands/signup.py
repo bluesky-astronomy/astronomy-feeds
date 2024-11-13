@@ -168,8 +168,8 @@ COMPLETE_POSTS = [
 COMPLETE_QUOTES = {
     # @emily.space thread of all feeds, with details:
     1: models.ComAtprotoRepoStrongRef.Main(
-        uri="at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.post/3kkri5olz3526",
-        cid="bafyreicgwczccg7sfn33hd7mydr4xwgmam57nqzjruaxmob5pa7x76ivea",
+        uri="at://did:plc:xy2zorw2ys47poflotxthlzg/app.bsky.feed.post/3lau3lw3mk22b",
+        cid="bafyreihe2ooso6qrhxs43wvd3bqiq4hai2qkcz6n2yerfd5qgoiqcjavn4",
     )
 }
 
