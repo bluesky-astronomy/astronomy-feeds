@@ -54,7 +54,7 @@ class Post(BaseModel):
 
 class SubscriptionState(BaseModel):
     service = peewee.CharField(unique=True)
-    cursor = peewee.IntegerField()
+    cursor = peewee.BigIntegerField()
 
 
 class Account(BaseModel):
