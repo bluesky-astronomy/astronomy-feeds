@@ -1,16 +1,16 @@
 [project]
-name = "astrofeed_firehose"  # Required
-version = "0.0.1"  # Required
+name = "astrofeed_firehose" # Required
+version = "0.0.1" # Required
 description = "The Bluesky firehose consumer for the Astronomy feeds."
 readme = "README.md" # Optional
 requires-python = ">=3.12,<3.13"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 keywords = ["bluesky", "astronomy"]
 authors = [
-  {name = "Emily L. Hunt", email = "emily.hunt.physics@gmail.com" } # Optional
+  { name = "Emily L. Hunt", email = "emily.hunt.physics@gmail.com" }, # Optional
 ]
 maintainers = [
-  {name = "Emily L. Hunt", email = "emily.hunt.physics@gmail.com" } # Optional
+  { name = "Emily L. Hunt", email = "emily.hunt.physics@gmail.com" }, # Optional
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -21,10 +21,10 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = [
-  "astrofeed_lib @ https://github.com/bluesky-astronomy/astrofeed-lib/archive/0.0.4.zip",
-  "uvloop>=0.20"
-]
+dependencies = ["astrofeed_lib", "uvloop>=0.20"]
+
+[tool.uv.sources]
+astrofeed_lib = { git = "https://github.com/bluesky-astronomy/astrofeed-lib", branch = "main" }
 
 [project.urls]
 "Homepage" = "https://astronomy.blue/"
