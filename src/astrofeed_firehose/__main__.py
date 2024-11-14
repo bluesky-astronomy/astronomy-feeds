@@ -27,7 +27,7 @@ if CURSOR_OVERRIDE is not None:
 
 def _create_shared_resources():
     """Creates resources that are shared between subprocesses."""
-    cursor = multiprocessing.Value("i", 0)
+    cursor = multiprocessing.Value("L", 0)
     client_time = multiprocessing.Value("d", time.time())
     post_time = multiprocessing.Value("d", time.time())
     receiver, pipe = multiprocessing.Pipe(duplex=False)
