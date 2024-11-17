@@ -1,30 +1,11 @@
 """Moderation-related actions."""
 
-from astrofeed_lib.accounts import CachedAccountQuery
-from astrofeed_lib.database import Account
+from astrofeed_lib.accounts import CachedModeratorList
 from astrobot.database import new_mod_action, new_signup
-
-
-class CachedModeratorList(CachedAccountQuery):
-    """#TODO: migrate to astrofeed_lib version"""
-    def account_query(self):
-        return get_moderators()
-    
-    def get_accounts_above_level(self, minimum_level: int) -> set[str]:
-        """Wraps get_accounts and returns only moderators with the desired minimum
-        level.
-        """
-        return {did for did, level in self.get_accounts() if level >= minimum_level}
 
 
 # Setup list of moderators
 MODERATORS = CachedModeratorList(query_interval=60)
-
-
-def get_moderators() -> dict[str, int]:
-    """Returns a set containing the DIDs of all current moderators."""
-    query = Account.select(Account.did).where(Account.mod_level >= 1)
-    return {user.did: user.mod_level for user in query.execute()}
 
 
 def ban_user(did: str, did_mod: str, reason: str):
