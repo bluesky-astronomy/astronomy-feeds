@@ -42,7 +42,7 @@ class UnrecognizedCommand(Command):
 
         new_bot_action(self)
 
-    def execute_no_permissions(self, client: Client):
+    def execute_no_permissions(self, client: Client, reason: str):
         print(
             "Not sending unrecognized command as user is a moderator, and may need to "
             "mention the bot to e.g. point people towards it."
