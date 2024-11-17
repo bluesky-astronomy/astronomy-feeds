@@ -14,6 +14,7 @@ unrecognized_command_text = "Sorry, but I don't recognize that command."
 
 class UnrecognizedCommand(Command):
     command = "unrecognized"
+    level = -1
 
     def __init__(self, notification: MentionNotification, extra=""):
         self.notification = notification
@@ -40,3 +41,9 @@ class UnrecognizedCommand(Command):
         )
 
         new_bot_action(self)
+
+    def execute_no_permissions(self, client: Client):
+        print(
+            "Not sending unrecognized command as user is a moderator, and may need to "
+            "mention the bot to e.g. point people towards it."
+        )
