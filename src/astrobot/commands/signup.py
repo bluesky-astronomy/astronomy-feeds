@@ -14,7 +14,7 @@ from ._base import MultiStepCommand
 from ..post import send_post, send_thread
 from atproto import Client, models, client_utils, IdResolver
 from ..notifications import MentionNotification, LikeNotification, ReplyNotification
-from ..moderation import MODERATORS, signup_user
+from ..moderation import MODERATORS, signup_user, cancel_signup
 from typing import Callable
 
 
@@ -224,6 +224,20 @@ def _execute_complete(
     update_bot_action(command, "complete", parent.uri, parent.cid)
 
 
+def _execute_cancel(command: SignupCommand, client: Client, reply_in_thread: bool = True):
+    print(f"SignupCommand: cancelling signup {command.notification.author.handle}")
+    root, parent = send_thread(
+        client,
+        ["Signup request cancelled."],
+        #quotes=COMPLETE_QUOTES,
+        root_post=command.notification.root_ref,
+        parent_post=command.notification.parent_ref,
+    )
+
+    update_bot_action(command, "complete", parent.uri, parent.cid)
+    cancel_signup(command.notification.action.did, command.notification.author.did)
+
+
 class SignupCommand(MultiStepCommand):
     """Sign up a user to the feeds.
 
@@ -288,9 +302,12 @@ class SignupCommand(MultiStepCommand):
         if stage == "get_description" and is_author and is_reply:
             return SignupCommand(notification, _execute_get_moderator)
 
-        # Check to see if moderator liked the bot's previous post
-        if stage == "get_moderator" and is_moderator and is_like:
-            return SignupCommand(notification, _execute_complete)
+        # Check to see if moderator liked or replied to the bot's previous post
+        if stage == "get_moderator" and is_moderator:
+            if is_like:
+                return SignupCommand(notification, _execute_complete)
+            if notification.words[0] == "cancel":
+                return SignupCommand(notification, _execute_cancel)
 
         print(
             f"Attempted to match a notification to command {MultiStepCommand.command}, "

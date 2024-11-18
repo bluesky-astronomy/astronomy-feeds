@@ -31,3 +31,9 @@ def signup_user(did: str, did_mod: str, handle: str = "undefined",  valid: bool 
     print(f"Signing up {handle} to the feeds. Mod: {did_mod}")
     new_mod_action(did_mod, did, "signup")
     new_signup(did, handle, valid=valid)
+
+
+def cancel_signup(did: str, did_mod: str):
+    print(f"Cancelling signup for user {did}. Mod: {did_mod}")
+    new_mod_action(did_mod, did, "signup_cancelled")
+
