@@ -96,7 +96,11 @@ def get_posts_signup_feed(cursor: Optional[str], limit: int) -> dict:
         BotActions.select(
             BotActions.indexed_at, BotActions.latest_uri, BotActions.latest_cid
         )
-        .where(BotActions.complete == False, BotActions.type == "signup")  # noqa: E712
+        .where(
+            BotActions.complete == False,  # noqa: E712
+            BotActions.type == "signup",
+            BotActions.stage == "get_moderator",
+        )
         .order_by(BotActions.indexed_at.desc())
         .limit(limit)
     )
