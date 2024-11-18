@@ -78,6 +78,7 @@ class BotActions(BaseModel):
     latest_cid = peewee.CharField(null=False , default="")
     complete = peewee.BooleanField(null=False, default=False, index=True)
     authorized = peewee.BooleanField(null=False, index=True, default=True)
+    checked_at = peewee.DateTimeField(null=False, index=True, default=datetime.utcnow)
 
 
 class ModActions(BaseModel):
