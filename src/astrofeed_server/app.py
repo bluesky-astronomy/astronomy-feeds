@@ -37,11 +37,14 @@ def index():
 
     for uri, name in config.FEED_URIS.items():
         link = f"<li><a href=\"/xrpc/app.bsky.feed.getFeedSkeleton?feed={uri}\">{name}</a>"
-        if config.FEED_TERMS[name] is None:
-            terms = "all posts by validated users"
+        if name in config.FEED_TERMS:
+            if config.FEED_TERMS[name] is None:
+                terms = "all posts by validated users"
+            else:
+                terms = ', '.join(config.FEED_TERMS[name]["emoji"] + config.FEED_TERMS[name]["words"])
+            feed_urls.append(link + f" ({terms})</li>")
         else:
-            terms = ', '.join(config.FEED_TERMS[name]["emoji"] + config.FEED_TERMS[name]["words"])
-        feed_urls.append(link + f" ({terms})</li>")
+            feed_urls.append(link + " (feed for moderation purposes)</li>")
 
     feed_urls = "\n".join(feed_urls)
 
