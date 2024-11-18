@@ -49,13 +49,19 @@ FEED_TERMS = {
     # "questions": {"emoji": [], "words": ["#askanastronomer"]},
 }
 
+# These are a number of feeds that aren't from the firehose but are hosted on the same
+# server.
+NON_FIREHOSE_FEEDS = {
+    "signup": {"emoji": [], "words": ["", ""]}
+}
+
 # Dict containing all feeds *to be published*! key:value pairs of the name as published and internal (short) name.
 # The short name is used throughout databases. The name as published is the URI where the feed is.
 # The actual inner workings of feeds are housed in feeds.py. This variable specifies which feeds the firehose and
 # server should try to host, however.
 FEED_NAMING_SCHEME_RULEBREAKERS = {"all": "astro-all"}
 FEED_URIS = {}
-for a_feed in FEED_TERMS.keys():
+for a_feed in (FEED_TERMS | NON_FIREHOSE_FEEDS).keys():
     if a_feed in FEED_NAMING_SCHEME_RULEBREAKERS:
         key = FEED_URI + FEED_NAMING_SCHEME_RULEBREAKERS[a_feed]
     else:
