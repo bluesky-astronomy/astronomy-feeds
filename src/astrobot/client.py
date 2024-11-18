@@ -5,7 +5,7 @@ from .config import HANDLE, PASSWORD
 
 def get_client(
     reuse_session: bool = True
-) -> tuple[Client, str]:
+) -> Client:
     """A standard function for getting a valid client - already logged in and 
     ready to go =)
 

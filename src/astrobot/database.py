@@ -1,6 +1,6 @@
 """A collection of all database actions for things the bot needs to do."""
 
-import datetime
+from datetime import datetime, timedelta, timezone
 import warnings
 from astrofeed_lib.database import BotActions, ModActions, db, Account
 
@@ -23,7 +23,6 @@ def fetch_account_entry_for_did(did):
     return [x for x in Account.select().where(Account.did == did)]
 
 
-
 def new_bot_action(
     command,
     stage: str = "complete",
@@ -42,7 +41,6 @@ def new_bot_action(
         latest_uri = command.notification.parent_ref.uri
     if latest_cid is None:
         latest_cid = command.notification.parent_ref.uri
-
 
     db.connect(reuse_if_open=True)
     with db.atomic():
@@ -74,7 +72,7 @@ def update_bot_action(command, stage, latest_uri, latest_cid):
 
 
 def new_mod_action(
-    did_mod: str, did_user: str, action: str, expiry: None | datetime.datetime = None
+    did_mod: str, did_user: str, action: str, expiry: None | datetime = None
 ):
     """Register a new bot action in the database."""
     db.connect(reuse_if_open=True)
@@ -89,13 +87,13 @@ def new_signup(did, handle, valid=True):
     db.connect(reuse_if_open=True)
     # Last check to see if this account is already signed up - we won't add them again!
     account_entries = fetch_account_entry_for_did(did)
-    already_signed_up = any(
-        [account.is_valid for account in account_entries]
-    )
+    already_signed_up = any([account.is_valid for account in account_entries])
     if already_signed_up:
-        warnings.warn(f"Account {handle} is already signed up to the feeds! Unable to sign them up.")
+        warnings.warn(
+            f"Account {handle} is already signed up to the feeds! Unable to sign them up."
+        )
         return
-    
+
     # Sign up a previously not validated account
     if not already_signed_up and len(account_entries) > 0:
         entry = account_entries[0]
@@ -123,3 +121,26 @@ def get_outstanding_bot_actions(uris: None | list[str]) -> list:
         .where(BotActions.complete == False, BotActions.latest_uri << uris)  # noqa: E712
         .execute()
     ]
+
+
+def get_candidate_stale_bot_actions(types: list, limit: int = 25, age: int = 28):
+    """Fetches all candidate stale bot actions, i.e. those that haven't had anything
+    happen in a while.
+    """
+    return (
+        BotActions.select()
+        .where(
+            BotActions.type << types,
+            BotActions.complete == False,  # noqa: E712
+            BotActions.indexed_at > datetime.now() - timedelta(days=age),
+        )
+        .order_by(BotActions.checked_at)
+        .limit(limit)
+    )
+
+
+def update_checked_at_time_of_bot_actions(ids: list):
+    with db.atomic():
+        BotActions.update(checked_at=datetime.now(timezone.utc)).where(
+            BotActions.id << ids
+        ).execute()

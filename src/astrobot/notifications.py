@@ -1,9 +1,13 @@
 """Tools for handling and subclassing notifications."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from atproto import Client, models
 from atproto_client.models.app.bsky.notification.list_notifications import Notification
 from astrobot.post import get_post
+from astrobot.database import (
+    get_candidate_stale_bot_actions,
+    update_checked_at_time_of_bot_actions,
+)
 import warnings
 
 
@@ -48,6 +52,87 @@ def get_notifications(
     return all_notifications, current_time
 
 
+def get_notifications_from_stale_commands(
+    client: Client, commands_to_check: list, age: int = 120
+):
+    """Fetches replies and likes on up to 25 commands that may have turned stale, i.e.
+    those that we haven't had a notification for but where something may have happened
+    since.
+    """
+    actions_of_interest = get_candidate_stale_bot_actions(commands_to_check, age=age)
+    uris_of_interest = [x.latest_uri for x in actions_of_interest]
+    posts = client.get_posts(uris_of_interest).posts
+    posts = [post for post in posts if post.like_count > 0 or post.reply_count > 0]
+
+    notifications = []
+    for post in posts:
+        if post.reply_count > 0:
+            replies = client.get_post_thread(post.uri, depth=1).thread
+            if isinstance(replies, models.AppBskyFeedDefs.ThreadViewPost):
+                for reply in replies.replies:
+                    if isinstance(reply, models.AppBskyFeedDefs.ThreadViewPost):
+                        notifications.append(reply_to_reply_notification(reply))
+
+        if post.like_count > 0:
+            # Bluesky has a max of 100. We probably never need more than this anyway here.
+            likes = client.get_likes(post.uri, limit=100)
+            for like in likes.likes:
+                notifications.append(like_to_like_notification(like, post))
+
+    # Sort by bluesky index time (ascending)
+    notifications.sort(key=lambda x: x.indexed_at)
+
+    # Mark notifications as being done with
+    update_checked_at_time_of_bot_actions([action.id for action in actions_of_interest])
+
+    return notifications
+
+
+def basic_profile_view_to_profile_view(
+    profile: models.AppBskyActorDefs.ProfileViewBasic,
+) -> models.AppBskyActorDefs.ProfileView:
+    """Converts a ProfileViewBasic (which misses 'description' and 'indexed_at') to a
+    semi-complete ProfileView, missing those fields but with correct type.
+    """
+    return models.AppBskyActorDefs.ProfileView(
+        associated=profile.associated,
+        avatar=profile.avatar,
+        created_at=profile.created_at,
+        did=profile.did,
+        display_name=profile.display_name,
+        handle=profile.handle,
+        labels=profile.labels,
+        viewer=profile.viewer,
+    )
+
+
+def reply_to_reply_notification(reply):
+    return models.AppBskyNotificationListNotifications.Notification(
+        author=basic_profile_view_to_profile_view(reply.post.author),
+        cid=reply.post.cid,
+        indexed_at=reply.post.indexed_at,
+        is_read=False,
+        reason="reply",
+        record=reply.post.record,
+        uri=reply.post.uri,
+    )
+
+
+def like_to_like_notification(like, post):
+    return models.AppBskyNotificationListNotifications.Notification(
+        author=like.actor,
+        indexed_at=like.indexed_at,
+        is_read=False,
+        reason="like",
+        record=models.AppBskyFeedLike.Record(
+            created_at=like.created_at, subject=models.create_strong_ref(post)
+        ),
+        # CID and URI of the like record itself is unknown!
+        cid="unknown",
+        uri="unknown",
+    )
+
+
 def update_last_seen_time(client: Client, current_time: str):
     client.app.bsky.notification.update_seen({"seen_at": current_time})
 
@@ -55,7 +140,7 @@ def update_last_seen_time(client: Client, current_time: str):
 def get_words(text):
     # Remove linebreaks and upper case letters
     text = text.replace("\n", " ").lower()
-    
+
     # Split into words. Groups of more than 1 space are removed by `if len(w) > 0`.
     return [w for w in text.split(" ") if len(w) > 0]
 
@@ -84,7 +169,7 @@ class MentionNotification(BaseNotification):
 
         # Also setup all of the words in the command
         words = get_words(self.text)
-        
+
         try:
             mention_index = words.index("@" + HANDLE)
         except ValueError:
