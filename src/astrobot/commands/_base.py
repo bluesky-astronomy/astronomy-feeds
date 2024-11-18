@@ -49,7 +49,7 @@ class Command(ABC):
 
         if self.level < 0:
             if author_did in MODERATORS.get_accounts_above_level(self.level * -1):
-                return True
+                return f"Moderator level too high (max: {self.level * -1})"
             return False
 
         # Hence, must have level > 0 -> requires mod permissions
