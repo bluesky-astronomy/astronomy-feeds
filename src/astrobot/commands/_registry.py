@@ -80,3 +80,14 @@ class CommandRegistry:
             )
 
         return command.create_from_partial_step(notification)
+    
+    def list_commands(self):
+        return list(self._commands.keys())
+    
+    def list_multistep_commands(self):
+        command_names = []
+        for command_name, command in self._commands.items():
+            if issubclass(command, MultiStepCommand):
+                command_names.append(command_name)
+        return command_names
+
