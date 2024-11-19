@@ -17,18 +17,16 @@ def _process_commit(
     message, cursor, valid_accounts, existing_posts, update_cursor_in_database=True
 ):
     """Attempt to process a single commit. Returns a list of any new posts to add."""
-    # # Skip any commits that do not pass this model (which can occur sometimes)
-    # try:
-    #     commit = parse_subscribe_repos_message(message)
-    # except ModelError:
-    #     logger.exception("Unable to process a commit due to validation issue")
-    #     return []
+    # Skip any commits that do not pass this model (which can occur sometimes)
+    try:
+        commit = parse_subscribe_repos_message(message)
+    except ModelError:
+        logger.exception("Unable to process a commit due to validation issue")
+        return []
 
-    # # Final check that this is in fact a commit, and not e.g. a handle change
-    # if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
-    #     return []
-    # TODO: remove after doing checking of this in the async bit
-    commit = message
+    # Final check that this is in fact a commit, and not e.g. a handle change
+    if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
+        return []
 
     new_posts = apply_commit(commit, valid_accounts, existing_posts)
 
@@ -57,7 +55,6 @@ def apply_commit(
 ) -> list:
     """Applies the operations in a commit based on which ones are necessary to process."""
     ops = _get_ops_by_type(commit)
-
     cursor = commit.seq
 
     # See how many posts are valid
@@ -133,7 +130,6 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
         "reposts": {"created": [], "deleted": []},
         "likes": {"created": [], "deleted": []},
         "follows": {"created": [], "deleted": []},
-        "count": 0,
     }
 
     # Handle occasional empty commit (not in ATProto spec but seems to happen sometimes.
@@ -168,7 +164,6 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
                 operation_by_type["posts"]["created"].append(
                     {"record": record, **create_info}
                 )
-                operation_by_type["count"] += 1
 
             # The following types of event don't need to be tracked by the feed right now, and are removed.
             # elif uri.collection == ids.AppBskyFeedLike and is_record_type(record, ids.AppBskyFeedLike):
@@ -181,7 +176,6 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
         if op.action == "delete":
             if uri.collection == models.ids.AppBskyFeedPost:
                 operation_by_type["posts"]["deleted"].append({"uri": str(uri)})
-                operation_by_type["count"] += 1
 
             # The following types of event don't need to be tracked by the feed right now.
             # elif uri.collection == ids.AppBskyFeedLike:
