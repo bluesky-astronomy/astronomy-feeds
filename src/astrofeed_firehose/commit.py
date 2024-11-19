@@ -32,18 +32,18 @@ def _process_commit(
 
     new_posts = apply_commit(commit, valid_accounts, existing_posts)
 
-    # Update stored state every ~100 events
-    if commit.seq % 100 == 0:
-        cursor.value = commit.seq
-        if commit.seq % 1000 == 0:
-            if update_cursor_in_database:
-                db.connect(reuse_if_open=True)
-                SubscriptionState.update(cursor=commit.seq).where(
-                    SubscriptionState.service == SERVICE_DID
-                ).execute()
-                db.close()
-            else:
-                logger.info(f"Cursor: {commit.seq}")
+    # Update stored state every ~100 posts
+    if commit['cursor'] % 100 == 0:
+        cursor.value = commit['cursor']
+        # if commit['cursor'] % 100 == 0:
+        if update_cursor_in_database:
+            db.connect(reuse_if_open=True)
+            SubscriptionState.update(cursor=commit['cursor']).where(
+                SubscriptionState.service == SERVICE_DID
+            ).execute()
+            db.close()
+        else:
+            logger.info(f"Cursor: {commit['cursor']}")
 
     # Notify the manager process of either a) a new post, or b) that we're done with
     # this commit
@@ -51,14 +51,16 @@ def _process_commit(
 
 
 def apply_commit(
-    commit: models.ComAtprotoSyncSubscribeRepos.Commit,
+    commit: dict,  #models.ComAtprotoSyncSubscribeRepos.Commit,
     valid_accounts: set,
     existing_posts: set,
 ) -> list:
     """Applies the operations in a commit based on which ones are necessary to process."""
-    ops = _get_ops_by_type(commit)
-
-    cursor = commit.seq
+    # ops = _get_ops_by_type(commit)
+    # cursor = commit.seq
+    # TODO: REMOVE COMMENTED OUT BIT
+    ops = commit
+    cursor = ops['cursor']
 
     # See how many posts are valid
     posts_to_create = []
@@ -133,7 +135,8 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
         "reposts": {"created": [], "deleted": []},
         "likes": {"created": [], "deleted": []},
         "follows": {"created": [], "deleted": []},
-        "count": 0,
+        "has_ops": False,
+        "cursor": commit.seq
     }
 
     # Handle occasional empty commit (not in ATProto spec but seems to happen sometimes.
@@ -168,7 +171,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
                 operation_by_type["posts"]["created"].append(
                     {"record": record, **create_info}
                 )
-                operation_by_type["count"] += 1
+                operation_by_type["has_ops"] = True
 
             # The following types of event don't need to be tracked by the feed right now, and are removed.
             # elif uri.collection == ids.AppBskyFeedLike and is_record_type(record, ids.AppBskyFeedLike):
@@ -181,7 +184,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
         if op.action == "delete":
             if uri.collection == models.ids.AppBskyFeedPost:
                 operation_by_type["posts"]["deleted"].append({"uri": str(uri)})
-                operation_by_type["count"] += 1
+                operation_by_type["has_ops"] = True
 
             # The following types of event don't need to be tracked by the feed right now.
             # elif uri.collection == ids.AppBskyFeedLike:
