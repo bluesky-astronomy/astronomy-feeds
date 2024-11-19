@@ -59,8 +59,8 @@ def run_commit_processor(
 
     logger.info("All resources initialised. Beginning message sending process.")
 
-    # measurement_time = time.time() + measurement_interval
-    # total_ops = 0
+    measurement_time = time.time() + measurement_interval
+    total_ops = 0
 
     while True:
         # Wait for new firehose event (blocking)
@@ -71,9 +71,9 @@ def run_commit_processor(
         )
         _assign_message_to_process(available_connections, running_connections, message)
         current_time = _update_parent_watchdog(worker_time)
-        # total_ops, measurement_time = _write_ops_per_second_to_log(
-        #     measurement_interval, measurement_time, total_ops, current_time
-        # )
+        total_ops, measurement_time = _write_ops_per_second_to_log(
+            measurement_interval, measurement_time, total_ops, current_time
+        )
         next_account_update_time, next_post_update_time = _refresh_process_information(
             account_update_interval,
             post_update_interval,

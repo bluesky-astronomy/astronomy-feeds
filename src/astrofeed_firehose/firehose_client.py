@@ -34,10 +34,6 @@ def run_client(
     )
 
 
-measurement_time = time.time()
-total_ops = 0
-
-
 async def run_client_async(
     cursor: Synchronized,  # Return value of multiprocessing.Value
     pipe: Connection,
@@ -51,12 +47,11 @@ async def run_client_async(
 
     async def on_message_handler(message: firehose_models.MessageFrame) -> None:
         """This handler tells the client what to do when a new commit is encountered."""
-        ops = parse_message(message)
+        commit = parse_message(message)
 
-        if ops:
-            if ops['has_ops']:
-                # Send it to post processing worker to handle
-                pipe.send(ops)
+        if commit:
+            # Send it to post processing worker to handle
+            pipe.send(commit)
 
         # Update local client cursor value
         if cursor.value:
@@ -66,19 +61,7 @@ async def run_client_async(
             cursor.value = 0
 
         # Update current working time so that the watchdog knows this process is running
-        now = time.time()
-        firehose_time.value = now
-
-        # Update user on ops/second
-        global total_ops, measurement_time
-        total_ops += 1
-
-        if (interval := now - measurement_time) > 60:
-            logger.info(f"Running at {total_ops / interval:.2f} ops/second")
-            total_ops = 0
-            measurement_time = now
-
-
+        firehose_time.value = time.time()
 
     # Continually restarts the client if ConsumerTooSlow errors are encountered. This
     # can happen due to the Bluesky network being busy or internet connection issues.
@@ -106,10 +89,8 @@ def parse_message(message):
     # Final check that this is in fact a commit, and not e.g. a handle change
     if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
         return []
-    
-    ops = _get_ops_by_type(commit)
 
-    return ops
+    return commit
 
 
 def _get_client(
