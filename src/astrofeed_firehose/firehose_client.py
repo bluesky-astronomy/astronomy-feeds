@@ -7,10 +7,12 @@ import time
 from atproto.exceptions import FirehoseError
 from atproto import AsyncFirehoseSubscribeReposClient
 from atproto import firehose_models
-from atproto import models
+from atproto import models, CAR, AtUri, parse_subscribe_repos_message
 from atproto_client.models.common import XrpcError
+from atproto.exceptions import ModelError
 from astrofeed_lib.config import SERVICE_DID
 from astrofeed_lib.database import SubscriptionState
+from .commit import _get_ops_by_type
 import uvloop
 
 
@@ -45,8 +47,11 @@ async def run_client_async(
 
     async def on_message_handler(message: firehose_models.MessageFrame) -> None:
         """This handler tells the client what to do when a new commit is encountered."""
-        # Send it to post processing worker to handle
-        pipe.send(message)
+        commit = parse_message(message)
+
+        if commit:
+            # Send it to post processing worker to handle
+            pipe.send(commit)
 
         # Update local client cursor value
         if cursor.value:
@@ -71,6 +76,21 @@ async def run_client_async(
             if not _is_client_too_slow_error(e):
                 raise e
             logger.warn("Reconnecting to Firehose due to ConsumerTooSlow...")
+
+
+def parse_message(message):
+    # Skip any commits that do not pass this model (which can occur sometimes)
+    try:
+        commit = parse_subscribe_repos_message(message)
+    except ModelError:
+        logger.exception("Unable to process a commit due to validation issue")
+        return []
+
+    # Final check that this is in fact a commit, and not e.g. a handle change
+    if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
+        return []
+
+    return commit
 
 
 def _get_client(
