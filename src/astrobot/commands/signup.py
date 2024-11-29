@@ -114,7 +114,7 @@ def _execute_get_description(command: SignupCommand, client: Client):
     update_bot_action(command, "get_description", parent.uri, parent.cid)
 
 
-MODERATOR_TEXT = "Thanks! The last step now is to get a moderator to approve your signup. I'll mention them here to get their attention:"
+MODERATOR_TEXT = "Thanks! The last step now is to get a moderator to approve your signup. I'll let them know that you've applied!"
 
 
 def _execute_get_moderator(command: SignupCommand, client: Client):
@@ -124,10 +124,10 @@ def _execute_get_moderator(command: SignupCommand, client: Client):
     # Build the post to send from the current mod list
     text_builder = client_utils.TextBuilder()
     text_builder.text(MODERATOR_TEXT)
-    # Todo: this could overflow the post length limit if we get too many mods!
-    for moderator in MODERATORS.get_accounts():
-        text_builder.text(" ")
-        text_builder.mention("(tag)", moderator)
+    # Tags currently removed - probably won't be added again...
+    # for moderator in MODERATORS.get_accounts():
+    #     text_builder.text(" ")
+    #     text_builder.mention("(tag)", moderator)
 
     # Send it!
     root, parent = send_post(
