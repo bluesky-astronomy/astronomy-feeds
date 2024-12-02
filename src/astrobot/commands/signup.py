@@ -95,11 +95,11 @@ def _execute_get_description(command: SignupCommand, client: Client):
 
     # Check to see if they replied with yes
     # Todo: could be more sophisticated here, e.g. if a smartass replies 'no' we probably don't want to have the bot act like an idiot and ask them to say yes
-    valid_yes = {"yes", "y", "ye", "yeah", "yess", "yes.", "yes,", "yes!"}
+    valid_yes = {"yes", "y", "ye", "yeah", "yess", "yes.", "yes,", "yes!", "'yes'", "'yes", "yes'"}
     if not any([x in valid_yes for x in command.notification.words]):
         root, parent = send_post(
             client,
-            "That doesn't look like a valid yes.\n\nIf you meant for it to be, you can try to reply to that post again with a 'yes'.\n\nIf you don't accept the rules, then you won't be able to post to the feed.",
+            "That doesn't look like a valid yes.\n\nIf you meant for it to be, you can try to reply to that post again with a 'yes' (without the apostrophes!).\n\nIf you don't accept the rules, then you won't be able to post to the feed.",
             root_post=command.notification.root_ref,
             parent_post=command.notification.parent_ref,
         )
