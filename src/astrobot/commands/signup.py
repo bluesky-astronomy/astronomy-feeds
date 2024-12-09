@@ -97,6 +97,13 @@ def _execute_get_description(command: SignupCommand, client: Client):
     # Todo: could be more sophisticated here, e.g. if a smartass replies 'no' we probably don't want to have the bot act like an idiot and ask them to say yes
     valid_yes = {"yes", "y", "ye", "yeah", "yess", "yes.", "yes,", "yes!", "'yes'", "'yes", "yes'", "yea"}
     if not any([x in valid_yes for x in command.notification.words]):
+        # Check if the bot has already replied
+        from astrobot.config import HANDLE  # sorry it's here, avoids a circ import
+        thread = client.get_post_thread(command.notification.notification.uri, parent_height=0)
+        if any([HANDLE == reply.post.author.handle for reply in thread.thread.replies]):
+            return
+        
+        # Otherwise, send some help text
         root, parent = send_post(
             client,
             "That doesn't look like a valid yes.\n\nIf you meant for it to be, you can try to reply to that post again with a 'yes' (without the apostrophes!).\n\nIf you don't accept the rules, then you won't be able to post to the feed.",
