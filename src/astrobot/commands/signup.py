@@ -95,7 +95,7 @@ def _execute_get_description(command: SignupCommand, client: Client):
 
     # Check to see if they replied with yes
     # Todo: could be more sophisticated here, e.g. if a smartass replies 'no' we probably don't want to have the bot act like an idiot and ask them to say yes
-    valid_yes = {"yes", "y", "ye", "yeah", "yess", "yes.", "yes,", "yes!", "'yes'", "'yes", "yes'"}
+    valid_yes = {"yes", "y", "ye", "yeah", "yess", "yes.", "yes,", "yes!", "'yes'", "'yes", "yes'", "yea"}
     if not any([x in valid_yes for x in command.notification.words]):
         root, parent = send_post(
             client,
