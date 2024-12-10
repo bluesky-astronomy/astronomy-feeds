@@ -31,23 +31,24 @@ with rules_image_file.open("rb") as f:
 RULES_IMAGES = {2: rules_image}
 
 RULES_IMAGES_ALTS = {
-    2: """Astronomy Feed Rules
+    2: """Screenshot of the feed rules, which are:
 
-Anyone posting to the Astronomy feeds must follow the rules below:
-
-1. You must be a professional, amateur, or student astronomer to post to the feeds.
-It's also ok if you left academia but still want to sign up. You are still an astronomer and you are welcome here!
+1. To post to the feeds, you must be a professional/amateur/student in astronomy/astrophysics/astrobiology/planetary science/astronomy education—or you must represent an astronomy-related organization.
+It’s also OK if you left academia but still want to sign up. You are still welcome here!
 
 2. Be respectful of others in the community.
-We won't tolerate discrimination of any kind; that means no racism, sexism, homophobia, transphobia, ableism, or any other kind of discrimination.
+We will not tolerate discrimination of any kind; that means no racism, sexism, homophobia, transphobia, ableism, or any other kind of discrimination.
 
-3. Content that you post to the feeds must be appropriate, accurate, and not spam.
-No misinformation/impersonation, no spamming, and no off-topic posts. Ask a moderator if you aren't sure.
+3. Content you post to the feeds must be appropriate, scientifically accurate, and not spam.
+No off-topic posts, no misinformation/impersonation, and no spam, including repetitive or overly promotional material that clutters the feeds and detracts from meaningful interactions. AI usage should be minimized, and AI fakes or low-quality generative creations should be avoided. Ask a moderator if you aren’t sure about your content before you post.
 
 4. Attribute content that is not your own.
-You must credit the original author of any content you post. Where possible, you should link to the original author's content.
+You must credit the original author/creator of any content you post. Whenever possible, link to the original author/creator’s content.
 
-If you ever have any concerns or issues, get in touch with @moderation.astronomy.blue or @emily.space."""
+5. Only limited promotion of items for sale is allowed—and they must be astronomy-related.
+Independent creators may use the feeds occasionally to promote or sell their astronomy-related work. We ask you to limit your promotional posts to no more than once per day on the main Astronomy feed. Promotional posts should not be the majority of your contributions to the feeds.
+
+If you ever have any concerns or issues with moderation, get in touch with @moderation.astronomy.blue."""
 }
 
 
