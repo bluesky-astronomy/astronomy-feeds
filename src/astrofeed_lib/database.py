@@ -86,7 +86,7 @@ class ModActions(BaseModel):
     did_mod = peewee.CharField(index=True, null=False)
     did_user = peewee.CharField(index=True)
     action = peewee.CharField(index=True, null=False)
-    expiry = peewee.DateTimeField(index=True)
+    expiry = peewee.DateTimeField(index=True, null=True)
 
 
 
