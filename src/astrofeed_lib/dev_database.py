@@ -1,10 +1,53 @@
+from __future__ import annotations
+
 import os
 import numpy
 import pandas
 import peewee
 
 from datetime import datetime
-from database import *
+
+##
+## main function to be used outside of this module
+##
+def build_dev_db(data_source : str):
+    """
+        given a string representing a source of data, and (optionally) a string for the 
+        name of a database file, populate the database file with data from the specified
+        source
+
+        in:
+            data_source: string that currently must locate a directory containing parquet 
+                         files titled Account.parquet, Post.parquet, BotActions.parquet, 
+                         ModActions.parquet, and SubscriptionState.parquet
+                         
+    """
+
+    main_db = get_db_as_dict(data_source)
+    dev_db = truncate_db(main_db, take_num=50000, sampling="last")
+    dev_db = clean_db(dev_db)
+
+    # connect to database
+    db_conn = peewee.SqliteDatabase("dev_db.db")
+    BaseModel._meta.database.initialize(db_conn)
+
+    # now that it's set up, swap to our database, write the data, then swap back
+    write_dict = {
+        Account           : dev_db["Account"],
+        Post              : dev_db["Post"],
+        BotActions        : dev_db["BotActions"],
+        ModActions        : dev_db["ModActions"],
+        SubscriptionState : dev_db["SubscriptionState"]
+    }
+    db_conn.create_tables([model for model in write_dict.keys()])
+    batch_write_to_db(write_dict)
+
+
+##
+## auxilliary functions for internal use
+##
+
+
 
 def get_db_as_dict(source : str, source_format : str = "parquet"):
     """ 
@@ -188,7 +231,7 @@ def batch_write_to_db(write_dict : dict[BaseModel, pandas.DataFrame]):
     for model,df in zip(write_dict.keys(), write_dict.values()):
         # get database from model (and perform final security check before writing...
         # REALLY don't want to be accessing the production database here):
-        db = model._meta.db
+        db = model._meta.database
         if type(db) is peewee.MySQLDatabase:
             raise ConnectionRefusedError("dev_database/batch_write_to_db: trying to write with a MySQL database connection, aborting.")
 
@@ -199,3 +242,82 @@ def batch_write_to_db(write_dict : dict[BaseModel, pandas.DataFrame]):
         with db.atomic():
             for batch in peewee.chunked(df.iloc[:,:].itertuples(index=False), 100):
                 model.insert_many(rows=batch, fields=model_fields).execute()
+
+##
+## copies of database.py functions, initialized with a DataBaseProxy (for future flexibility)
+## 
+
+class BaseModel(peewee.Model):
+    class Meta:
+        database = peewee.DatabaseProxy()
+
+
+class Post(BaseModel):
+    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    uri = peewee.CharField(index=True)
+    cid = peewee.CharField(index=True)
+    author = peewee.CharField(index=True)
+    text = peewee.CharField()
+
+    # Feed booleans
+    # Main feeds
+    feed_all = peewee.BooleanField(default=False, index=True)
+    feed_astro = peewee.BooleanField(default=False, index=True)
+    feed_astrophotos = peewee.BooleanField(default=False, index=True)
+    
+    # Astronomy topics
+    feed_cosmology = peewee.BooleanField(default=False, index=True)
+    feed_exoplanets = peewee.BooleanField(default=False, index=True)
+    feed_extragalactic = peewee.BooleanField(default=False, index=True)
+    feed_highenergy = peewee.BooleanField(default=False, index=True)
+    feed_instrumentation = peewee.BooleanField(default=False, index=True)
+    feed_methods = peewee.BooleanField(default=False, index=True)
+    feed_milkyway = peewee.BooleanField(default=False, index=True)
+    feed_planetary = peewee.BooleanField(default=False, index=True)
+    feed_radio = peewee.BooleanField(default=False, index=True)
+    feed_stellar = peewee.BooleanField(default=False, index=True)
+
+    # Astrononmy / other
+    feed_education = peewee.BooleanField(default=False, index=True)
+    feed_history = peewee.BooleanField(default=False, index=True)
+
+    # feed_moderation = peewee.BooleanField(default=False)
+    # reply_parent = peewee.CharField(null=True, default=None)
+    # reply_root = peewee.CharField(null=True, default=None)
+
+
+class SubscriptionState(BaseModel):
+    service = peewee.CharField(unique=True)
+    cursor = peewee.BigIntegerField()
+
+
+class Account(BaseModel):
+    handle = peewee.CharField(index=True)
+    submission_id = peewee.CharField()
+    did = peewee.CharField(default="not set", index=True)
+    is_valid = peewee.BooleanField(index=True)
+    feed_all = peewee.BooleanField(default=False)  # Also implicitly includes allowing feed_astro
+    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    mod_level = peewee.IntegerField(null=False, index=True, unique=False, default=0)
+
+
+class BotActions(BaseModel):
+    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    did = peewee.CharField(default="not set")
+    type = peewee.CharField(null=False, default="unrecognized", index=True)
+    stage = peewee.CharField(null=False, default="initial", index=True)  # Initial: command initially sent but not replied to
+    parent_uri = peewee.CharField(null=False, default="")
+    parent_cid = peewee.CharField(null=False, default="")
+    latest_uri = peewee.CharField(null=False , default="")
+    latest_cid = peewee.CharField(null=False , default="")
+    complete = peewee.BooleanField(null=False, default=False, index=True)
+    authorized = peewee.BooleanField(null=False, index=True, default=True)
+    checked_at = peewee.DateTimeField(null=False, index=True, default=datetime.utcnow)
+
+
+class ModActions(BaseModel):
+    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    did_mod = peewee.CharField(index=True, null=False)
+    did_user = peewee.CharField(index=True)
+    action = peewee.CharField(index=True, null=False)
+    expiry = peewee.DateTimeField(index=True, null=True)
