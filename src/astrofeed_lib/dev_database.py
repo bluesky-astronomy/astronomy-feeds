@@ -186,10 +186,16 @@ def batch_write_to_db(write_dict : dict[BaseModel, pandas.DataFrame]):
     """
 
     for model,df in zip(write_dict.keys(), write_dict.values()):
+        # get database from model (and perform final security check before writing...
+        # REALLY don't want to be accessing the production database here):
+        db = model._meta.db
+        if type(db) is peewee.MySQLDatabase:
+            raise ConnectionRefusedError("dev_database/batch_write_to_db: trying to write with a MySQL database connection, aborting.")
+
         # get the fields from the model
         model_fields = list(model._meta.fields.values())
 
         # atomic batched write
-        with model._meta.database.atomic():
+        with db.atomic():
             for batch in peewee.chunked(df.iloc[:,:].itertuples(index=False), 100):
                 model.insert_many(rows=batch, fields=model_fields).execute()
