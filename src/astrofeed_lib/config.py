@@ -15,7 +15,7 @@ import os
 # Whether or not we're in production mode. Within this module, production mode causes
 # the following things:
 # 1. We expect a remote MySQL database instead of a local SQLite one
-ASTROFEED_PRODUCTION = bool(os.getenv("ASTROFEED_PRODUCTION", False))
+ASTROFEED_PRODUCTION = os.getenv("ASTROFEED_PRODUCTION", "False").lower() in {"true", "1"}
 
 
 # ----------------------------------------------
