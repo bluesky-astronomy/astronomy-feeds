@@ -21,62 +21,7 @@ ASTROFEED_PRODUCTION = bool(os.getenv("ASTROFEED_PRODUCTION", False))
 # ----------------------------------------------
 # DATABASE CONFIGURATION
 # ----------------------------------------------
-# DATABASE = os.environ.get("BLUESKY_DATABASE", None)
-
-
-
-class DatabaseConfig:
-    def __init__(self):
-        self.name, self.params = "", dict()
-
-        try:
-            self._set_params_from_connection_string()
-        except ValueError:
-            self._set_params_from_environment_variables()
-
-    def _set_params_from_connection_string(self):
-        """Fetches parameters from a connection string, which will look like:
-
-        mysql://USER:PASSWORD@HOST:PORT/NAME?ssl-mode=REQUIRED
-        """
-        connection_string = os.environ.get("BLUESKY_DATABASE", None)
-
-        if connection_string is None:
-            raise ValueError("must set database environment variables!")
-
-        # Split it into three segments
-        connection_string = connection_string.replace("mysql://", "")
-        first_half, second_half = connection_string.split("/")
-        user_details, host_details = first_half.split("@")
-
-        # Deal with user & host
-        self.params["user"], self.params["password"] = user_details.split(":")
-        self.params["host"], self.params["port"] = host_details.split(":")
-        self.params["port"] = int(self.params["port"])
-
-        # Deal with name and flags
-        self.name, flags = second_half.split("?")
-
-        if "ssl-mode=REQUIRED" in flags:
-            self.params["ssl_disabled"] = False
-
-    def _set_params_from_environment_variables(self):
-        """Fetches parameters from individual environment variables."""
-        print(
-            "WARNING! Setting parameters of database from individual env vars. This will be deprecated."
-            " In future, use BLUESKY_DATABASE instead."
-        )
-
-        self.params["host"] = os.environ.get("DATABASE_HOST", None)
-        self.params["port"] = int(os.environ.get("DATABASE_PORT", 25060))
-        self.params["user"] = os.environ.get("DATABASE_USER", None)
-        self.params["password"] = os.environ.get("DATABASE_PASSWORD", None)
-        self.name = os.environ.get("DATABASE_NAME", None)
-        if self.name is None or any([value is None for value in self.params.values()]):
-            raise ValueError("You must specify a database to use!")
-
-        # Hard-set (since this will be deprecated)
-        self.params["ssl_disabled"] = False
+BLUESKY_DATABASE = os.environ.get("BLUESKY_DATABASE", None)
 
 
 ################################################
