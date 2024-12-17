@@ -93,6 +93,7 @@ def get_moderators() -> dict[str, int]:
 
 
 async def fetch_handle(client, handle):
+    raise NotImplementedError("Method has been deprecated.")
     """Fetches DIDs - NOT handles!"""
     try:
         response = await client.com.atproto.identity.resolve_handle(
@@ -127,10 +128,12 @@ async def fetch_dids_async(accounts_to_query):
 
 
 def fetch_dids(account_names):
+    raise NotImplementedError("Method has been deprecated.")
     return asyncio.run(fetch_dids_async(account_names))
 
 
 async def fetch_handle_from_did_async(client, did):
+    raise NotImplementedError("Method has been deprecated.")
     try:
         response = await client.com.atproto.repo.describe_repo(params={"repo": did})
         logger.info(f"Found handle for {did}")
@@ -164,4 +167,5 @@ async def fetch_handles_async(accounts_to_query):
 
 
 def fetch_handles(account_dids):
+    raise NotImplementedError("Method has been deprecated.")
     return asyncio.run(fetch_handles_async(account_dids))
