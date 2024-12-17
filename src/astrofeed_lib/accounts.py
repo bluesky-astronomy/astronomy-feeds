@@ -1,7 +1,6 @@
 """Tools for handling lists of accounts and working with Bluesky DIDs etc."""
 
 from .database import db, Account
-from .config import QUERY_INTERVAL, HANDLE, PASSWORD
 from atproto import AsyncClient
 import logging
 import time
@@ -60,7 +59,7 @@ class CachedAccountQuery(AccountQuery):
         self.last_query_time = time.time()
 
     def get_accounts(self) -> set:
-        is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL
+        is_overdue = time.time() - self.last_query_time > self.query_interval
         if is_overdue or self.accounts is None:
             self.query_database()
             self.last_query_time = time.time()
@@ -72,7 +71,7 @@ class CachedModeratorList(CachedAccountQuery):
         return get_moderators()
 
     def get_accounts(self) -> dict:
-        is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL
+        is_overdue = time.time() - self.last_query_time > self.query_interval
         if is_overdue or self.accounts is None:
             self.query_database()
             self.last_query_time = time.time()
@@ -107,6 +106,7 @@ async def fetch_handle(client, handle):
 
 
 async def fetch_dids_async(accounts_to_query):
+    raise NotImplementedError("Method has been deprecated.")
     # Asynchronously query all of the handles
     logger.info(
         f"-> looking up account DIDs for the following handles:\n{accounts_to_query}"
@@ -141,6 +141,7 @@ async def fetch_handle_from_did_async(client, did):
 
 
 async def fetch_handles_async(accounts_to_query):
+    raise NotImplementedError("Method has been deprecated.")
     # Asynchronously query all of the handles
     logger.info(
         f"-> looking up account handles for the following DIDs:\n{accounts_to_query}"
