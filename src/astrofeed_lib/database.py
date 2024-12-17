@@ -4,14 +4,27 @@ from pathlib import Path
 from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION
 
 
+def _check_database_variable():
+    if BLUESKY_DATABASE is None:
+        raise ValueError(
+            "You must set the BLUESKY_DATABASE environment variable to use the "
+            "Astronomy feed databases. If ASTROFEED_PRODUCTION is unset (i.e. False), "
+            "then this env var should be a path to a local SQLite dev database; if it "
+            "is set (i.e. True), then this variable should be set to a MySQL database "
+            "connection string."
+        )
+
+
 def _get_mysql_database() -> peewee.MySQLDatabase:
     """Generates a MySQL database connection based on pre-set environment variable.
     This function expects a string that looks like this:
     mysql://USER:PASSWORD@HOST:PORT/NAME?ssl-mode=REQUIRED
     """
+    _check_database_variable()
+
     # Todo can this be neater? May just be worth changing the env variable spec anyway, as the current format is a pain to process. May be a good to-do for when we migrate fully to new hosting.
     # 1. Split it into three segments
-    connection_string = BLUESKY_DATABASE.replace("mysql://", "")
+    connection_string = BLUESKY_DATABASE.replace("mysql://", "")  # type: ignore
     first_half, second_half = connection_string.split("/")
     user_details, host_details = first_half.split("@")
 
@@ -40,21 +53,14 @@ def _get_sqlite_database() -> peewee.SqliteDatabase:
     """Generates a local SQLite database connection based on pre-set environment
     variable.
     """
+    _check_database_variable()
+    
     # Check that the path seems to make sense
-    path_to_database = Path(BLUESKY_DATABASE)
+    path_to_database = Path(BLUESKY_DATABASE)  # type: ignore
     if not path_to_database.exists():
         raise ValueError(f"Unable to find an SQLite database at {path_to_database}")
 
     return peewee.SqliteDatabase(BLUESKY_DATABASE)
-
-
-if BLUESKY_DATABASE is None:
-    raise ValueError(
-        "You must set the BLUESKY_DATABASE environment variable to use the Astronomy "
-        "feed databases. If ASTROFEED_PRODUCTION is unset (i.e. False), then this env "
-        "var should be a path to a local SQLite dev database; if it is set (i.e. True) "
-        ", then this variable should be set to a MySQL database connection string."
-    )
 
 
 if ASTROFEED_PRODUCTION:
