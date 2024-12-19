@@ -6,6 +6,8 @@ import warnings
 
 from datetime import datetime
 
+pandas.options.mode.chained_assignment = None  # default='warn' (this suppresses "assigning to copy" warnings)
+
 ##
 ## copies of database.py classes, initialized with a DataBaseProxy (for future flexibility)
 ## 
@@ -237,7 +239,9 @@ class DB():
                         replacement_label = "indexed_at"
 
                         # make copy of column in python date-time format
-                        replacement_data = df["indexed_at"].dt.to_pydatetime()
+                        with warnings.catch_warnings(): # suppresses deprecation warnings from to_pydatetime
+                            warnings.simplefilter("ignore")
+                            replacement_data = df["indexed_at"].dt.to_pydatetime()
                         replacement_data = pandas.Series(replacement_data, dtype=object)
 
                     case "checked_at":
