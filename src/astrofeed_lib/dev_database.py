@@ -302,7 +302,8 @@ def build_dev_db(data_source: str,
                  database_engine: str = "sqlite", 
                  truncation_num: int = 50000,
                  truncation_frac: float = 0.0,
-                 truncation_strat: str = "last"):
+                 truncation_strat: str = "last",
+                 overwrite_existing: bool = False):
     """Build a smaller, developer-friendly database from source data.
 
     in:
@@ -312,8 +313,18 @@ def build_dev_db(data_source: str,
         truncation_num: number of entries in the Post table to truncate to
         truncation_frac: fraction of entries in the Post table to truncate to
         truncation_strat: strategy to use for truncation
+        overwrite_existing: boolean indicating whether to overwrite a pre-existing database
     """
     # initialize database
+    if(os.path.isfile("dev_db.db")):
+        if overwrite_existing:
+            warnings.warn("Found pre-existing dev_db.db, and overwrite_existing=True: removing file.")
+            os.remove("dev_db.db")
+        else:
+            raise FileExistsError("Found pre-existing dev_db.db, and overwrite_existing=False:\n \
+                                   please move, remove, or rename existing dev database, or re-run with \
+                                   argument 'overwrite_existing=True'")
+
     database_engine = database_engine.lower()
     match database_engine:
         case "sqlite":
