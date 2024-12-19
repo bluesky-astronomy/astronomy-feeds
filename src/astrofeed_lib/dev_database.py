@@ -6,84 +6,7 @@ import warnings
 
 from datetime import datetime
 
-##
-## copies of database.py classes, initialized with a DataBaseProxy (for future flexibility)
-## 
-
-class BaseModel(peewee.Model):
-    class Meta:
-        database = peewee.DatabaseProxy()
-
-
-class Post(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
-    uri = peewee.CharField(index=True)
-    cid = peewee.CharField(index=True)
-    author = peewee.CharField(index=True)
-    text = peewee.CharField()
-
-    # Feed booleans
-    # Main feeds
-    feed_all = peewee.BooleanField(default=False, index=True)
-    feed_astro = peewee.BooleanField(default=False, index=True)
-    feed_astrophotos = peewee.BooleanField(default=False, index=True)
-    
-    # Astronomy topics
-    feed_cosmology = peewee.BooleanField(default=False, index=True)
-    feed_exoplanets = peewee.BooleanField(default=False, index=True)
-    feed_extragalactic = peewee.BooleanField(default=False, index=True)
-    feed_highenergy = peewee.BooleanField(default=False, index=True)
-    feed_instrumentation = peewee.BooleanField(default=False, index=True)
-    feed_methods = peewee.BooleanField(default=False, index=True)
-    feed_milkyway = peewee.BooleanField(default=False, index=True)
-    feed_planetary = peewee.BooleanField(default=False, index=True)
-    feed_radio = peewee.BooleanField(default=False, index=True)
-    feed_stellar = peewee.BooleanField(default=False, index=True)
-
-    # Astrononmy / other
-    feed_education = peewee.BooleanField(default=False, index=True)
-    feed_history = peewee.BooleanField(default=False, index=True)
-
-    # feed_moderation = peewee.BooleanField(default=False)
-    # reply_parent = peewee.CharField(null=True, default=None)
-    # reply_root = peewee.CharField(null=True, default=None)
-
-
-class SubscriptionState(BaseModel):
-    service = peewee.CharField(unique=True)
-    cursor = peewee.BigIntegerField()
-
-
-class Account(BaseModel):
-    handle = peewee.CharField(index=True)
-    submission_id = peewee.CharField()
-    did = peewee.CharField(default="not set", index=True)
-    is_valid = peewee.BooleanField(index=True)
-    feed_all = peewee.BooleanField(default=False)  # Also implicitly includes allowing feed_astro
-    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
-    mod_level = peewee.IntegerField(null=False, index=True, unique=False, default=0)
-
-
-class BotActions(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
-    did = peewee.CharField(default="not set")
-    type = peewee.CharField(null=False, default="unrecognized", index=True)
-    stage = peewee.CharField(null=False, default="initial", index=True)  # Initial: command initially sent but not replied to
-    parent_uri = peewee.CharField(null=False, default="")
-    parent_cid = peewee.CharField(null=False, default="")
-    latest_uri = peewee.CharField(null=False , default="")
-    latest_cid = peewee.CharField(null=False , default="")
-    complete = peewee.BooleanField(null=False, default=False, index=True)
-    authorized = peewee.BooleanField(null=False, index=True, default=True)
-    checked_at = peewee.DateTimeField(null=False, index=True, default=datetime.utcnow)
-
-
-class ModActions(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
-    did_mod = peewee.CharField(index=True, null=False)
-    did_user = peewee.CharField(index=True)
-    action = peewee.CharField(index=True, null=False)
-    expiry = peewee.DateTimeField(index=True, null=True)
+from .database import Account, Post, BotActions, ModActions, SubscriptionState
 
 ##
 ## main class that contains logic/methods for interacting with developer database, and data source to truncate from
@@ -106,23 +29,23 @@ class DB():
         write: write stored data to model class database connection                        
     """
 
-    # hard coding this structure for now, but maybe i can find everything in the namespace that is a subclass 
-    # of BaseModel to build this programmatically?
-    models = dict({
-        "Account"           : Account,
-        "Post"              : Post,
-        "BotActions"        : BotActions,
-        "ModActions"        : ModActions,
-        "SubscriptionState" : SubscriptionState
-    })
-
     # what is currently supported
     supported_source_formats      = ["parquet"]
     supported_sampling_strategies = ["first", "last", "random"]
 
-    def __init__(self, db_conn : peewee.Database):
-        # given a database connection, set our model classes to use it
-        BaseModel._meta.database.initialize(db_conn)
+    def __init__(self, db_conn: peewee.Database):
+        # get our models, and set their database connections
+        #
+        # hard coding this structure for now, but could probably be introspected from production db
+        self.models = dict({
+            "Account"           : Account,
+            "Post"              : Post,
+            "BotActions"        : BotActions,
+            "ModActions"        : ModActions,
+            "SubscriptionState" : SubscriptionState
+        })
+        for model in self.models.values():
+            setattr(model._meta, "database", db_conn)
 
         # make empty dictionary to hold dataframes
         self.data = dict()
