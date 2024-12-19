@@ -89,6 +89,23 @@ class ModActions(BaseModel):
 ## main class that contains logic/methods for interacting with developer database, and data source to truncate from
 ##
 class DB():
+    """Represents a database (including model classes and names), and store data in that database.
+
+    class variables:
+        models: dictionary of model names and their classes, reflective of production database
+        supported_source_formats: list of formats we can read source data in
+        supported_sampling_strategies: list of ways we can truncate source data
+
+    instance_variables:
+        data: dictionary of table names (model names), with data stored for those tables in this instance
+
+    methods:
+        populate_from_source: read data in from given source
+        truncate: remove data according to given criteria
+        clean: implement data cleaning/replacement procedures
+        write: write stored data to model class database connection                        
+    """
+
     # hard coding this structure for now, but maybe i can find everything in the namespace that is a subclass 
     # of BaseModel to build this programmatically?
     models = dict({
@@ -99,7 +116,7 @@ class DB():
         "SubscriptionState" : SubscriptionState
     })
 
-    # which is currently supported
+    # what is currently supported
     supported_source_formats      = ["parquet"]
     supported_sampling_strategies = ["first", "last", "random"]
 
@@ -111,10 +128,14 @@ class DB():
         self.data = dict()
 
     def populate_from_source(self, source: str, format: str = "parquet"):
-        """ 
-            given a string representing a source to read data from, and another string indicating the format 
-            of data at that source: set data in tables from source
-            
+        """Fill instance's dictionary of stored data from given source.
+
+        For now, this method will demand that every model name in our database structure has a corresponding 
+        source, since at the moment everything else is build assuming we have a 'complete' set of data.
+
+        in:
+            source: string locating a source of data to read in
+            format: string indicating format of data at that source
         """
 
         format = format.lower()
@@ -139,6 +160,18 @@ class DB():
                                             {self.supported_source_formats}")
 
     def truncate(self, take_num : int = 0, take_frac : float = 0, sampling : str = "last"):
+        """Reduce volume of stored data, by sampling given amount according to given strategy.
+
+        For the moment, this is built assuming that we have a 'complete' database (all models have associated 
+        dataframes of data), and the method itself demands that we at least have a Post table to initially 
+        sample from.
+
+        in:
+            take_num: number (integer) of entries to take from Post table (mutually exclusive with take_frac)
+            take_frac: fraction (float) of entries to take from Post table (mutually exclusive with take_num)
+            sampling: string indicating sampling strategy to use            
+        """
+
         # make sure our take_num/take_frac make sense
         if(((take_num!=0) == (take_frac!=0)) or (take_num < 0 or take_frac < 0)):
             raise ValueError(f"dev_database/DB/truncate: \
@@ -183,6 +216,17 @@ class DB():
         self.data["SubscriptionState"] = self.data["SubscriptionState"] # no selection necessary here, it's only one entry (for now)
 
     def clean(self):
+        """Reduce volume of stored data, by sampling given amount according to given strategy.
+
+        At the moment, this is implemented column by column (multiple of our tables have 'indexed_at' columns that 
+        all need to be handled in the same way), and is highly specific and sensitive to the exact structure of the 
+        database, and format of input data.
+
+        in:
+            take_num: number (integer) of entries to take from Post table (mutually exclusive with take_frac)
+            take_frac: fraction (float) of entries to take from Post table (mutually exclusive with take_num)
+            sampling: string indicating sampling strategy to use            
+        """
         # for each table in our list, create a copy of the data and modify (if needed)
         for table_name,df in self.data.items():
             # clean copied data column by column, as needed
@@ -222,6 +266,12 @@ class DB():
                 self.data[table_name] = df
 
     def write(self):
+        """Enter data stored in this instance into the databases connected to by associated model classes.
+
+        Data is batched, and databased accessed atomically, to speed up operation; batch size is set to 100, 
+        because it seems that SQLite and maybe some other kinds of databases can only handle 100 entries at a 
+        time through the 'insert_many' method.
+        """
         # write data for each model
         for model_name,model in self.models.items():
             # get database from model, and perform final security check before writing...
