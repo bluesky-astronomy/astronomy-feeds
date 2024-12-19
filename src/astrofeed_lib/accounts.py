@@ -1,7 +1,6 @@
 """Tools for handling lists of accounts and working with Bluesky DIDs etc."""
 
 from .database import db, Account
-from .config import QUERY_INTERVAL, HANDLE, PASSWORD
 from atproto import AsyncClient
 import logging
 import time
@@ -60,7 +59,7 @@ class CachedAccountQuery(AccountQuery):
         self.last_query_time = time.time()
 
     def get_accounts(self) -> set:
-        is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL
+        is_overdue = time.time() - self.last_query_time > self.query_interval
         if is_overdue or self.accounts is None:
             self.query_database()
             self.last_query_time = time.time()
@@ -72,7 +71,7 @@ class CachedModeratorList(CachedAccountQuery):
         return get_moderators()
 
     def get_accounts(self) -> dict:
-        is_overdue = time.time() - self.last_query_time > QUERY_INTERVAL
+        is_overdue = time.time() - self.last_query_time > self.query_interval
         if is_overdue or self.accounts is None:
             self.query_database()
             self.last_query_time = time.time()
@@ -94,6 +93,7 @@ def get_moderators() -> dict[str, int]:
 
 
 async def fetch_handle(client, handle):
+    raise NotImplementedError("Method has been deprecated.")
     """Fetches DIDs - NOT handles!"""
     try:
         response = await client.com.atproto.identity.resolve_handle(
@@ -107,6 +107,7 @@ async def fetch_handle(client, handle):
 
 
 async def fetch_dids_async(accounts_to_query):
+    raise NotImplementedError("Method has been deprecated.")
     # Asynchronously query all of the handles
     logger.info(
         f"-> looking up account DIDs for the following handles:\n{accounts_to_query}"
@@ -127,10 +128,12 @@ async def fetch_dids_async(accounts_to_query):
 
 
 def fetch_dids(account_names):
+    raise NotImplementedError("Method has been deprecated.")
     return asyncio.run(fetch_dids_async(account_names))
 
 
 async def fetch_handle_from_did_async(client, did):
+    raise NotImplementedError("Method has been deprecated.")
     try:
         response = await client.com.atproto.repo.describe_repo(params={"repo": did})
         logger.info(f"Found handle for {did}")
@@ -141,6 +144,7 @@ async def fetch_handle_from_did_async(client, did):
 
 
 async def fetch_handles_async(accounts_to_query):
+    raise NotImplementedError("Method has been deprecated.")
     # Asynchronously query all of the handles
     logger.info(
         f"-> looking up account handles for the following DIDs:\n{accounts_to_query}"
@@ -163,4 +167,5 @@ async def fetch_handles_async(accounts_to_query):
 
 
 def fetch_handles(account_dids):
+    raise NotImplementedError("Method has been deprecated.")
     return asyncio.run(fetch_handles_async(account_dids))
