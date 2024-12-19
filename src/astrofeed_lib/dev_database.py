@@ -6,8 +6,6 @@ import warnings
 
 from datetime import datetime
 
-pandas.options.mode.chained_assignment = None  # default='warn' (this suppresses "assigning to copy" warnings)
-
 ##
 ## copies of database.py classes, initialized with a DataBaseProxy (for future flexibility)
 ## 
@@ -200,11 +198,11 @@ class DB():
         match sampling:
             case "last":
                 icut = len(self.data["Post"]) - take_num
-                self.data["Post"] = self.data["Post"].iloc[icut:]
+                self.data["Post"] = self.data["Post"].iloc[icut:].reset_index(drop=True)
             case "first":
-                self.data["Post"] = self.data["Post"].iloc[:take_num]
+                self.data["Post"] = self.data["Post"].iloc[:take_num].reset_index(drop=True)
             case "random":
-                self.data["Post"] = self.data["Post"].sample(n=take_num)
+                self.data["Post"] = (self.data["Post"].sample(n=take_num)).reset_index(drop=True)
 
         # next, we get the unique DIDs making those posts, as well as the DIDs of mods who interacted with those users
         user_dids = set(self.data["Post"]["author"])
@@ -212,9 +210,9 @@ class DB():
         dids = user_dids.union(mod_dids)
 
         # now with our full set of DIDs, we can retrieve all of the relevant data from the other tables
-        self.data["ModActions"       ] = self.data["ModActions"       ][self.data["ModActions"]["did_user"].isin(dids)] # for mods on user end of mod actions
-        self.data["BotActions"       ] = self.data["BotActions"       ][self.data["BotActions"]["did"     ].isin(dids)]
-        self.data["Account"          ] = self.data["Account"          ][self.data["Account"   ]["did"     ].isin(dids)]
+        self.data["ModActions"       ] = self.data["ModActions"       ].loc[self.data["ModActions"]["did_user"].isin(dids)] # for mods on user end of mod actions
+        self.data["BotActions"       ] = self.data["BotActions"       ].loc[self.data["BotActions"]["did"     ].isin(dids)]
+        self.data["Account"          ] = self.data["Account"          ].loc[self.data["Account"   ]["did"     ].isin(dids)]
         self.data["SubscriptionState"] = self.data["SubscriptionState"] # no selection necessary here, it's only one entry (for now)
 
     def clean(self):
@@ -247,14 +245,15 @@ class DB():
                     case "checked_at":
                         replacement_label = "checked_at"
 
-                        # replace possibl all-zeroes entries that we can't convert first
-                        date_strings = df["checked_at"]
+                        # replace possible all-zeroes entries that we can't convert first
+                        date_strings = numpy.array(df["checked_at"])
+                        replacement_data = []
                         for i in range(len(date_strings)):
-                            if date_strings.iloc[i] == "0000-00-00 00:00:00":
-                                date_strings.iloc[i] = "0001-01-01 00:00:01"
+                            if date_strings[i] == "0000-00-00 00:00:00":
+                                date_strings[i] = "0001-01-01 00:00:01"
+                            replacement_data.append(datetime.strptime(date_strings[i], "%Y-%m-%d %H:%M:%S"))
 
-                        replacement_data = pandas.Series([datetime.strptime(date_strings.iloc[i], "%Y-%m-%d %H:%M:%S") 
-                                                          for i in range(len(date_strings))])
+                        replacement_data = pandas.Series(replacement_data)
 
                     case _: # no cleaning needed
                         continue
