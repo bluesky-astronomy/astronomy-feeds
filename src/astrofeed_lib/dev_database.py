@@ -297,13 +297,21 @@ class DB():
 ## main function to be used outside of this module
 ##
 
-def build_dev_db(data_source: str, data_format: str = "parquet", database_engine: str = "sqlite"):
+def build_dev_db(data_source: str, 
+                 data_format: str = "parquet", 
+                 database_engine: str = "sqlite", 
+                 truncation_num: int = 50000,
+                 truncation_frac: float = 0.0,
+                 truncation_strat: str = "last"):
     """Build a smaller, developer-friendly database from source data.
 
     in:
         data_souce: string locating un-truncated data to read in
         data_format: string indicating format of data in source
         database_engine: string indicating which engine to use for the developer database
+        truncation_num: number of entries in the Post table to truncate to
+        truncation_frac: fraction of entries in the Post table to truncate to
+        truncation_strat: strategy to use for truncation
     """
     # initialize database
     database_engine = database_engine.lower()
@@ -317,7 +325,7 @@ def build_dev_db(data_source: str, data_format: str = "parquet", database_engine
 
     # populate and process our data
     database.populate_from_source(source=data_source, format=data_format)
-    database.truncate(take_num=50000, sampling="last")
+    database.truncate(take_num=truncation_num, take_frac=truncation_frac, sampling=truncation_strat)
     database.clean()
 
     # write to database
