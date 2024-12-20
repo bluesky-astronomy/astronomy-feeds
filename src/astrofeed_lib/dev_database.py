@@ -15,11 +15,11 @@ class DB():
     """Represents a database (including model classes and names), and store data in that database.
 
     class variables:
-        models: dictionary of model names and their classes, reflective of production database
         supported_source_formats: list of formats we can read source data in
         supported_sampling_strategies: list of ways we can truncate source data
 
     instance_variables:
+        models: dictionary of model names and their classes, reflective of production database
         data: dictionary of table names (model names), with data stored for those tables in this instance
 
     methods:
