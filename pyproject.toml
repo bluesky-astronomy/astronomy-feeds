@@ -29,6 +29,11 @@ dependencies = [
   "websockets>=13.0"  # Has a faster async implementation than others
 ]
 
+[project.optional-dependencies]
+dev_db = [
+  "pandas>=2.0,<3" # If (re-)building the developer database
+]
+
 [project.urls]
 "Homepage" = "https://astronomy.blue/"
 "Bug Reports" = "https://github.com/bluesky-astronomy/astrofeed-lib"
