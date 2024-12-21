@@ -31,7 +31,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev_db = [
-  "pandas==2.2.2" # If (re-)building the developer database
+  "pandas>=2.0,<3" # If (re-)building the developer database
 ]
 
 [project.urls]
