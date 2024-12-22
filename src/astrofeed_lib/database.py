@@ -2,6 +2,8 @@ import peewee
 from datetime import datetime
 from pathlib import Path
 from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION
+from playhouse.pool import PooledSqliteDatabase, PooledMySQLDatabase
+from icecream import ic
 
 
 def _check_database_variable():
@@ -15,11 +17,12 @@ def _check_database_variable():
         )
 
 
-def _get_mysql_database() -> peewee.MySQLDatabase:
+def _get_mysql_database() -> PooledMySQLDatabase: # peewee.MySQLDatabase:
     """Generates a MySQL database connection based on pre-set environment variable.
     This function expects a string that looks like this:
     mysql://USER:PASSWORD@HOST:PORT/NAME?ssl-mode=REQUIRED
     """
+    ic("Getting MySQL Database")
     _check_database_variable()
 
     # Todo can this be neater? May just be worth changing the env variable spec anyway, as the current format is a pain to process. May be a good to-do for when we migrate fully to new hosting.
@@ -39,6 +42,7 @@ def _get_mysql_database() -> peewee.MySQLDatabase:
     if "ssl-mode=REQUIRED" in flags:
         ssl_disabled = False
 
+    """
     return peewee.MySQLDatabase(
         database_name,
         user=user,
@@ -47,12 +51,25 @@ def _get_mysql_database() -> peewee.MySQLDatabase:
         port=port,
         ssl_disabled=ssl_disabled,
     )
+    """
+    return PooledMySQLDatabase(
+        database_name,
+        max_connection=10,
+        stale_timeout=None,
+        timeout=5,
+        user=user,
+        password=password,
+        host=host,
+        port=port,
+        ssl_disabled=ssl_disabled
+    )
 
 
-def _get_sqlite_database() -> peewee.SqliteDatabase:
+def _get_sqlite_database() -> PooledSqliteDatabase: # peewee.SqliteDatabase:
     """Generates a local SQLite database connection based on pre-set environment
     variable.
     """
+    ic("Getting SQLite Database")
     _check_database_variable()
     
     # Check that the path seems to make sense
@@ -60,7 +77,14 @@ def _get_sqlite_database() -> peewee.SqliteDatabase:
     if not path_to_database.exists():
         raise ValueError(f"Unable to find an SQLite database at {path_to_database}")
 
-    return peewee.SqliteDatabase(BLUESKY_DATABASE)
+    # return peewee.SqliteDatabase(BLUESKY_DATABASE)
+
+    return PooledSqliteDatabase(
+        BLUESKY_DATABASE,
+        max_connections=1,
+        stale_timeout=None,
+        timeout=5
+    )
 
 
 if ASTROFEED_PRODUCTION:
