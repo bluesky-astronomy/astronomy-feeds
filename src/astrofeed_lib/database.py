@@ -6,6 +6,9 @@ from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION
 from playhouse.pool import PooledMySQLDatabase
 from icecream import ic
 
+# set up icecream
+ic.configureOutput(includeContext=True)
+
 proxy: DatabaseProxy = None
 
 

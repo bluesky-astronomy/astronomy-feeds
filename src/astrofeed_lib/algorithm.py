@@ -1,14 +1,14 @@
 from .database import Account, Post, BotActions
 from .accounts import CachedAccountQuery
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Final
 
 
 VALID_ACCOUNTS = CachedAccountQuery(
-    with_database_closing=False, flags=[Account.is_valid], query_interval=60
+    flags=[Account.is_valid], query_interval=60
 )
 
-CURSOR_END_OF_FEED = "eof"
+CURSOR_END_OF_FEED: Final[str] = "eof"
 
 
 def _select_posts(feed, limit):

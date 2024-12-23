@@ -3,35 +3,27 @@
 from .database import Account
 from .database import get_database, setup_connection, teardown_connection
 from atproto import AsyncClient
-import logging
 import time
 import asyncio
+from icecream import ic
 
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+# set up icecream
+ic.configureOutput(includeContext=True)
 
 
 class AccountQuery:
-    def __init__(self, with_database_closing=False, flags=None) -> None:
+    def __init__(self, flags=None) -> None:
         """Generic refreshing account list. Will return all accounts that have flags
         matching the defined 'flags' parameter.
         """
         self.accounts = None
         self.flags = flags
-        if with_database_closing:
-            self.query_database = self.query_database_with_closing
-        else:
-            self.query_database = self.query_database_without_closing
+        self.query_database = self.query_database
 
-    def query_database_without_closing(self) -> None:
-        get_database().connect(reuse_if_open=True)
+    def query_database(self) -> None:
+        setup_connection(get_database())
         self.accounts = self.account_query()
-
-    def query_database_with_closing(self) -> None:
-        get_database().connect(reuse_if_open=True)
-        self.accounts = self.account_query()
-        get_database().close()
+        teardown_connection(get_database())
 
     def account_query(self):
         """Intended to be overwritten! Should return a set of accounts."""
@@ -55,7 +47,7 @@ class CachedAccountQuery(AccountQuery):
         """Generic refreshing account list. Will return all accounts that have flags
         matching the defined 'flags' parameter.
         """
-        super().__init__(with_database_closing=with_database_closing, flags=flags)
+        super().__init__(flags=flags)
         self.query_interval = query_interval
         self.last_query_time = time.time()
 
