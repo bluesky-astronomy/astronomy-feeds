@@ -7,9 +7,14 @@ from astrobot.post import get_post
 from astrobot.database import (
     get_candidate_stale_bot_actions,
     update_checked_at_time_of_bot_actions,
+    teardown_connection,
+    get_database
 )
 import warnings
+from icecream import ic
 
+# set up icecream
+ic.configureOutput(includeContext=True)
 
 ALLOWED_NOTIFICATION_TYPES = {"like", "repost", "follow", "mention", "reply", "quote"}
 
@@ -84,7 +89,7 @@ def get_notifications_from_stale_commands(
 
     # Mark notifications as being done with
     update_checked_at_time_of_bot_actions([action.id for action in actions_of_interest])
-
+    teardown_connection(get_database())
     return notifications
 
 

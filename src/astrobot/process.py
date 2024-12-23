@@ -3,7 +3,7 @@
 from atproto_client.models.app.bsky.notification.list_notifications import Notification
 from atproto import Client
 from .config import COMMAND_REGISTRY
-from .database import get_outstanding_bot_actions
+from .database import get_outstanding_bot_actions, teardown_connection, get_database
 from .notifications import LikeNotification, ReplyNotification, MentionNotification
 
 
@@ -61,11 +61,13 @@ def _look_for_updates_to_multistep_commands(
     uris = [n.target.uri for n in good_notifications]
     actions = get_outstanding_bot_actions(uris)
     if len(actions) == 0:
+        teardown_connection(get_database())
         return []
 
     # Limit to just those that match an action
     good_notifications = [n for n in good_notifications if n.match(actions)]
     if len(good_notifications) == 0:
+        teardown_connection(get_database())
         return []
 
     # FINALLY, convert all of these matched notifications into commands
@@ -74,6 +76,7 @@ def _look_for_updates_to_multistep_commands(
         command = COMMAND_REGISTRY.get_matching_multistep_command(notification)
         if command is not None:
             commands.append(command)
+    teardown_connection(get_database())
     return commands
 
 
