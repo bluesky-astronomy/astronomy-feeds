@@ -4,14 +4,17 @@ firehose client and post processor on separate subprocesses.
 
 import os
 import multiprocessing
-import logging
+#import logging
 import time
 from astrofeed_firehose.firehose_client import run_client
 from astrofeed_firehose.commit_processor import run_commit_processor
+from icecream import ic
 
+# set up icecream
+ic.configureOutput(includeContext=True)
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+#logger = logging.getLogger(__name__)
+#logging.basicConfig(level=logging.INFO)
 
 
 BASE_URI = "wss://bsky.network/xrpc"  # Which relay to fetch commits from
@@ -36,7 +39,7 @@ def _create_shared_resources():
 
 def _start_client_worker(cursor, pipe, latest_firehose_event_time):
     """Starts the client worker that connects to the Bluesky network."""
-    logger.info("Starting new firehose client worker...")
+    ic("Starting new firehose client worker...")
     client_worker = multiprocessing.Process(
         target=run_client,
         args=(cursor, pipe, latest_firehose_event_time),
@@ -44,12 +47,13 @@ def _start_client_worker(cursor, pipe, latest_firehose_event_time):
         name="Client worker",
     )
     client_worker.start()
+    client_worker.join()
     return client_worker
 
 
 def _start_post_worker(cursor, receiver, latest_worker_event_time):
     """Starts the post processing worker."""
-    logger.info("Starting new post processing worker...")
+    ic("Starting new post processing worker...")
     post_worker = multiprocessing.Process(
         target=run_commit_processor,
         args=(receiver, cursor, latest_worker_event_time),
@@ -57,6 +61,7 @@ def _start_post_worker(cursor, receiver, latest_worker_event_time):
         name="Commit processing manager",
     )
     post_worker.start()
+    post_worker.join()
     return post_worker
 
 
@@ -113,6 +118,7 @@ def run(watchdog_interval: int | float = 60, startup_sleep: int | float = 10):
 
         # Stop firehose if necessary
         if errors:
+            ic(errors)
             break
 
         time.sleep(watchdog_interval)

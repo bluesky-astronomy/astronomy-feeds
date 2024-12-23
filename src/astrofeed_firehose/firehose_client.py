@@ -10,7 +10,7 @@ from atproto import firehose_models
 from atproto import models
 from atproto_client.models.common import XrpcError
 from astrofeed_lib.config import SERVICE_DID
-from astrofeed_lib.database import SubscriptionState
+from astrofeed_lib.database import SubscriptionState, setup_connection, teardown_connection, get_database
 import uvloop
 
 
@@ -84,17 +84,20 @@ def _get_client(
 
 def _get_start_cursor():
     # Get current saved cursor value
+    setup_connection(get_database())
     start_cursor = SubscriptionState.get(
         SubscriptionState.service == SERVICE_DID
     ).cursor
     if start_cursor:
         if not isinstance(start_cursor, int):
+            teardown_connection(get_database())
             raise ValueError(f"Saved cursor with value '{start_cursor}' is invalid.")
         return start_cursor
 
     # If there isn't one, then make sure the DB has a cursor
     logger.info("Generating a cursor for the first time...")
     SubscriptionState.create(service=SERVICE_DID, cursor=0)
+    teardown_connection(get_database())
     return None
 
 
