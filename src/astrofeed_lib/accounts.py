@@ -1,6 +1,7 @@
 """Tools for handling lists of accounts and working with Bluesky DIDs etc."""
 
-from .database import db, Account
+from .database import Account
+from .database import get_database
 from atproto import AsyncClient
 import logging
 import time
@@ -24,13 +25,13 @@ class AccountQuery:
             self.query_database = self.query_database_without_closing
 
     def query_database_without_closing(self) -> None:
-        db.connect(reuse_if_open=True)
+        get_database().connect(reuse_if_open=True)
         self.accounts = self.account_query()
 
     def query_database_with_closing(self) -> None:
-        db.connect(reuse_if_open=True)
+        get_database().connect(reuse_if_open=True)
         self.accounts = self.account_query()
-        db.close()
+        get_database().close()
 
     def account_query(self):
         """Intended to be overwritten! Should return a set of accounts."""

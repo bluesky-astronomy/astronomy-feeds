@@ -1,9 +1,12 @@
 import peewee
+from peewee import DatabaseProxy
 from datetime import datetime
 from pathlib import Path
 from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION
-from playhouse.pool import PooledSqliteDatabase, PooledMySQLDatabase
+from playhouse.pool import PooledMySQLDatabase
 from icecream import ic
+
+proxy: DatabaseProxy = None
 
 
 def _check_database_variable():
@@ -61,13 +64,16 @@ def _get_mysql_database() -> PooledMySQLDatabase: # peewee.MySQLDatabase:
         password=password,
         host=host,
         port=port,
-        ssl_disabled=ssl_disabled
+        ssl_disabled=ssl_disabled,
+        autoconnect=False
     )
 
 
-def _get_sqlite_database() -> PooledSqliteDatabase: # peewee.SqliteDatabase:
+def _get_sqlite_database() -> peewee.SqliteDatabase:
     """Generates a local SQLite database connection based on pre-set environment
-    variable.
+    variable. Not using pooled connections because SQLite doesn't seem to play well with
+    threads, and since this is just for running locally, not putting the time into figuring
+    it out now
     """
     ic("Getting SQLite Database")
     _check_database_variable()
@@ -75,27 +81,59 @@ def _get_sqlite_database() -> PooledSqliteDatabase: # peewee.SqliteDatabase:
     # Check that the path seems to make sense
     path_to_database = Path(BLUESKY_DATABASE)  # type: ignore
     if not path_to_database.exists():
+        ic(f"Unable to find an SQLite database at {path_to_database}")
         raise ValueError(f"Unable to find an SQLite database at {path_to_database}")
 
-    # return peewee.SqliteDatabase(BLUESKY_DATABASE)
-
+    return peewee.SqliteDatabase(BLUESKY_DATABASE, autoconnect=False)
+"""
     return PooledSqliteDatabase(
         BLUESKY_DATABASE,
         max_connections=1,
         stale_timeout=None,
         timeout=5
     )
+"""
 
 
-if ASTROFEED_PRODUCTION:
-    db = _get_mysql_database()
-else:
-    db = _get_sqlite_database()
+def get_database() -> DatabaseProxy:
+    """
+    Method used to grab a connection to the SQL Database. Handles checking if running in local vs. production
+    mode, and connecting to the appropriate database.
+
+    MySQL Database proxy is a wrapper around a connection pool - calling open and close will
+    """
+    global proxy
+
+    if proxy is None:
+        ic("Need to instantiate a new database...")
+        if ASTROFEED_PRODUCTION:
+            ic("Production - grabbing the proxy to the MySql database")
+            db = _get_mysql_database()
+        else:
+            ic("Local environment - grabbing a connection to the SQLite database")
+            db = _get_sqlite_database()
+        proxy = DatabaseProxy()
+        proxy.initialize(db)
+
+    return proxy
+
+
+def setup_connection(database: DatabaseProxy) -> None:
+    ic("Connecting to DB")
+    if database.is_closed():
+        ic("Opening new connection")
+        database.connect()
+
+
+def teardown_connection(database: DatabaseProxy) -> None:
+    ic("Closing DB connection")
+    if not database.is_closed():
+        database.close()
 
 
 class BaseModel(peewee.Model):
     class Meta:
-        database = db
+        database = get_database()
 
 
 class Post(BaseModel):
@@ -179,9 +217,13 @@ class ModActions(BaseModel):
 #     uri = peewee.CharField()
 #     cid = peewee.CharField()
 
-
-if db.is_closed():
-    db.connect()
-    db.create_tables([Post, SubscriptionState, Account, BotActions, ModActions])
-    if not db.is_closed():
-        db.close()
+"""
+if get_database().is_closed():
+    get_database().connect()
+    get_database().create_tables([Post, SubscriptionState, Account, BotActions, ModActions])
+    if not get_database().is_closed():
+        get_database().close()
+"""
+setup_connection(get_database())
+get_database().create_tables([Post, SubscriptionState, Account, BotActions, ModActions])
+teardown_connection(get_database())
