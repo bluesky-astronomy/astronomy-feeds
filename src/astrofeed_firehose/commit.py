@@ -1,16 +1,19 @@
 """Logic for how commits are filtered."""
 
-import logging
+# import logging
 from astrofeed_lib.config import SERVICE_DID
-from astrofeed_lib.database import SubscriptionState, db, Post
+from astrofeed_lib.database import SubscriptionState, Post, get_database, setup_connection, teardown_connection
 from astrofeed_lib.feeds import post_in_feeds
 from atproto import CAR, AtUri, parse_subscribe_repos_message
 from atproto import models
 from atproto.exceptions import ModelError
+from icecream import ic
 
+# set up icecream
+ic.configureOutput(includeContext=True)
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+# logger = logging.getLogger(__name__)
+# logging.basicConfig(level=logging.INFO)
 
 
 def _process_commit(
@@ -21,7 +24,7 @@ def _process_commit(
     try:
         commit = parse_subscribe_repos_message(message)
     except ModelError:
-        logger.exception("Unable to process a commit due to validation issue")
+        ic("Unable to process a commit due to validation issue")
         return []
 
     # Final check that this is in fact a commit, and not e.g. a handle change
@@ -35,13 +38,15 @@ def _process_commit(
         cursor.value = commit.seq
         if commit.seq % 1000 == 0:
             if update_cursor_in_database:
-                db.connect(reuse_if_open=True)
+                #db.connect(reuse_if_open=True)
+                setup_connection(get_database())
                 SubscriptionState.update(cursor=commit.seq).where(
                     SubscriptionState.service == SERVICE_DID
                 ).execute()
-                db.close()
+                #db.close()
+                teardown_connection(get_database())
             else:
-                logger.info(f"Cursor: {commit.seq}")
+                ic(f"Cursor: {commit.seq}")
 
     # Notify the manager process of either a) a new post, or b) that we're done with
     # this commit
@@ -68,7 +73,7 @@ def apply_commit(
     for created_post in valid_posts:
         # Don't add a post if it already exists (e.g. if we're looping over the firehose)
         if created_post["uri"] in existing_posts:
-            logger.info(f"Ignored duplicate post (cursor={cursor})")
+            ic(f"Ignored duplicate post (cursor={cursor})")
             continue
 
         # Basic post info to add to the database
@@ -101,22 +106,24 @@ def apply_commit(
 
     # Perform database operations
     if posts_to_delete or posts_to_create:
-        db.connect(reuse_if_open=True)
+        #db.connect(reuse_if_open=True)
+        setup_connection(get_database())
 
         if posts_to_delete:
             Post.delete().where(Post.uri.in_(posts_to_delete))
-            logger.info(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
+            ic(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
 
         if posts_to_create:
-            with db.atomic():
+            with get_database().atomic():
                 for post_dict in posts_to_create:
                     Post.create(**post_dict)
             feed_counts_string = ", ".join(
                 [f"{key[5:]}-{feed_counts[key]}" for key in feed_counts]
             )
-            logger.info(f"Added posts: {feed_counts_string} (cursor={cursor})")
+            ic(f"Added posts: {feed_counts_string} (cursor={cursor})")
 
-        db.close()
+        #db.close()
+        teardown_connection(get_database())
 
     if not posts_to_create:
         return []
