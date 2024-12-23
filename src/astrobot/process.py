@@ -10,6 +10,7 @@ from icecream import ic
 # set up icecream
 ic.configureOutput(includeContext=True)
 
+
 def process_commands(client: Client, notifications: list[Notification]):
     ic("Processing notifications...")
     # Get all mentions and try to see if any are new commands
