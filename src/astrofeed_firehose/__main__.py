@@ -9,6 +9,8 @@ import time
 from astrofeed_firehose.firehose_client import run_client
 from astrofeed_firehose.commit_processor import run_commit_processor
 from icecream import ic
+from multiprocessing import set_start_method
+
 
 # set up icecream
 ic.configureOutput(includeContext=True)
@@ -47,7 +49,7 @@ def _start_client_worker(cursor, pipe, latest_firehose_event_time):
         name="Client worker",
     )
     client_worker.start()
-    client_worker.join()
+    #client_worker.join()
     return client_worker
 
 
@@ -61,7 +63,7 @@ def _start_post_worker(cursor, receiver, latest_worker_event_time):
         name="Commit processing manager",
     )
     post_worker.start()
-    post_worker.join()
+    #post_worker.join()
     return post_worker
 
 
@@ -94,6 +96,7 @@ def run(watchdog_interval: int | float = 60, startup_sleep: int | float = 10):
     still running once every watchdog_interval seconds. The firehose will stop if this
     happens.
     """
+    set_start_method('fork')
     start_time = time.time()
     post_worker, client_worker, client_time, post_time = _start_workers()
 
