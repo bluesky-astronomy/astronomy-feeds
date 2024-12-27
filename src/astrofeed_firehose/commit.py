@@ -12,10 +12,6 @@ from icecream import ic
 # set up icecream
 ic.configureOutput(includeContext=True)
 
-# logger = logging.getLogger(__name__)
-# logging.basicConfig(level=logging.INFO)
-
-
 def _process_commit(
     message, cursor, valid_accounts, existing_posts, update_cursor_in_database=True
 ):
@@ -38,12 +34,10 @@ def _process_commit(
         cursor.value = commit.seq
         if commit.seq % 1000 == 0:
             if update_cursor_in_database:
-                #db.connect(reuse_if_open=True)
                 setup_connection(get_database())
                 SubscriptionState.update(cursor=commit.seq).where(
                     SubscriptionState.service == SERVICE_DID
                 ).execute()
-                #db.close()
                 teardown_connection(get_database())
             else:
                 ic(f"Cursor: {commit.seq}")
@@ -106,7 +100,6 @@ def apply_commit(
 
     # Perform database operations
     if posts_to_delete or posts_to_create:
-        #db.connect(reuse_if_open=True)
         setup_connection(get_database())
 
         if posts_to_delete:
@@ -122,7 +115,6 @@ def apply_commit(
             )
             ic(f"Added posts: {feed_counts_string} (cursor={cursor})")
 
-        #db.close()
         teardown_connection(get_database())
 
     if not posts_to_create:
