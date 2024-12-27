@@ -28,7 +28,7 @@ class PostQuery:
 
     def post_query(self):
         """Intended to be overwritten! Should return a set of posts."""
-        ic(f"Querying for posts {post.uri}")
+        ic(f"Querying for posts {Post.uri}")
         return {
             post.uri
             for post in Post.select().where(
