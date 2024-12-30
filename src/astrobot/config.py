@@ -4,6 +4,7 @@ import os
 from .commands import CommandRegistry
 from .commands.joke import JokeCommand
 from .commands.signup import SignupCommand
+from .commands.moderation import ModeratorHideCommand
 
 
 def _get_handle(handle_env_var: str):
@@ -36,4 +37,4 @@ STALE_COMMAND_CHECK_INTERVAL = 20  # How many loops to wait before checking for 
 
 # Setup command registry
 COMMAND_REGISTRY = CommandRegistry()
-COMMAND_REGISTRY.register_commands([JokeCommand, SignupCommand])
+COMMAND_REGISTRY.register_commands([JokeCommand, SignupCommand, ModeratorHideCommand])
