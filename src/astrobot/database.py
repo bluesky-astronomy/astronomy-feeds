@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 import warnings
-from astrofeed_lib.database import BotActions, ModActions, db, Account
+from astrofeed_lib.database import BotActions, ModActions, db, Account, Post
 
 
 REQUIRED_BOT_ACTION_FIELDS = [
@@ -17,10 +17,16 @@ REQUIRED_BOT_ACTION_FIELDS = [
 ]
 
 
-def fetch_account_entry_for_did(did):
+def fetch_account_entry_for_did(did: str):
     """Checks to see if a user is already signed up to the feeds."""
     db.connect(reuse_if_open=True)
     return [x for x in Account.select().where(Account.did == did)]
+
+
+def fetch_post_entry_for_uri(uri: str):
+    """Checks to see if a user is already signed up to the feeds."""
+    db.connect(reuse_if_open=True)
+    return [x for x in Post.select().where(Post.uri == uri)]
 
 
 def new_bot_action(
@@ -144,3 +150,35 @@ def update_checked_at_time_of_bot_actions(ids: list):
         BotActions.update(checked_at=datetime.now(timezone.utc)).where(
             BotActions.id << ids
         ).execute()
+
+
+def hide_post(uri: str, did: str) -> str:
+    """Hides a post from the feeds. Returns a string saying if there was (or wasn't) success."""
+    db.connect(reuse_if_open=True)
+    account_entries = fetch_account_entry_for_did(did)
+    post_entires = fetch_post_entry_for_uri(uri)
+
+    # Perform checks on account & post
+    if len(account_entries) == 0:
+        return "Unable to hide post: post author is not signed up to the feeds."
+    if len(post_entires) == 0:
+        return "Unable to hide post: post is not in feeds."
+    if len(account_entries) > 1:
+        warnings.warn(
+            f"Account with DID {did} appears twice in the database. Hiding first one only."
+        )
+    if len(post_entires) > 1:
+        warnings.warn(
+            f"Post with URI {uri} appears twice in the database. Hiding first one only."
+        )
+
+    # Hide the post
+    post, account = post_entires[0], account_entries[0]
+    post.hidden = True
+    account.hidden_count += 1
+
+    with db.atomic():
+        post.save()
+        account.save()
+        
+    return "Post hidden from feeds successfully."
