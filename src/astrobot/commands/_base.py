@@ -11,7 +11,7 @@ from astrobot.database import new_bot_action
 
 class Command(ABC):
     command = ""  # should be set by subclasses
-    level = 0  # user or moderator level; user (0) by default. If -1, only users can use this command.
+    level = 0  # user or moderator level; user (0) by default.
 
     @staticmethod
     @abstractmethod
@@ -29,6 +29,7 @@ class Command(ABC):
         """Executes the next step of a given command, or update to a command."""
         if reason := self.user_cannot_use_command():
             self.execute_no_permissions(client, reason)
+            return
         self.execute_good_permissions(client)
 
     def user_cannot_use_command(self):
@@ -38,21 +39,13 @@ class Command(ABC):
         Command levels explained:
         =0: any user may use
         >0: any moderator with a level greater than or equal to level may use
-        <0: any moderator with a level greater than or equal to may *not* use
         """
         # Level == 0 -> no permissions are on this command!
         if self.level == 0:
             return False
-
-        # Level < 0 -> requires NOT having mod permissions
-        author_did = self.notification.author.did
-
-        if self.level < 0:
-            if author_did in MODERATORS.get_accounts_above_level(self.level * -1):
-                return f"Moderator level too high (max: {self.level * -1})"
-            return False
-
+        
         # Hence, must have level > 0 -> requires mod permissions
+        author_did = self.notification.author.did
         if author_did in MODERATORS.get_accounts_above_level(self.level):
             return False
 

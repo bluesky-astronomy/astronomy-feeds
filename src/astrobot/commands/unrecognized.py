@@ -14,7 +14,6 @@ unrecognized_command_text = "Sorry, but I don't recognize that command."
 
 class UnrecognizedCommand(Command):
     command = "unrecognized"
-    level = -1
 
     def __init__(self, notification: MentionNotification, extra=""):
         self.notification = notification
@@ -29,7 +28,7 @@ class UnrecognizedCommand(Command):
     @staticmethod
     def is_instance_of(notification: MentionNotification) -> None | UnrecognizedCommand:
         # For this class only, this method is not actually really intended...
-        # ... but we'll return it anyway! WE MUST OBEY THE INTERFACE (ABC) SPEC!!!!!!!!
+        # ... but we'll return it anyway!
         return UnrecognizedCommand(notification)
 
     def execute_good_permissions(self, client: Client):
@@ -41,9 +40,3 @@ class UnrecognizedCommand(Command):
         )
 
         new_bot_action(self)
-
-    def execute_no_permissions(self, client: Client, reason: str):
-        print(
-            "Not sending unrecognized command as user is a moderator, and may need to "
-            "mention the bot to e.g. point people towards it."
-        )

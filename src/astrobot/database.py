@@ -2,13 +2,8 @@
 
 from datetime import datetime, timedelta, timezone
 import warnings
+from astrofeed_lib.database import BotActions, ModActions, db, Account, Post
 
-import peewee
-from astrofeed_lib.database import BotActions, ModActions, Account, get_database, setup_connection, teardown_connection
-from icecream import ic
-
-# set up icecream
-ic.configureOutput(includeContext=True)
 
 REQUIRED_BOT_ACTION_FIELDS = [
     "did",
@@ -22,13 +17,19 @@ REQUIRED_BOT_ACTION_FIELDS = [
 ]
 
 
-def fetch_account_entry_for_did(did):
+def fetch_account_entry_for_did(did: str):
     """Checks to see if a user is already signed up to the feeds."""
     # db.connect(reuse_if_open=True)
     setup_connection(get_database())
     retval = [x for x in Account.select().where(Account.did == did)]
     teardown_connection(get_database())
     return retval
+
+
+def fetch_post_entry_for_uri(uri: str):
+    """Checks to see if a user is already signed up to the feeds."""
+    db.connect(reuse_if_open=True)
+    return [x for x in Post.select().where(Post.uri == uri)]
 
 
 def new_bot_action(
@@ -162,3 +163,38 @@ def update_checked_at_time_of_bot_actions(ids: list):
             BotActions.id << ids
         ).execute()
     teardown_connection(get_database())
+
+
+def hide_post_by_uri(uri: str, did: str) -> tuple[bool, str]:
+    """Hides a post from the feeds. Returns a string saying if there was (or wasn't) success."""
+    db.connect(reuse_if_open=True)
+    account_entries = fetch_account_entry_for_did(did)
+    post_entires = fetch_post_entry_for_uri(uri)
+
+    # Perform checks on account & post
+    if len(account_entries) == 0:
+        return False, "Unable to hide post: post author is not signed up to the feeds."
+    if len(post_entires) == 0:
+        return False, "Unable to hide post: post is not in feeds."
+    if len(account_entries) > 1:
+        warnings.warn(
+            f"Account with DID {did} appears twice in the database. Hiding first one only."
+        )
+    if len(post_entires) > 1:
+        warnings.warn(
+            f"Post with URI {uri} appears twice in the database. Hiding first one only."
+        )
+
+    # Hide the post
+    post, account = post_entires[0], account_entries[0]
+    if post.hidden:
+        return False, "Unable to hide post: post already hidden."
+
+    post.hidden = True
+    account.hidden_count += 1
+
+    with db.atomic():
+        post.save()
+        account.save()
+
+    return True, "Post hidden from feeds successfully."

@@ -41,7 +41,7 @@ requires-dist = [
 
 [[package]]
 name = "astrofeed-lib"
-version = "0.0.7"
+version = "0.0.8"
 source = { directory = "../astrofeed-lib" }
 dependencies = [
     { name = "atproto" },
