@@ -80,7 +80,7 @@ class Post(BaseModel):
     cid = peewee.CharField(index=True)
     author = peewee.CharField(index=True)
     text = peewee.CharField()
-    hidden = peewee.BooleanField(index=True, default=False)  # Todo new column 24/12/30
+    hidden = peewee.BooleanField(index=True, default=False)  # New column 24/12/30
 
     # Feed booleans
     # Main feeds
