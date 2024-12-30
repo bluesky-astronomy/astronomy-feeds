@@ -152,7 +152,7 @@ def update_checked_at_time_of_bot_actions(ids: list):
         ).execute()
 
 
-def hide_post(uri: str, did: str) -> str:
+def hide_post_by_uri(uri: str, did: str) -> tuple[bool, str]:
     """Hides a post from the feeds. Returns a string saying if there was (or wasn't) success."""
     db.connect(reuse_if_open=True)
     account_entries = fetch_account_entry_for_did(did)
@@ -160,9 +160,9 @@ def hide_post(uri: str, did: str) -> str:
 
     # Perform checks on account & post
     if len(account_entries) == 0:
-        return "Unable to hide post: post author is not signed up to the feeds."
+        return False, "Unable to hide post: post author is not signed up to the feeds."
     if len(post_entires) == 0:
-        return "Unable to hide post: post is not in feeds."
+        return False, "Unable to hide post: post is not in feeds."
     if len(account_entries) > 1:
         warnings.warn(
             f"Account with DID {did} appears twice in the database. Hiding first one only."
@@ -174,6 +174,9 @@ def hide_post(uri: str, did: str) -> str:
 
     # Hide the post
     post, account = post_entires[0], account_entries[0]
+    if post.hidden:
+        return False, "Unable to hide post: post already hidden."
+
     post.hidden = True
     account.hidden_count += 1
 
@@ -181,4 +184,4 @@ def hide_post(uri: str, did: str) -> str:
         post.save()
         account.save()
         
-    return "Post hidden from feeds successfully."
+    return True, "Post hidden from feeds successfully."
