@@ -2,7 +2,8 @@
 
 from datetime import datetime, timedelta, timezone
 import warnings
-from astrofeed_lib.database import BotActions, ModActions, db, Account, Post
+from astrofeed_lib.database import BotActions, ModActions, Account, Post, setup_connection, teardown_connection, get_database
+import peewee
 
 
 REQUIRED_BOT_ACTION_FIELDS = [
@@ -28,8 +29,11 @@ def fetch_account_entry_for_did(did: str):
 
 def fetch_post_entry_for_uri(uri: str):
     """Checks to see if a user is already signed up to the feeds."""
-    db.connect(reuse_if_open=True)
-    return [x for x in Post.select().where(Post.uri == uri)]
+    # db.connect(reuse_if_open=True)
+    setup_connection(get_database())
+    retval = [x for x in Post.select().where(Post.uri == uri)]
+    teardown_connection((get_database()))
+    return retval
 
 
 def new_bot_action(
@@ -167,7 +171,8 @@ def update_checked_at_time_of_bot_actions(ids: list):
 
 def hide_post_by_uri(uri: str, did: str) -> tuple[bool, str]:
     """Hides a post from the feeds. Returns a string saying if there was (or wasn't) success."""
-    db.connect(reuse_if_open=True)
+    #db.connect(reuse_if_open=True)
+    setup_connection(get_database())
     account_entries = fetch_account_entry_for_did(did)
     post_entires = fetch_post_entry_for_uri(uri)
 
@@ -193,8 +198,8 @@ def hide_post_by_uri(uri: str, did: str) -> tuple[bool, str]:
     post.hidden = True
     account.hidden_count += 1
 
-    with db.atomic():
+    with get_database().atomic():
         post.save()
         account.save()
-
+    teardown_connection(get_database())
     return True, "Post hidden from feeds successfully."
