@@ -14,9 +14,9 @@ CURSOR_END_OF_FEED: Final[str] = "eof"
 def _select_posts(feed, limit):
     feed_boolean = getattr(Post, "feed_" + feed)
     return (
-        Post.select(Post.indexed_at, Post.uri, Post.cid)
+        Post.select(Post.indexed_at, Post.uri, Post.cid, Post.hidden)
         .join(Account, on=(Account.did == Post.author))
-        .where(Account.is_valid, feed_boolean)
+        .where(Account.is_valid, feed_boolean, ~Post.hidden)
         .order_by(Post.indexed_at.desc())
         .limit(limit)
     )
