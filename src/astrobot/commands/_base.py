@@ -38,7 +38,6 @@ class Command(ABC):
         Command levels explained:
         =0: any user may use
         >0: any moderator with a level greater than or equal to level may use
-        <0: any moderator with a level greater than or equal to may *not* use
         """
         # Level == 0 -> no permissions are on this command!
         if self.level == 0:
