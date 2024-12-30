@@ -1,6 +1,6 @@
 """Tools for handling and subclassing notifications."""
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from atproto import Client, models
 from atproto_client.models.app.bsky.notification.list_notifications import Notification
 from astrobot.post import get_post
