@@ -11,7 +11,7 @@ from astrobot.database import new_bot_action
 
 class Command(ABC):
     command = ""  # should be set by subclasses
-    level = 0  # user or moderator level; user (0) by default. If -1, only users can use this command.
+    level = 0  # user or moderator level; user (0) by default.
 
     @staticmethod
     @abstractmethod
