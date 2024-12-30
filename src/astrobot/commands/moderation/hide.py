@@ -29,9 +29,9 @@ class ModeratorHideCommand(Command):
         explanation = "Unable to hide post: this command must be in reply to the post to hide."
         
         # Check that this post is a reply to something
-        if hasattr(self.notification.record, "reply"):
+        if hasattr(self.notification.notification.record, "reply"):
             # Attempt to hide the post it's replied to
-            uri_to_hide = self.notification.record.reply.parent.uri
+            uri_to_hide = self.notification.notification.record.reply.parent.uri
             author_did = uri_to_hide.replace("at://", "").split("/")[0]
             mod_did = self.notification.author.did
             explanation = hide_post(uri_to_hide, author_did, mod_did)
