@@ -80,6 +80,7 @@ class Post(BaseModel):
     cid = peewee.CharField(index=True)
     author = peewee.CharField(index=True)
     text = peewee.CharField()
+    hidden = peewee.BooleanField(index=True, default=False)  # New column 24/12/30
 
     # Feed booleans
     # Main feeds
@@ -115,14 +116,27 @@ class SubscriptionState(BaseModel):
 
 class Account(BaseModel):
     handle = peewee.CharField(index=True)
-    submission_id = peewee.CharField()
     did = peewee.CharField(default="not set", index=True)
-    is_valid = peewee.BooleanField(index=True)
-    feed_all = peewee.BooleanField(
-        default=False
-    )  # Also implicitly includes allowing feed_astro
     indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+
+    # Account flags
+    is_valid = peewee.BooleanField(index=True)
+    is_muted = peewee.BooleanField(index=True, default=False)  # New column 24/12/30
+    is_banned = peewee.BooleanField(index=True, default=False)  # New column 24/12/30
+    
+    # Counts on number of mod actions taken against this account
+    hidden_count = peewee.IntegerField(default=0)  # New column 24/12/30
+    warned_count = peewee.IntegerField(default=0)  # New column 24/12/30
+    muted_count = peewee.IntegerField(default=0)  # New column 24/12/30
+    banned_count = peewee.IntegerField(default=0)  # New column 24/12/30
+    
+    # Whether or not account is a mod
     mod_level = peewee.IntegerField(null=False, index=True, unique=False, default=0)
+    
+    # Deprecated columns
+    # Todo remove eventually - will need to be removed from the db first though
+    feed_all = peewee.BooleanField(default=False)
+    submission_id = peewee.CharField()
 
 
 class BotActions(BaseModel):
