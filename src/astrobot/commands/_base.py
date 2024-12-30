@@ -43,16 +43,9 @@ class Command(ABC):
         # Level == 0 -> no permissions are on this command!
         if self.level == 0:
             return False
-
-        # Level < 0 -> requires NOT having mod permissions
-        author_did = self.notification.author.did
-
-        if self.level < 0:
-            if author_did in MODERATORS.get_accounts_above_level(self.level * -1):
-                return f"Moderator level too high (max: {self.level * -1})"
-            return False
-
+        
         # Hence, must have level > 0 -> requires mod permissions
+        author_did = self.notification.author.did
         if author_did in MODERATORS.get_accounts_above_level(self.level):
             return False
 
