@@ -101,13 +101,13 @@ classifiers = [  # Optional
 # For an analysis of this field vs pip's requirements files see:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [ # Optional
-  # "astrofeed_lib@git+https://github.com/bluesky-astronomy/astrofeed-lib",
   "astrofeed_lib",
   "icecream>=2.1.3",
 ]
 
 [tool.uv.sources]
-astrofeed_lib = {  path = "../astrofeed-lib" }
+astrofeed_lib = { git = "https://github.com/bluesky-astronomy/astrofeed-lib", branch = "main" }
+#astrofeed_lib = {  path = "../astrofeed-lib" }
 
 # List additional groups of dependencies here (e.g. development
 # dependencies). Users will be able to install these using the "extras"
