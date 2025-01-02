@@ -3,32 +3,36 @@
 from atproto_client.models.app.bsky.notification.list_notifications import Notification
 from atproto import Client
 from .config import COMMAND_REGISTRY
-from .database import get_outstanding_bot_actions
+from .database import get_outstanding_bot_actions, teardown_connection, get_database
 from .notifications import LikeNotification, ReplyNotification, MentionNotification
+from icecream import ic
+
+# set up icecream
+ic.configureOutput(includeContext=True)
 
 
 def process_commands(client: Client, notifications: list[Notification]):
-    print("Processing notifications...")
+    ic("Processing notifications...")
     # Get all mentions and try to see if any are new commands
     new_commands = _look_for_new_commands(notifications)
     updated_commands = _look_for_updates_to_multistep_commands(notifications)
 
-    print(f"-> found {len(new_commands)} new commands")
+    ic(f"-> found {len(new_commands)} new commands")
     if new_commands:
         to_print = ", ".join(
             [f"{c.notification.author.handle}: {c.command}" for c in new_commands]
         )
-        print(f"   with types: {to_print}")
-    print(f"-> found {len(updated_commands)} valid updates to commands")
+        ic(f"   with types: {to_print}")
+    ic(f"-> found {len(updated_commands)} valid updates to commands")
     if updated_commands:
         to_print = ",".join(
             [f"{c.notification.author.handle}: {c.command}" for c in updated_commands]
         )
-        print(f"   with types: {to_print}")
+        ic(f"   with types: {to_print}")
 
-    print("Executing...")
+    ic("Executing...")
     for command in new_commands + updated_commands:
-        print(
+        ic(
             f"-> running command {command.command} acting on {command.notification.author.handle}"
         )
         command.execute(client)
@@ -61,11 +65,13 @@ def _look_for_updates_to_multistep_commands(
     uris = [n.target.uri for n in good_notifications]
     actions = get_outstanding_bot_actions(uris)
     if len(actions) == 0:
+        teardown_connection(get_database())
         return []
 
     # Limit to just those that match an action
     good_notifications = [n for n in good_notifications if n.match(actions)]
     if len(good_notifications) == 0:
+        teardown_connection(get_database())
         return []
 
     # FINALLY, convert all of these matched notifications into commands
@@ -74,6 +80,7 @@ def _look_for_updates_to_multistep_commands(
         command = COMMAND_REGISTRY.get_matching_multistep_command(notification)
         if command is not None:
             commands.append(command)
+    teardown_connection(get_database())
     return commands
 
 
