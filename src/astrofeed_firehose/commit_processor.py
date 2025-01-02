@@ -162,8 +162,8 @@ def _initialise_resources(
     logger.info("Fetching initial data")
     next_account_update_time = time.time() + account_update_interval
     next_post_update_time = time.time() + post_update_interval
-    account_query = AccountQuery(with_database_closing=True)
-    post_query = PostQuery(with_database_closing=True)
+    account_query = AccountQuery()
+    post_query = PostQuery()
     accounts_update = ValidAccountsUpdate(account_query.get_accounts())
     posts_update = ExistingPostsUpdate(post_query.get_posts())
 

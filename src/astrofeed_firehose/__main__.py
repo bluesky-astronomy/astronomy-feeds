@@ -4,25 +4,22 @@ firehose client and post processor on separate subprocesses.
 
 import os
 import multiprocessing
-import logging
 import time
 from astrofeed_firehose.firehose_client import run_client
 from astrofeed_firehose.commit_processor import run_commit_processor
+from icecream import ic
+from multiprocessing import set_start_method, Process
+from typing import Final
 
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+# set up icecream
+ic.configureOutput(includeContext=True)
 
-
-BASE_URI = "wss://bsky.network/xrpc"  # Which relay to fetch commits from
-CURSOR_OVERRIDE = os.getenv("FIREHOSE_CURSOR_OVERRIDE", None)  # Can be used to set a different start value of cursor
-CPU_COUNT = os.getenv("FIREHOSE_WORKER_COUNT", os.cpu_count())
-if CPU_COUNT is None:
-    CPU_COUNT = 1
-else:
-    CPU_COUNT = int(CPU_COUNT)
-if CURSOR_OVERRIDE is not None:
-    CURSOR_OVERRIDE = int(CURSOR_OVERRIDE)
+BASE_URI: Final[str] = "wss://bsky.network/xrpc"  # Which relay to fetch commits from
+CURSOR_OVERRIDE: Final[int] = int(os.getenv("FIREHOSE_CURSOR_OVERRIDE")) \
+    if os.getenv("FIREHOSE_CURSOR_OVERRIDE",None) is not None else 1 # Can be used to set a different start value of cursor
+CPU_COUNT: Final[int] = int(os.getenv("FIREHOSE_WORKER_COUNT", os.cpu_count())) \
+    if os.getenv("FIREHOSE_WORKER_COUNT") is not None else 1
 
 
 def _create_shared_resources():
@@ -34,9 +31,9 @@ def _create_shared_resources():
     return cursor, client_time, post_time, receiver, pipe
 
 
-def _start_client_worker(cursor, pipe, latest_firehose_event_time):
+def _start_client_worker(cursor, pipe, latest_firehose_event_time) -> Process:
     """Starts the client worker that connects to the Bluesky network."""
-    logger.info("Starting new firehose client worker...")
+    ic("Starting new firehose client worker...")
     client_worker = multiprocessing.Process(
         target=run_client,
         args=(cursor, pipe, latest_firehose_event_time),
@@ -47,9 +44,9 @@ def _start_client_worker(cursor, pipe, latest_firehose_event_time):
     return client_worker
 
 
-def _start_post_worker(cursor, receiver, latest_worker_event_time):
+def _start_post_worker(cursor, receiver, latest_worker_event_time) -> Process:
     """Starts the post processing worker."""
-    logger.info("Starting new post processing worker...")
+    ic("Starting new post processing worker...")
     post_worker = multiprocessing.Process(
         target=run_commit_processor,
         args=(receiver, cursor, latest_worker_event_time),
@@ -74,11 +71,13 @@ def _stop_workers(post_worker, client_worker):
     """Tries to kill child processes."""
     try:
         post_worker.kill()
-    except Exception:
+    except Exception as ex:
+        ic(f"Exception stopping Post Worker {ex}")
         pass
     try:
         client_worker.kill()
-    except Exception:
+    except Exception as ex:
+        ic(f"Exception stopping Client Worker {ex}")
         pass
 
 
@@ -89,6 +88,7 @@ def run(watchdog_interval: int | float = 60, startup_sleep: int | float = 10):
     still running once every watchdog_interval seconds. The firehose will stop if this
     happens.
     """
+    set_start_method('fork')
     start_time = time.time()
     post_worker, client_worker, client_time, post_time = _start_workers()
 
@@ -113,6 +113,7 @@ def run(watchdog_interval: int | float = 60, startup_sleep: int | float = 10):
 
         # Stop firehose if necessary
         if errors:
+            ic(errors)
             break
 
         time.sleep(watchdog_interval)

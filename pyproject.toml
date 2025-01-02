@@ -21,10 +21,15 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3 :: Only",
 ]
-dependencies = ["astrofeed_lib", "uvloop>=0.20"]
+dependencies = [
+    "astrofeed_lib",
+    "icecream>=2.1.3",
+    "uvloop>=0.20",
+]
 
 [tool.uv.sources]
 astrofeed_lib = { git = "https://github.com/bluesky-astronomy/astrofeed-lib", branch = "main" }
+#astrofeed_lib = {  path = "../astrofeed-lib", editable=true }
 
 [project.urls]
 "Homepage" = "https://astronomy.blue/"
