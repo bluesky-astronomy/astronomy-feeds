@@ -7,10 +7,7 @@ from astrofeed_lib.feeds import post_in_feeds
 from atproto import CAR, AtUri, parse_subscribe_repos_message
 from atproto import models
 from atproto.exceptions import ModelError
-from icecream import ic
 
-# set up icecream
-ic.configureOutput(includeContext=True)
 
 def _process_commit(
     message, cursor, valid_accounts, existing_posts, update_cursor_in_database=True
@@ -20,7 +17,7 @@ def _process_commit(
     try:
         commit = parse_subscribe_repos_message(message)
     except ModelError:
-        ic("Unable to process a commit due to validation issue")
+        print("Unable to process a commit due to validation issue")
         return []
 
     # Final check that this is in fact a commit, and not e.g. a handle change
@@ -40,7 +37,7 @@ def _process_commit(
                 ).execute()
                 teardown_connection(get_database())
             else:
-                ic(f"Cursor: {commit.seq}")
+                print(f"Cursor: {commit.seq}")
 
     # Notify the manager process of either a) a new post, or b) that we're done with
     # this commit
@@ -67,7 +64,7 @@ def apply_commit(
     for created_post in valid_posts:
         # Don't add a post if it already exists (e.g. if we're looping over the firehose)
         if created_post["uri"] in existing_posts:
-            ic(f"Ignored duplicate post (cursor={cursor})")
+            print(f"Ignored duplicate post (cursor={cursor})")
             continue
 
         # Basic post info to add to the database
@@ -104,7 +101,7 @@ def apply_commit(
 
         if posts_to_delete:
             Post.delete().where(Post.uri.in_(posts_to_delete))
-            ic(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
+            print(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
 
         if posts_to_create:
             with get_database().atomic():
@@ -113,7 +110,7 @@ def apply_commit(
             feed_counts_string = ", ".join(
                 [f"{key[5:]}-{feed_counts[key]}" for key in feed_counts]
             )
-            ic(f"Added posts: {feed_counts_string} (cursor={cursor})")
+            print(f"Added posts: {feed_counts_string} (cursor={cursor})")
 
         teardown_connection(get_database())
 
