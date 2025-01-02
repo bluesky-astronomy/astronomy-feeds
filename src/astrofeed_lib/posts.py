@@ -1,35 +1,34 @@
 """Tools for handling lists of posts in the database."""
-from astrofeed_lib.database import db, Post
+from .database import Post, get_database, setup_connection, teardown_connection
 import time
 from datetime import datetime, timedelta
+from icecream import ic
+from typing import Final
+
+# set up icecream
+ic.configureOutput(includeContext=True)
+
+QUERY_INTERVAL: Final[int] = 24 * 60 * 60
+ONE_WEEK_IN_DAYS: Final[int] = 7
 
 
 class PostQuery:
-    def __init__(
-        self,
-        with_database_closing: bool = False,
-        max_post_age: timedelta = timedelta(days=7),
-    ) -> None:
+    def __init__(self, max_post_age: timedelta = timedelta(days=ONE_WEEK_IN_DAYS),) -> None:
         """Generic refreshing post list."""
         self.last_query_time = time.time()
         self.posts = set()
         self.max_post_age = max_post_age
-        if with_database_closing:
-            self.query_database = self.query_database_with_closing
-        else:
-            self.query_database = self.query_database_without_closing
+        self.query_database = self.query_database
 
-    def query_database_without_closing(self) -> None:
-        db.connect(reuse_if_open=True)
+    def query_database(self) -> None:
+        setup_connection(get_database())
+        ic("Loading posts")
         self.posts = self.post_query()
-
-    def query_database_with_closing(self) -> None:
-        db.connect(reuse_if_open=True)
-        self.posts = self.post_query()
-        db.close()
+        teardown_connection(get_database())
 
     def post_query(self):
         """Intended to be overwritten! Should return a set of posts."""
+        ic(f"Querying for posts {Post.uri}")
         return {
             post.uri
             for post in Post.select().where(
@@ -38,31 +37,27 @@ class PostQuery:
         }
 
     def get_posts(self) -> set:
+        ic("getting all posts")
         self.query_database()
         return self.posts
 
     def add_posts(self, posts):
+        ic(f"Adding posts {posts}")
         for post in posts:
             self.posts.add(post)
 
     def remove_posts(self, posts):
+        ic(f"Removing posts {posts}")
         for post in posts:
             self.posts.remove(post)
 
 
 class CachedPostQuery(PostQuery):
-    def __init__(
-        self,
-        with_database_closing: bool = False,
-        query_interval: int = 60 * 60 * 24,
-        max_post_age: timedelta = timedelta(days=7),
-    ) -> None:
+    def __init__(self, query_interval: int = QUERY_INTERVAL, max_post_age: timedelta = timedelta(days=ONE_WEEK_IN_DAYS),) -> None:
         """Generic refreshing post list. Uses caching to try to reduce number of
         required query operations!
         """
-        super().__init__(
-            with_database_closing=with_database_closing, max_post_age=max_post_age
-        )
+        super().__init__(max_post_age=max_post_age)
         self.query_interval = query_interval
         self.last_query_time = time.time()
 
