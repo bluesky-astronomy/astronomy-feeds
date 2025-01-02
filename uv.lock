@@ -43,7 +43,7 @@ requires-dist = [
 [[package]]
 name = "astrofeed-lib"
 version = "0.0.7"
-source = { editable = "../astrofeed-lib" }
+source = { git = "https://github.com/bluesky-astronomy/astrofeed-lib?branch=main#e9d8f5c2411d46d961f2648a1e54bea516cd771e" }
 dependencies = [
     { name = "atproto" },
     { name = "emoji" },
