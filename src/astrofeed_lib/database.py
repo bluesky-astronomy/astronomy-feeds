@@ -60,7 +60,7 @@ def _get_mysql_database() -> PooledMySQLDatabase: # peewee.MySQLDatabase:
     """
     return PooledMySQLDatabase(
         database_name,
-        max_connection=10,
+        max_connections=10,
         stale_timeout=None,
         timeout=5,
         user=user,
