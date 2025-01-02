@@ -97,7 +97,7 @@ def run(watchdog_interval: int | float = 60, startup_sleep: int | float = 10):
     still running once every watchdog_interval seconds. The firehose will stop if this
     happens.
     """
-    set_start_method('fork')
+    # set_start_method('fork')
     start_time = time.time()
     post_worker, client_worker, client_time, post_time = _start_workers()
 
