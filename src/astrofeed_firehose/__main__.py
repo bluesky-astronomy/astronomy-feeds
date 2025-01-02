@@ -15,11 +15,20 @@ from typing import Final
 # set up icecream
 ic.configureOutput(includeContext=True)
 
+# Fetch base URI
 BASE_URI: Final[str] = "wss://bsky.network/xrpc"  # Which relay to fetch commits from
-CURSOR_OVERRIDE: Final[int] = int(os.getenv("FIREHOSE_CURSOR_OVERRIDE")) \
-    if os.getenv("FIREHOSE_CURSOR_OVERRIDE",None) is not None else 1 # Can be used to set a different start value of cursor
-CPU_COUNT: Final[int] = int(os.getenv("FIREHOSE_WORKER_COUNT", os.cpu_count())) \
-    if os.getenv("FIREHOSE_WORKER_COUNT") is not None else 1
+
+# Fetch cursor override
+_cursor_override = os.getenv("FIREHOSE_CURSOR_OVERRIDE", None)
+if _cursor_override is not None:
+    _cursor_override = int(_cursor_override)
+CURSOR_OVERRIDE: Final[int | None] = _cursor_override
+
+# Assign number of CPUs
+_cpu_count = os.getenv("FIREHOSE_WORKER_COUNT", os.cpu_count())
+if _cpu_count is None:
+    _cpu_count = 1
+CPU_COUNT: Final[int] = int(_cpu_count)
 
 
 def _create_shared_resources():
