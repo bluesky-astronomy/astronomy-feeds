@@ -9,7 +9,7 @@ from icecream import ic
 # set up icecream
 ic.configureOutput(includeContext=True)
 
-proxy: DatabaseProxy = None
+proxy: DatabaseProxy | None = None
 
 
 def _check_database_variable():
