@@ -10,7 +10,12 @@ from atproto import firehose_models
 from atproto import models
 from atproto_client.models.common import XrpcError
 from astrofeed_lib.config import SERVICE_DID
-from astrofeed_lib.database import SubscriptionState, setup_connection, teardown_connection, get_database
+from astrofeed_lib.database import (
+    SubscriptionState,
+    setup_connection,
+    teardown_connection,
+    get_database,
+)
 import uvloop
 
 
@@ -85,9 +90,12 @@ def _get_client(
 def _get_start_cursor():
     # Get current saved cursor value
     setup_connection(get_database())
-    start_cursor = SubscriptionState.get(
-        SubscriptionState.service == SERVICE_DID
-    ).cursor
+    start_cursor = (
+        SubscriptionState.select()
+        .where(SubscriptionState.service == SERVICE_DID)
+        .execute()[0]
+        .cursor
+    )
     if start_cursor:
         if not isinstance(start_cursor, int):
             teardown_connection(get_database())
