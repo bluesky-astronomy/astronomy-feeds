@@ -30,7 +30,7 @@ class PostQuery:
         return {
             post.uri
             for post in Post.select().where(
-                Post.indexed_at > datetime.now() - self.max_post_age
+                Post.indexed_at > datetime.now() - self.max_post_age  # type: ignore
             )
         }
 
