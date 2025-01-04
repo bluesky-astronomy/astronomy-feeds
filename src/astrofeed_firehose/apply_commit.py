@@ -51,7 +51,7 @@ def _create_posts(cursor, posts_to_create_classified, feed_counts):
             for post_dict in posts_to_create_classified:
                 Post.create(**post_dict)
         feed_counts_string = ", ".join(
-            [f"{key[5:]}-{feed_counts[key]}" for key in feed_counts]
+            [f"{key[5:]}-{value}" for key, value in feed_counts.items() if value > 0]
         )
         print(f"Added posts: {feed_counts_string} (cursor={cursor})")
 
