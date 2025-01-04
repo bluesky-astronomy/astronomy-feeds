@@ -31,11 +31,7 @@ def run_client(
     firehose_time: Synchronized,  # Return value of multiprocessing.Value
 ):
     # We run the client with uvloop as it's a little bit quicker than basic Python
-    uvloop.run(
-        run_client_async(
-            queue, cursor, firehose_time
-        )
-    )
+    uvloop.run(run_client_async(queue, cursor, firehose_time))
 
 
 async def run_client_async(
@@ -51,10 +47,10 @@ async def run_client_async(
         """This handler tells the client what to do when a new commit is encountered."""
         while True:
             try:
-                queue.put(message, timeout=0.1)
+                queue.put(message, timeout=1.0)
                 break
             except Full:
-                logger.warning("Queue is full")
+                logger.warning("Queue is full! Consider increasing queue size.")
                 time.sleep(1)
 
         # Update local client cursor value
@@ -70,7 +66,7 @@ async def run_client_async(
     # Continually restarts the client if ConsumerTooSlow errors are encountered. This
     # can happen due to the Bluesky network being busy or internet connection issues.
     while True:
-        client = _get_client(start_cursor=CURSOR_OVERRIDE, base_uri=BASE_URI)
+        client = _get_client()
 
         try:
             logger.info("... firehose client worker started")
@@ -82,13 +78,12 @@ async def run_client_async(
             logger.warning("Reconnecting to Firehose due to ConsumerTooSlow...")
 
 
-def _get_client(
-    start_cursor: int | None = None, base_uri: str = "wss://bsky.network/xrpc"
-):
+def _get_client():
+    start_cursor = CURSOR_OVERRIDE
     if start_cursor is None:
         start_cursor = _get_start_cursor()
     params = models.ComAtprotoSyncSubscribeRepos.Params(cursor=start_cursor)
-    return AsyncFirehoseSubscribeReposClient(params, base_uri=base_uri)
+    return AsyncFirehoseSubscribeReposClient(params, base_uri=BASE_URI)
 
 
 def _get_start_cursor():
