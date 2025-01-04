@@ -8,7 +8,6 @@ from astrofeed_lib.database import (
     teardown_connection,
 )
 from astrofeed_lib.accounts import CachedAccountQuery
-from astrofeed_lib.posts import CachedPostQuery
 from astrofeed_lib.feeds import post_in_feeds
 from atproto import CAR, AtUri
 from atproto import models
@@ -17,9 +16,6 @@ from atproto import models
 # This is our set of accounts that are signed up, including those that are muted/banned
 # (as those could be later reversed.) We keep it updated once every 60 seconds.
 VALID_ACCOUNTS = CachedAccountQuery(query_interval=60)
-
-# We keep a set of existing posts around to try and reduce our chances of adding duplicates.
-EXISTING_POSTS = CachedPostQuery(query_interval=300)
 
 
 def apply_commit(
@@ -45,23 +41,41 @@ def apply_commit(
 
 def _create_posts(cursor, posts_to_create_classified, feed_counts):
     """Adds posts to the database."""
-    if posts_to_create_classified:
-        # Todo still not infallible against adding duplicate posts
-        with get_database().atomic():
-            for post_dict in posts_to_create_classified:
-                Post.create(**post_dict)
-        feed_counts_string = ", ".join(
-            [f"{key[5:]}-{value}" for key, value in feed_counts.items() if value > 0]
-        )
-        print(f"Added posts: {feed_counts_string} (cursor={cursor})")
+    if not posts_to_create_classified:
+        return
+
+    # Remove duplicate posts
+    # Todo: change to do this in one query (doesn't matter atm as this function is almost always called one post at a time, but eventually...)
+    initial_length = len(posts_to_create_classified)
+    posts_to_create_classified = [
+        post
+        for post in posts_to_create_classified
+        if not Post.select().where(Post.uri == post["uri"]).exists()
+    ]
+    if (current_length := len(posts_to_create_classified)) != initial_length:
+        print(f"Ignored duplicate posts: {initial_length - current_length}")
+
+    if not posts_to_create_classified:
+        return
+
+    # Add the posts
+    with get_database().atomic():
+        for post_dict in posts_to_create_classified:
+            Post.create(**post_dict)
+    feed_counts_string = ", ".join(
+        [f"{key[5:]}-{value}" for key, value in feed_counts.items() if value > 0]
+    )
+    print(f"Added posts: {feed_counts_string} (cursor={cursor})")
 
 
 def _delete_posts(cursor, posts_to_delete):
     """Removes posts from the database."""
-    if posts_to_delete:
-        # Todo needs fixing
-        Post.delete().where(Post.uri.in_(posts_to_delete))  # type: ignore
-        print(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
+    if not posts_to_delete:
+        return
+
+    # Todo needs fixing - pylance is grumpy for some reason, is this used wrong?
+    Post.delete().where(Post.uri.in_(posts_to_delete))  # type: ignore
+    print(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
 
 
 def _classify_posts(posts_to_create):
@@ -148,7 +162,9 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
 
         if op.action == "delete":
             if uri.collection == models.ids.AppBskyFeedPost:
-                operation_by_type["posts"]["deleted"].append({"uri": str(uri)})
+                operation_by_type["posts"]["deleted"].append(
+                    {"uri": str(uri), "author": commit.repo}
+                )
 
             # The following types of event don't need to be tracked by the feed right now.
             # elif uri.collection == ids.AppBskyFeedLike:
@@ -164,17 +180,18 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
 def _get_required_ops(ops: dict):
     """Fetches the required operations from a _get_ops_by_type dict."""
     good_accounts = VALID_ACCOUNTS.get_accounts()
-    existing_posts = EXISTING_POSTS.get_posts()
 
     # See how many posts need creating or deleting
     posts_to_create = [
         post for post in ops["posts"]["created"] if post["author"] in good_accounts
     ]
-    posts_to_create = [
-        post for post in posts_to_create if post["uri"] not in existing_posts
-    ]
+    # posts_to_create = [
+    #     post for post in posts_to_create if post["uri"] not in existing_posts
+    # ]
     posts_to_delete = [
-        post["uri"] for post in ops["posts"]["deleted"] if post["uri"] in existing_posts
+        post["uri"]
+        for post in ops["posts"]["deleted"]
+        if post["author"] in good_accounts
     ]
 
     return posts_to_create, posts_to_delete
