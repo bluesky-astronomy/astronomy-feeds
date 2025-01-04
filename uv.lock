@@ -27,7 +27,7 @@ wheels = [
 [[package]]
 name = "astrofeed-lib"
 version = "0.0.9"
-source = { git = "https://github.com/bluesky-astronomy/astrofeed-lib?branch=main#dfbde43d47d7e219aafa5a1e671c8c1b540a6479" }
+source = { git = "https://github.com/bluesky-astronomy/astrofeed-lib?branch=main#af5ee877145edc7596894e8c5449263f4d21fc67" }
 dependencies = [
     { name = "atproto" },
     { name = "emoji" },
