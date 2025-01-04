@@ -39,16 +39,16 @@ def apply_commit(
     cursor = commit.seq
     setup_connection(get_database())
     _delete_posts(cursor, posts_to_delete)
-    _create_posts(cursor, posts_to_create, posts_to_create_classified, feed_counts)
+    _create_posts(cursor, posts_to_create_classified, feed_counts)
     teardown_connection(get_database())
 
 
-def _create_posts(cursor, posts_to_create, posts_to_create_classified, feed_counts):
+def _create_posts(cursor, posts_to_create_classified, feed_counts):
     """Adds posts to the database."""
     if posts_to_create_classified:
         # Todo still not infallible against adding duplicate posts
         with get_database().atomic():
-            for post_dict in posts_to_create:
+            for post_dict in posts_to_create_classified:
                 Post.create(**post_dict)
         feed_counts_string = ", ".join(
             [f"{key[5:]}-{feed_counts[key]}" for key in feed_counts]
@@ -171,7 +171,7 @@ def _get_required_ops(ops: dict):
         post for post in ops["posts"]["created"] if post["author"] in good_accounts
     ]
     posts_to_create = [
-        post for post in posts_to_create if post["uri"] in existing_posts
+        post for post in posts_to_create if post["uri"] not in existing_posts
     ]
     posts_to_delete = [
         post["uri"] for post in ops["posts"]["deleted"] if post["uri"] in existing_posts
