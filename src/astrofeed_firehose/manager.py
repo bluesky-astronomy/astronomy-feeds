@@ -109,7 +109,7 @@ class FirehoseProcessingManager:
         ops_elapsed = current_op_count - self.last_op_count
         print(
             f"Running at {ops_elapsed / time_elapsed:.2f} ops/sec "
-            f"(total: {current_op_count:.4e} ops)"
+            f"(total: {current_op_count:.2e} ops)"
         )
 
         self.last_check_time, self.last_op_count = current_time, current_op_count
