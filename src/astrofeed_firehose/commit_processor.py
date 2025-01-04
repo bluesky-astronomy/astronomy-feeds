@@ -4,6 +4,7 @@ added to the feeds.
 
 import logging
 import time
+import traceback
 from multiprocessing.sharedctypes import Synchronized
 from astrofeed_lib.config import SERVICE_DID
 from astrofeed_firehose.apply_commit import apply_commit
@@ -14,8 +15,7 @@ from astrofeed_lib.database import (
     teardown_connection,
 )
 from faster_fifo import Queue
-from queue import Empty, Full
-from atproto import CAR, AtUri, parse_subscribe_repos_message
+from atproto import parse_subscribe_repos_message
 from atproto import models
 from atproto.exceptions import ModelError
 
@@ -28,6 +28,7 @@ def run_commit_processor(
     queue: Queue,
     cursor: Synchronized,  # Return value of multiprocessing.Value
     process_time: Synchronized,  # Return value of multiprocessing.Value
+    op_counter: Synchronized | None = None,
 ) -> None:
     """Main sub-worker handler!
 
@@ -46,15 +47,17 @@ def run_commit_processor(
             cursor_value = _process_commit(message)
         except Exception:
             logger.exception(
-                "Post processing worker encountered an exception while processing a "
-                "post! This post will be skipped."
+                traceback.format_exc()
+                + "Commit processing worker encountered an exception while processing "
+                "a commit! This commit will be skipped."
             )
             error_count += 1
             logger.info(f"Error count: {error_count}")
         else:
             _update_cursor(cursor_value, cursor)
-        
+
         _update_process_time(process_time)
+        _increment_op_count(op_counter)
 
 
 def _process_commit(message):
@@ -100,3 +103,8 @@ def _update_cursor(value: int | None, cursor: Synchronized):
 
 def _update_process_time(time_object: Synchronized):
     time_object.value = time.time()
+
+
+def _increment_op_count(op_counter: Synchronized | None):
+    if op_counter is not None:
+        op_counter.value += 1
