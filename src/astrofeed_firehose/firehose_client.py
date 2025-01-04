@@ -2,7 +2,6 @@
 
 import logging
 from multiprocessing.sharedctypes import Synchronized
-from multiprocessing.connection import Connection
 import time
 from atproto.exceptions import FirehoseError
 from atproto import AsyncFirehoseSubscribeReposClient
@@ -16,7 +15,10 @@ from astrofeed_lib.database import (
     teardown_connection,
     get_database,
 )
+from astrofeed_firehose.config import BASE_URI, CURSOR_OVERRIDE
 import uvloop
+from faster_fifo import Queue
+from queue import Full
 
 
 logger = logging.getLogger(__name__)
@@ -24,25 +26,22 @@ logging.basicConfig(level=logging.INFO)
 
 
 def run_client(
+    queue: Queue,
     cursor: Synchronized,  # Return value of multiprocessing.Value
-    pipe: Connection,
     firehose_time: Synchronized,  # Return value of multiprocessing.Value
-    start_cursor: int | None = None,
-    base_uri: str = "wss://bsky.network/xrpc",
 ):
+    # We run the client with uvloop as it's a little bit quicker than basic Python
     uvloop.run(
         run_client_async(
-            cursor, pipe, firehose_time, start_cursor=start_cursor, base_uri=base_uri
+            queue, cursor, firehose_time
         )
     )
 
 
 async def run_client_async(
+    queue: Queue,
     cursor: Synchronized,  # Return value of multiprocessing.Value
-    pipe: Connection,
     firehose_time: Synchronized,  # Return value of multiprocessing.Value
-    start_cursor: int | None = None,
-    base_uri: str = "wss://bsky.network/xrpc",
 ):
     """Primary function for running the client that connects to Bluesky. New commits are
     immediately sent to the separate post processing worker.
@@ -50,8 +49,13 @@ async def run_client_async(
 
     async def on_message_handler(message: firehose_models.MessageFrame) -> None:
         """This handler tells the client what to do when a new commit is encountered."""
-        # Send it to post processing worker to handle
-        pipe.send(message)
+        while True:
+            try:
+                queue.put(message, timeout=0.1)
+                break
+            except Full:
+                logger.warning("Queue is full")
+                time.sleep(1)
 
         # Update local client cursor value
         if cursor.value:
@@ -66,7 +70,7 @@ async def run_client_async(
     # Continually restarts the client if ConsumerTooSlow errors are encountered. This
     # can happen due to the Bluesky network being busy or internet connection issues.
     while True:
-        client = _get_client(start_cursor=start_cursor, base_uri=base_uri)
+        client = _get_client(start_cursor=CURSOR_OVERRIDE, base_uri=BASE_URI)
 
         try:
             logger.info("... firehose client worker started")
@@ -75,7 +79,7 @@ async def run_client_async(
         except FirehoseError as e:
             if not _is_client_too_slow_error(e):
                 raise e
-            logger.warn("Reconnecting to Firehose due to ConsumerTooSlow...")
+            logger.warning("Reconnecting to Firehose due to ConsumerTooSlow...")
 
 
 def _get_client(

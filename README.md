@@ -12,6 +12,8 @@ The [Astronomy feeds](https://bsky.app/profile/emily.space/feed/astro) on [Blues
 
 Create a fresh virtual environment with the Python version defined in runtime.txt. Then, install with `pip install -e .`.
 
+This module uses [faster-fifo](https://github.com/alex-petrenko/faster-fifo) for fast communication between processes; you may need to install some basic compile tools to get it to work, if you don't already have them (`sudo apt install --reinstall build-essential gcc g++`).
+
 ## Running the app
 
 You can start the app with the 'run' script, or the command
