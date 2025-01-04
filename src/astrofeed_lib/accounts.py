@@ -2,9 +2,7 @@
 
 from .database import Account
 from .database import get_database, setup_connection, teardown_connection
-from atproto import AsyncClient
 import time
-import asyncio
 
 
 class AccountQuery:
