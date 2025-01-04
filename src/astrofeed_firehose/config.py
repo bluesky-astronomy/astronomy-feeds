@@ -16,10 +16,13 @@ if _cursor_override is not None:
 CURSOR_OVERRIDE: Final[int | None] = _cursor_override
 
 # Assign number of CPUs
-_cpu_count = os.getenv("FIREHOSE_WORKER_COUNT", os.cpu_count())
+_cpu_count = os.getenv("FIREHOSE_WORKER_COUNT", os.cpu_count() - 1)
 if _cpu_count is None:
     _cpu_count = 1
-CPU_COUNT: Final[int] = int(_cpu_count)
+_cpu_count = int(_cpu_count)
+if _cpu_count < 1:
+    _cpu_count = 1
+CPU_COUNT: Final[int] = _cpu_count
 
 
 # ------------------------
