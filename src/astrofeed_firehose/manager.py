@@ -54,8 +54,8 @@ class FirehoseProcessingManager:
                 self.stop_processes()
                 raise RuntimeError(
                     "Processes encountered critical errors and hung/died."
-                    f"\nProcesses that died: {dead_processes}"
-                    f"\nProcesses that hung: {hung_processes}"
+                    f"\nProcesses that died: {', '.join(sorted(dead_processes))}"
+                    f"\nProcesses that hung: {', '.join(sorted(hung_processes))}"
                 )
             time.sleep(MANAGER_CHECK_INTERVAL)
 
@@ -109,7 +109,7 @@ class FirehoseProcessingManager:
         ops_elapsed = current_op_count - self.last_op_count
         print(
             f"Running at {ops_elapsed / time_elapsed:.2f} ops/sec "
-            f"(total: {current_op_count} ops)"
+            f"(total: {current_op_count:.4e} ops)"
         )
 
         self.last_check_time, self.last_op_count = current_time, current_op_count
