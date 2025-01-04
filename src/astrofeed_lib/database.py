@@ -122,17 +122,17 @@ def get_database() -> DatabaseProxy:
 
 
 def setup_connection(database: DatabaseProxy) -> None:
-    if not ASTROFEED_PRODUCTION:
-        ic("Connecting to DB")
+    # if not ASTROFEED_PRODUCTION:
+    #     ic("Connecting to DB")
     if database.is_closed():
-        if not ASTROFEED_PRODUCTION:
-            ic("Opening new connection")
+        # if not ASTROFEED_PRODUCTION:
+        #     ic("Opening new connection")
         database.connect()
 
 
 def teardown_connection(database: DatabaseProxy) -> None:
-    if not ASTROFEED_PRODUCTION:
-        ic("Closing DB connection")
+    # if not ASTROFEED_PRODUCTION:
+    #     ic("Closing DB connection")
     if not database.is_closed():
         database.close()
 

@@ -1,19 +1,19 @@
 """Tools for handling lists of posts in the database."""
+
 from .database import Post, get_database, setup_connection, teardown_connection
 import time
 from datetime import datetime, timedelta
-from icecream import ic
 from typing import Final
-
-# set up icecream
-ic.configureOutput(includeContext=True)
 
 QUERY_INTERVAL: Final[int] = 24 * 60 * 60
 ONE_WEEK_IN_DAYS: Final[int] = 7
 
 
 class PostQuery:
-    def __init__(self, max_post_age: timedelta = timedelta(days=ONE_WEEK_IN_DAYS),) -> None:
+    def __init__(
+        self,
+        max_post_age: timedelta = timedelta(days=ONE_WEEK_IN_DAYS),
+    ) -> None:
         """Generic refreshing post list."""
         self.last_query_time = time.time()
         self.posts = set()
@@ -22,13 +22,11 @@ class PostQuery:
 
     def query_database(self) -> None:
         setup_connection(get_database())
-        ic("Loading posts")
         self.posts = self.post_query()
         teardown_connection(get_database())
 
     def post_query(self):
         """Intended to be overwritten! Should return a set of posts."""
-        ic(f"Querying for posts {Post.uri}")
         return {
             post.uri
             for post in Post.select().where(
@@ -37,23 +35,24 @@ class PostQuery:
         }
 
     def get_posts(self) -> set:
-        ic("getting all posts")
         self.query_database()
         return self.posts
 
     def add_posts(self, posts):
-        ic(f"Adding posts {posts}")
         for post in posts:
             self.posts.add(post)
 
     def remove_posts(self, posts):
-        ic(f"Removing posts {posts}")
         for post in posts:
             self.posts.remove(post)
 
 
 class CachedPostQuery(PostQuery):
-    def __init__(self, query_interval: int = QUERY_INTERVAL, max_post_age: timedelta = timedelta(days=ONE_WEEK_IN_DAYS),) -> None:
+    def __init__(
+        self,
+        query_interval: int = QUERY_INTERVAL,
+        max_post_age: timedelta = timedelta(days=ONE_WEEK_IN_DAYS),
+    ) -> None:
         """Generic refreshing post list. Uses caching to try to reduce number of
         required query operations!
         """
