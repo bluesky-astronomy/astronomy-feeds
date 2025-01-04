@@ -2,33 +2,19 @@
 firehose client and post processor on separate subprocesses.
 """
 
-import os
 import multiprocessing
 import time
 from astrofeed_firehose.firehose_client import run_client
 from astrofeed_firehose.commit_processor import run_commit_processor
 from icecream import ic
-from multiprocessing import set_start_method, Process
-from typing import Final
+from multiprocessing import Process
+from astrofeed_firehose.config import BASE_URI, CURSOR_OVERRIDE, CPU_COUNT
 
 
 # set up icecream
 ic.configureOutput(includeContext=True)
 
-# Fetch base URI
-BASE_URI: Final[str] = "wss://bsky.network/xrpc"  # Which relay to fetch commits from
 
-# Fetch cursor override
-_cursor_override = os.getenv("FIREHOSE_CURSOR_OVERRIDE", None)
-if _cursor_override is not None:
-    _cursor_override = int(_cursor_override)
-CURSOR_OVERRIDE: Final[int | None] = _cursor_override
-
-# Assign number of CPUs
-_cpu_count = os.getenv("FIREHOSE_WORKER_COUNT", os.cpu_count())
-if _cpu_count is None:
-    _cpu_count = 1
-CPU_COUNT: Final[int] = int(_cpu_count)
 
 
 def _create_shared_resources():
