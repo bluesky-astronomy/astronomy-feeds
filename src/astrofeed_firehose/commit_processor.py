@@ -15,6 +15,7 @@ from astrofeed_lib.database import (
     teardown_connection,
 )
 from faster_fifo import Queue
+from queue import Empty
 from atproto import parse_subscribe_repos_message
 from atproto import models
 from atproto.exceptions import ModelError
@@ -41,7 +42,13 @@ def run_commit_processor(
     while True:
         # Wait for the queue to contain something.
         # Todo: upgrade to get_many eventually, reducing lock overhead
-        message = queue.get(timeout=300)
+        while True:
+            try:
+                message = queue.get(timeout=300)
+                break
+            except Empty:
+                time.sleep(0.001)
+                continue
 
         try:
             cursor_value = _process_commit(message)
