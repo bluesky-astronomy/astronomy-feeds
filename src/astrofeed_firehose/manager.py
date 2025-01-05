@@ -8,6 +8,10 @@ from astrofeed_firehose.config import (
     MANAGER_CHECK_INTERVAL,
     CPU_COUNT,
 )
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class FirehoseProcessingManager:
@@ -42,7 +46,7 @@ class FirehoseProcessingManager:
             try:
                 process.kill()
             except Exception as ex:
-                print(f"Exception stopping worker {process.name} ({ex})")
+                logger.error(f"Exception stopping worker {process.name} ({ex})")
                 pass
 
     def monitor(self):
@@ -51,6 +55,9 @@ class FirehoseProcessingManager:
             self._print_ops_per_second()
             dead_processes, hung_processes = self._check_processes()
             if dead_processes or hung_processes:
+                logger.critical(
+                    "Crticial exception encountered! Stopping child processes."
+                )
                 self.stop_processes()
                 raise RuntimeError(
                     "Processes encountered critical errors and hung/died."
@@ -107,7 +114,7 @@ class FirehoseProcessingManager:
 
         time_elapsed = current_time - self.last_check_time
         ops_elapsed = current_op_count - self.last_op_count
-        print(
+        logger.info(
             f"Running at {ops_elapsed / time_elapsed:.2f} ops/sec "
             f"(total: {current_op_count:.2e} ops)"
         )
@@ -131,7 +138,9 @@ def _run_firehose_client(
     try:
         run_client(queue, cursor, firehose_time, **kwargs)
     except Exception as e:
-        print(traceback.format_exc())
+        logger.critical(
+            "Critical exception when running firehose client", exc_info=True
+        )
         raise e
 
 
@@ -151,5 +160,7 @@ def _run_commit_processor(
     try:
         run_commit_processor(queue, cursor, firehose_time, **kwargs)
     except Exception as e:
-        print(traceback.format_exc())
+        logger.critical(
+            "Critical exception when running commit processor", exc_info=True
+        )
         raise e

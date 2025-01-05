@@ -11,6 +11,10 @@ from astrofeed_lib.accounts import CachedAccountQuery
 from astrofeed_lib.feeds import post_in_feeds
 from atproto import CAR, AtUri
 from atproto import models
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 # This is our set of accounts that are signed up, including those that are muted/banned
@@ -39,7 +43,9 @@ def apply_commit(
     teardown_connection(get_database())
 
 
-def _create_posts(cursor, posts_to_create_classified, feed_counts):
+def _create_posts(
+    cursor: int, posts_to_create_classified: list[dict], feed_counts: dict
+):
     """Adds posts to the database."""
     if not posts_to_create_classified:
         return
@@ -53,7 +59,7 @@ def _create_posts(cursor, posts_to_create_classified, feed_counts):
         if not Post.select().where(Post.uri == post["uri"]).exists()
     ]
     if (current_length := len(posts_to_create_classified)) != initial_length:
-        print(f"Ignored duplicate posts: {initial_length - current_length}")
+        logger.info(f"Ignored duplicate posts: {initial_length - current_length}")
 
     if not posts_to_create_classified:
         return
@@ -65,20 +71,19 @@ def _create_posts(cursor, posts_to_create_classified, feed_counts):
     feed_counts_string = ", ".join(
         [f"{key[5:]}-{value}" for key, value in feed_counts.items() if value > 0]
     )
-    print(f"Added posts: {feed_counts_string} (cursor={cursor})")
+    logger.info(f"Added posts: {feed_counts_string} (cursor={cursor})")
 
 
-def _delete_posts(cursor, posts_to_delete):
+def _delete_posts(cursor: int, posts_to_delete: list[str]):
     """Removes posts from the database."""
     if not posts_to_delete:
         return
+    
+    Post.delete().where(Post.uri.in_(posts_to_delete))  # type: ignore (pylance is wrong)
+    logger.info(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
 
-    # Todo needs fixing - pylance is grumpy for some reason, is this used wrong?
-    Post.delete().where(Post.uri.in_(posts_to_delete))  # type: ignore
-    print(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
 
-
-def _classify_posts(posts_to_create):
+def _classify_posts(posts_to_create: list[dict]) -> tuple[list[dict], dict]:
     """Classifies posts by type, also returning a dictionary of post classifications
     for some pretty printing of the added posts.
     """
@@ -177,7 +182,7 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
     return operation_by_type
 
 
-def _get_required_ops(ops: dict):
+def _get_required_ops(ops: dict) -> tuple[list[dict], list[str]]:
     """Fetches the required operations from a _get_ops_by_type dict."""
     good_accounts = VALID_ACCOUNTS.get_accounts()
 

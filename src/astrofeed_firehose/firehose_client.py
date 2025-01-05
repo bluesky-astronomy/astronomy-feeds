@@ -1,6 +1,5 @@
 """Code for client that connects to firehose."""
 
-import logging
 from multiprocessing.sharedctypes import Synchronized
 import time
 from atproto.exceptions import FirehoseError
@@ -19,10 +18,10 @@ from astrofeed_firehose.config import BASE_URI, CURSOR_OVERRIDE
 import uvloop
 from faster_fifo import Queue
 from queue import Full
+import logging
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 
 def run_client(
