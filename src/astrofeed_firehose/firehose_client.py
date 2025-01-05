@@ -14,7 +14,7 @@ from astrofeed_lib.database import (
     teardown_connection,
     get_database,
 )
-from astrofeed_firehose.config import BASE_URI, CURSOR_OVERRIDE
+from astrofeed_firehose.config import BASE_URI, CURSOR_OVERRIDE, COMMITS_TO_ADD_AT_ONCE
 import uvloop
 from faster_fifo import Queue
 from queue import Full
@@ -33,6 +33,9 @@ def run_client(
     uvloop.run(run_client_async(queue, cursor, firehose_time))
 
 
+_queue_cache = []
+
+
 async def run_client_async(
     queue: Queue,
     cursor: Synchronized,  # Return value of multiprocessing.Value
@@ -44,13 +47,16 @@ async def run_client_async(
 
     async def on_message_handler(message: firehose_models.MessageFrame) -> None:
         """This handler tells the client what to do when a new commit is encountered."""
-        while True:
-            try:
-                queue.put(message, timeout=1.0)
-                break
-            except Full:
-                logger.warning("Queue is full! Consider increasing queue size.")
-                time.sleep(1)
+        _queue_cache.append(message)
+        if len(_queue_cache) > COMMITS_TO_ADD_AT_ONCE:
+            while True:
+                try:
+                    queue.put_many(_queue_cache, timeout=1.0)
+                    _queue_cache.clear()
+                    break
+                except Full:
+                    logger.warning("Queue is full! Consider increasing queue size.")
+                    time.sleep(0.1)
 
         # Update local client cursor value
         if cursor.value:

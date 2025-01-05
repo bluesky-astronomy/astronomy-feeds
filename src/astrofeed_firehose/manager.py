@@ -1,5 +1,4 @@
 import time
-import traceback
 from faster_fifo import Queue
 from multiprocessing import Process, Value
 from multiprocessing.sharedctypes import Synchronized
@@ -116,7 +115,8 @@ class FirehoseProcessingManager:
         ops_elapsed = current_op_count - self.last_op_count
         logger.info(
             f"Running at {ops_elapsed / time_elapsed:.2f} ops/sec "
-            f"(total: {current_op_count:.2e} ops)"
+            f"| Total: {current_op_count:.2e} ops "
+            f"| Commits in queue: {self.queue.qsize()}"
         )
 
         self.last_check_time, self.last_op_count = current_time, current_op_count
