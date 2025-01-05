@@ -1,3 +1,0 @@
-#!/bin/bash
-echo "Starting astrofeed-firehose..."
-python -m astrofeed_firehose

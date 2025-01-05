@@ -30,6 +30,7 @@ version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "astrofeed-lib" },
+    { name = "faster-fifo" },
     { name = "icecream" },
     { name = "uvloop" },
 ]
@@ -37,6 +38,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "astrofeed-lib", git = "https://github.com/bluesky-astronomy/astrofeed-lib?branch=main" },
+    { name = "faster-fifo", specifier = ">=1.5.2,<2.0" },
     { name = "icecream", specifier = ">=2.1.3" },
     { name = "uvloop", specifier = ">=0.20" },
 ]
@@ -44,7 +46,7 @@ requires-dist = [
 [[package]]
 name = "astrofeed-lib"
 version = "0.0.9"
-source = { git = "https://github.com/bluesky-astronomy/astrofeed-lib?branch=main#4877256e6a3b4ace5c6a71a8c6fe847965429be7" }
+source = { git = "https://github.com/bluesky-astronomy/astrofeed-lib?branch=main#af5ee877145edc7596894e8c5449263f4d21fc67" }
 dependencies = [
     { name = "atproto" },
     { name = "emoji" },
@@ -188,6 +190,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/8c/e3/7d45f492c2c4a0e8e0fad57d081a7c8a0286cdd86372b070cca1ec0caa1e/executing-2.1.0.tar.gz", hash = "sha256:8ea27ddd260da8150fa5a708269c4a10e76161e2496ec3e587da9e3c0fe4b9ab", size = 977485 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b5/fd/afcd0496feca3276f509df3dbd5dae726fcc756f1a08d9e25abe1733f962/executing-2.1.0-py2.py3-none-any.whl", hash = "sha256:8d63781349375b5ebccc3142f4b30350c0cd9c79f921cde38be2be4637e98eaf", size = 25805 },
+]
+
+[[package]]
+name = "faster-fifo"
+version = "1.5.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/f0/8747adf39f3f337b09217ceebb6e415ef874e360718d0e52837c889cc217/faster_fifo-1.5.2.tar.gz", hash = "sha256:a2a544fef4d6e31ebd4bb4c7bbfced315d741c3b7ccad23fe0a359d7b408527e", size = 11743 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/26/25/91be31ef17edb11e50b7836a4257053d485ffcd8033230eac64e61b203e7/faster_fifo-1.5.2-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:bd191713e9e395197b6f2f9f19365badea7d0b38ca407449e93a6a1bf45001f9", size = 75583 },
+    { url = "https://files.pythonhosted.org/packages/9b/58/be4043c8f5cdb259f6ef450468a5d5bbe54ef02e76e10ebbde3c124fd4c9/faster_fifo-1.5.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:3d5d9d9ea550ed8e01c7ff237a5844c5fa9b95eb7011fb1d9955cb7741cfd898", size = 70925 },
+    { url = "https://files.pythonhosted.org/packages/fa/b7/1a9a8c9cc779b1bb5876b0af727c283cf3201f75724c4634ab0e529518c5/faster_fifo-1.5.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ee5cd7e57263547c1cd119d22b02abc4d2277c262ccbeefc9c9b42809338ad8d", size = 428861 },
+    { url = "https://files.pythonhosted.org/packages/37/d7/2e9a49d1b51c8876093ace54216413c917d41c6274fb3647d59bf5f4d4a8/faster_fifo-1.5.2-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:cbaf33fb8120f5ec9e040e5578be7e9074621ed45aa1f96ff28e2b398c344880", size = 402630 },
+    { url = "https://files.pythonhosted.org/packages/af/7e/de6eeac229ed64239ceabefffb52b791e9475f150a6fa44e687cee823c02/faster_fifo-1.5.2-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:68b6f2756541401ddb735120e6bca55cc4df2d3a01f8bc843a6bb8e3324811d3", size = 1503749 },
+    { url = "https://files.pythonhosted.org/packages/da/87/d178d4d7470dc4d31d14abb7bc97679afcd28694e92dccb41921b48c8da7/faster_fifo-1.5.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:0f0284891b2ece21695c533dfb0f2708aa6a42db5f0877e0f2ba32c3625b5ac1", size = 1423775 },
 ]
 
 [[package]]

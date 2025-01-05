@@ -1,72 +1,95 @@
 """Logic for how commits are filtered."""
 
 # import logging
-from astrofeed_lib.config import SERVICE_DID
-from astrofeed_lib.database import SubscriptionState, Post, get_database, setup_connection, teardown_connection
+from astrofeed_lib.database import (
+    Post,
+    get_database,
+    setup_connection,
+    teardown_connection,
+)
+from astrofeed_lib.accounts import CachedAccountQuery
 from astrofeed_lib.feeds import post_in_feeds
-from atproto import CAR, AtUri, parse_subscribe_repos_message
+from atproto import CAR, AtUri
 from atproto import models
-from atproto.exceptions import ModelError
+import logging
 
 
-def _process_commit(
-    message, cursor, valid_accounts, existing_posts, update_cursor_in_database=True
-):
-    """Attempt to process a single commit. Returns a list of any new posts to add."""
-    # Skip any commits that do not pass this model (which can occur sometimes)
-    try:
-        commit = parse_subscribe_repos_message(message)
-    except ModelError:
-        print("Unable to process a commit due to validation issue")
-        return []
+logger = logging.getLogger(__name__)
 
-    # Final check that this is in fact a commit, and not e.g. a handle change
-    if not isinstance(commit, models.ComAtprotoSyncSubscribeRepos.Commit):
-        return []
 
-    new_posts = apply_commit(commit, valid_accounts, existing_posts)
-
-    # Update stored state every ~100 events
-    if commit.seq % 100 == 0:
-        cursor.value = commit.seq
-        if commit.seq % 1000 == 0:
-            if update_cursor_in_database:
-                setup_connection(get_database())
-                SubscriptionState.update(cursor=commit.seq).where(
-                    SubscriptionState.service == SERVICE_DID
-                ).execute()
-                teardown_connection(get_database())
-            else:
-                print(f"Cursor: {commit.seq}")
-
-    # Notify the manager process of either a) a new post, or b) that we're done with
-    # this commit
-    return new_posts
+# This is our set of accounts that are signed up, including those that are muted/banned
+# (as those could be later reversed.) We keep it updated once every 60 seconds.
+VALID_ACCOUNTS = CachedAccountQuery(query_interval=60)
 
 
 def apply_commit(
     commit: models.ComAtprotoSyncSubscribeRepos.Commit,
-    valid_accounts: set,
-    existing_posts: set,
-) -> list:
+):
     """Applies the operations in a commit based on which ones are necessary to process."""
+    # Sort the initial commit into everything we're interested in
     ops = _get_ops_by_type(commit)
+    posts_to_create, posts_to_delete = _get_required_ops(ops)
+    if not posts_to_create and not posts_to_delete:
+        return
+
+    # If we have posts to create, then we'll also need to classify them
+    posts_to_create_classified, feed_counts = _classify_posts(posts_to_create)
+
+    # Perform database operations
     cursor = commit.seq
+    setup_connection(get_database())
+    _delete_posts(cursor, posts_to_delete)
+    _create_posts(cursor, posts_to_create_classified, feed_counts)
+    teardown_connection(get_database())
 
-    # See how many posts are valid
-    posts_to_create = []
-    valid_posts = [
-        post for post in ops["posts"]["created"] if post["author"] in valid_accounts
+
+def _create_posts(
+    cursor: int, posts_to_create_classified: list[dict], feed_counts: dict
+):
+    """Adds posts to the database."""
+    if not posts_to_create_classified:
+        return
+
+    # Remove duplicate posts
+    # Todo: change to do this in one query (doesn't matter atm as this function is almost always called one post at a time, but eventually...)
+    initial_length = len(posts_to_create_classified)
+    posts_to_create_classified = [
+        post
+        for post in posts_to_create_classified
+        if not Post.select().where(Post.uri == post["uri"]).exists()
     ]
+    if (current_length := len(posts_to_create_classified)) != initial_length:
+        logger.info(f"Ignored duplicate posts: {initial_length - current_length}")
 
-    # Classify valid posts into feed categories
+    if not posts_to_create_classified:
+        return
+
+    # Add the posts
+    with get_database().atomic():
+        for post_dict in posts_to_create_classified:
+            Post.create(**post_dict)
+    feed_counts_string = ", ".join(
+        [f"{key[5:]}-{value}" for key, value in feed_counts.items() if value > 0]
+    )
+    logger.info(f"Added posts: {feed_counts_string} (cursor={cursor})")
+
+
+def _delete_posts(cursor: int, posts_to_delete: list[str]):
+    """Removes posts from the database."""
+    if not posts_to_delete:
+        return
+    
+    Post.delete().where(Post.uri.in_(posts_to_delete))  # type: ignore (pylance is wrong)
+    logger.info(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
+
+
+def _classify_posts(posts_to_create: list[dict]) -> tuple[list[dict], dict]:
+    """Classifies posts by type, also returning a dictionary of post classifications
+    for some pretty printing of the added posts.
+    """
     feed_counts = {}
-    for created_post in valid_posts:
-        # Don't add a post if it already exists (e.g. if we're looping over the firehose)
-        if created_post["uri"] in existing_posts:
-            print(f"Ignored duplicate post (cursor={cursor})")
-            continue
-
+    posts_to_create_classified = []
+    for created_post in posts_to_create:
         # Basic post info to add to the database
         post_text = created_post["record"]["text"]
         post_dict = {
@@ -79,7 +102,7 @@ def apply_commit(
         # Add labels to the post for
         feed_labels = post_in_feeds(post_text)
         post_dict.update(feed_labels)
-        posts_to_create.append(post_dict)
+        posts_to_create_classified.append(post_dict)
 
         # Count how many posts we have
         # Initialise the dict if we're here the first time (not done above for optimization reasons)
@@ -89,34 +112,7 @@ def apply_commit(
         # Add feed labelling to said dict
         for a_key in feed_labels:
             feed_counts[a_key] += feed_labels[a_key]
-
-    # See if there are any posts that need deleting
-    posts_to_delete = [
-        post["uri"] for post in ops["posts"]["deleted"] if post["uri"] in existing_posts
-    ]
-
-    # Perform database operations
-    if posts_to_delete or posts_to_create:
-        setup_connection(get_database())
-
-        if posts_to_delete:
-            Post.delete().where(Post.uri.in_(posts_to_delete))
-            print(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
-
-        if posts_to_create:
-            with get_database().atomic():
-                for post_dict in posts_to_create:
-                    Post.create(**post_dict)
-            feed_counts_string = ", ".join(
-                [f"{key[5:]}-{feed_counts[key]}" for key in feed_counts]
-            )
-            print(f"Added posts: {feed_counts_string} (cursor={cursor})")
-
-        teardown_connection(get_database())
-
-    if not posts_to_create:
-        return []
-    return [post["uri"] for post in posts_to_create]
+    return posts_to_create_classified, feed_counts
 
 
 def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict:  # noqa: C901
@@ -171,7 +167,9 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
 
         if op.action == "delete":
             if uri.collection == models.ids.AppBskyFeedPost:
-                operation_by_type["posts"]["deleted"].append({"uri": str(uri)})
+                operation_by_type["posts"]["deleted"].append(
+                    {"uri": str(uri), "author": commit.repo}
+                )
 
             # The following types of event don't need to be tracked by the feed right now.
             # elif uri.collection == ids.AppBskyFeedLike:
@@ -182,3 +180,23 @@ def _get_ops_by_type(commit: models.ComAtprotoSyncSubscribeRepos.Commit) -> dict
             #     operation_by_type['follows']['deleted'].append({'uri': str(uri)})
 
     return operation_by_type
+
+
+def _get_required_ops(ops: dict) -> tuple[list[dict], list[str]]:
+    """Fetches the required operations from a _get_ops_by_type dict."""
+    good_accounts = VALID_ACCOUNTS.get_accounts()
+
+    # See how many posts need creating or deleting
+    posts_to_create = [
+        post for post in ops["posts"]["created"] if post["author"] in good_accounts
+    ]
+    # posts_to_create = [
+    #     post for post in posts_to_create if post["uri"] not in existing_posts
+    # ]
+    posts_to_delete = [
+        post["uri"]
+        for post in ops["posts"]["deleted"]
+        if post["author"] in good_accounts
+    ]
+
+    return posts_to_create, posts_to_delete
