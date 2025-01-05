@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     try:
         logger.info("Starting continuous monitoring of processes")
-        time.sleep(5)  # Give it a sec to start up
+        time.sleep(10)  # Give it a sec to start up
         manager.monitor()
 
     except KeyboardInterrupt:
