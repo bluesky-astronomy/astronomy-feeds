@@ -1,5 +1,10 @@
 import os
 from typing import Final
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 # ------------------------
 # GENERAL SETTINGS
@@ -30,10 +35,31 @@ CPU_COUNT: Final[int] = _cpu_count
 # These settings probably won't need tweaking and aren't exposed as environment
 # variables, but could be necessary to change in the future or on different machines
 # ------------------------
+
+# OVERALL MANAGER -----------------------
+# How often the watchdog should check that all processes are running (in seconds)
+MANAGER_CHECK_INTERVAL = 60
+
+# QUEUE PRIMITIVE -----------------------
 # Buffer size of the internal process queue (I think it's in bytes?)
 # N.B.: one commit is about ~1-2 KB
 # The last multiple is size in MB
 QUEUE_BUFFER_SIZE = 1024**2 * 10
 
-# How often the watchdog should check that all processes are running (in seconds)
-MANAGER_CHECK_INTERVAL = 60
+# Number of commits the firehose client should try to send at once.
+COMMITS_TO_ADD_AT_ONCE = 100
+
+# Maximum number of commits each processing worker should try to get
+COMMITS_TO_FETCH_AT_ONCE = 100
+
+# Sleep times for if the queue is empty or full
+FULL_QUEUE_SLEEP_TIME = 0.1
+EMPTY_QUEUE_SLEEP_TIME = 0.01
+
+# CURSOR SYNCHRONIZATION ----------------
+# How often to update the cursor for the firehose client & in the database
+# I.e., on each nth commit we update the cursor in each place
+FIREHOSE_CURSOR_UPDATE = 100  # Todo: see if this can be increased to 1000
+DATABASE_CURSOR_UPDATE = (
+    1000  # Todo: see if this can be increased to 10000, which is <1 minute of ops/sec
+)
