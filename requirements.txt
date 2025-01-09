@@ -1,0 +1,3 @@
+astrofeed_lib @ git+https://github.com/bluesky-astronomy/astrofeed-lib
+Flask>=2.3.2,<3.0
+gunicorn>=20.1.0
