@@ -1,3 +1,0 @@
-#!/bin/bash
-echo "Starting astrofeed-server..."
-gunicorn --worker-tmp-dir /dev/shm src.astrofeed_server.app:app
