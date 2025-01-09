@@ -3,6 +3,9 @@
 .vscode
 *.code-workspace
 
+# Saved session files from client logins
+*.session
+
 
 ## Default Python .gitignore
 .DS_Store
