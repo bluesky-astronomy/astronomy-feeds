@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, request
 from astrofeed_lib import config
-#from astrofeed_lib.database import db
-from astrofeed_lib.database import get_database, setup_connection, teardown_connection
+from astrofeed_lib.database import DBConnection, get_database, setup_connection, teardown_connection
 from astrofeed_lib.algorithm import get_posts
 
 # Haven't yet worked out how to get a local Flask debug with VS Code to like a relative
@@ -22,7 +21,6 @@ app = Flask(__name__)
 def _db_connect():
     if get_database().is_closed():
         setup_connection(get_database())
-        #get_database().connect()
 
 
 # This hook ensures that the connection is closed when we've finished
@@ -30,7 +28,6 @@ def _db_connect():
 @app.teardown_request
 def _db_close(exc):
     if not get_database().is_closed():
-        #get_database().close()
         teardown_connection(get_database())
 
 
