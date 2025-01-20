@@ -3,7 +3,7 @@ name = "astronomy_feeds" # Required
 version = "0.1.0" # Required
 description = "The Python implementation that powers the Astronomy feeds on Bluesky."
 readme = "README.md" # Optional
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.11,<3.13"
 license = { file = "LICENSE" }
 keywords = ["bluesky", "astronomy"]
 authors = [
