@@ -20,7 +20,7 @@ from typing import Callable
 
 RULES_POSTS = [
     "Thank you for your interest in signing up to the Astronomy feeds! There are a few steps to this that I'll guide you through in this thread.\n\nThis bot is experimental; if you have any issues, please tag @emily.space, the bot's maintainer.",
-    "Firstly, please note that you only need to sign up to the feed if you'd like to post to it. Anyone on Bluesky can read the feed!\n\nIn addition, you must be a professional, amateur, or student astronomer to post to the feeds. (It's also ok if you left academia but still want to sign up!)",
+    "IMPORTANT: you only need to sign up to the feed if you'd like to *post* to it.\n\nAnyone on Bluesky can *read* the feed or *reply* to posts.\n\nTo post here, you must be a professional, amateur, or student astronomer. (People who have left academia are also very welcome.)",
     "If the above is ok and you still want to sign up, then you'll need to agree to the feed rules below:\n\nIf you agree to follow them, then reply to this post with a 'yes'.",
 ]
 
@@ -86,7 +86,7 @@ def _execute_rules_sent(command: SignupCommand, client: Client):
     )
 
 
-DESCRIPTION_TEXT = "Great! 😊\n\nNext off, please reply to this post with one or two sentences about why you'd like to join the feeds.\n\nFor instance: are you an astrophotographer? Are you currently studying/working in astronomy? Or whatever else!"
+DESCRIPTION_TEXT = "Great! 😊\n\nNext off, please reply to this post with one or two sentences about why you'd like to be able to post to the feeds.\n\nFor instance: are you an astrophotographer? Are you currently studying/working in astronomy? Or whatever else!"
 
 
 def _execute_get_description(command: SignupCommand, client: Client):
