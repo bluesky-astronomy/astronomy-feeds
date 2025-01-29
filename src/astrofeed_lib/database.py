@@ -4,13 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION
 from playhouse.pool import PooledMySQLDatabase
-import logging
-
-
-# set up logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG if ASTROFEED_PRODUCTION == "False" else logging.DEBUG)
-logging.basicConfig(format='%(asctime)s [%(levelname)s] : %(message)s')
+from astrofeed_lib import logger
 
 proxy: DatabaseProxy | None = None
 
@@ -121,7 +115,7 @@ def setup_connection(database: DatabaseProxy) -> None:
 
 
 def teardown_connection(database: DatabaseProxy) -> None:
-    logging.debug("Closing DB connection")
+    logger.debug("Closing DB connection")
     if database is not None and not database.is_closed():
         try:
             database.close()

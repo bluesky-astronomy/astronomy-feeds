@@ -48,6 +48,7 @@ Running each service requires setting environment variables and running a single
 - `FIREHOSE_WORKER_COUNT` - number of post-processing workers. Defaults to your number of CPU cores; in general, setting this higher than ~2-4 isn't necessary, although it depends a lot on the speed of the post-processing workers on your machine.
 - `FIREHOSE_BASE_URI` - websocket to fetch posts from. Defaults to `wss://bsky.network/xrpc`.
 - `FIREHOSE_CURSOR_OVERRIDE` - cursor override to use when starting the firehose. Defaults to None, and it will instead fetch a cursor from the database. If the database cursor does not exist or is too old, the firehose will instead use the cursor of the latest Bluesky firehose commit.
+- `ASTROFEED_DEBUG` - Enabled debug log output. Will require a restart of the service.
 
 2. Start the service with the command `./run_firehose`, or with:
 
@@ -66,6 +67,10 @@ uv run -m astrofeed_firehose
 **Mandatory in production:**
 
 - `ASTROFEED_PRODUCTION` - set to True to instead connect to a remote MySQL database
+
+**Optional settings:**
+
+- `ASTROFEED_DEBUG` - Enabled debug log output. Will require a restart of the service.
 
 2. Start the server with the command `./run_server`, or with:
 
@@ -86,6 +91,10 @@ uv run gunicorn --worker-tmp-dir /dev/shm src.astrofeed_server.app:app
 **Mandatory in production:**
 
 - `ASTROFEED_PRODUCTION` - set to True to instead connect to a remote MySQL database
+
+**Optional settings:**
+
+- `ASTROFEED_DEBUG` - Enabled debug log output. Will require a restart of the service.
 
 2. Start the bot with the command `./run_bot`, or with:
 

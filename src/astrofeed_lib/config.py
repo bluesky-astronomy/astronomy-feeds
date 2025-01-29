@@ -16,6 +16,7 @@ import os
 # the following things:
 # 1. We expect a remote MySQL database instead of a local SQLite one
 ASTROFEED_PRODUCTION = os.getenv("ASTROFEED_PRODUCTION", "False").lower() in {"true", "1"}
+DEBUG_ENABLED = os.getenv("ASTROFEED_DEBUG", "False").lower() in {"true", "1"}
 
 
 # ----------------------------------------------
