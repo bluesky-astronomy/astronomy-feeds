@@ -7,10 +7,7 @@ from astrofeed_firehose.config import (
     MANAGER_CHECK_INTERVAL,
     CPU_COUNT,
 )
-import logging
-
-
-logger = logging.getLogger(__name__)
+from astrofeed_lib import logger
 
 
 class FirehoseProcessingManager:

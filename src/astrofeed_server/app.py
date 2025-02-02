@@ -3,6 +3,7 @@ from astrofeed_lib import config
 from astrofeed_lib.database import get_database, setup_connection, teardown_connection
 from astrofeed_lib.algorithm import get_posts
 
+
 # Haven't yet worked out how to get a local Flask debug with VS Code to like a relative
 # import, and how to get a Gunicorn running server on Digital Ocean to not *need* one =(
 # TODO: make this less of a hack

@@ -11,10 +11,8 @@ from astrobot.database import (
     get_database,
 )
 import warnings
-from icecream import ic
+from astrofeed_lib import logger
 
-# set up icecream
-ic.configureOutput(includeContext=True)
 
 ALLOWED_NOTIFICATION_TYPES = {"like", "repost", "follow", "mention", "reply", "quote"}
 
@@ -180,7 +178,7 @@ class MentionNotification(BaseNotification):
         try:
             mention_index = words.index("@" + HANDLE)
         except ValueError:
-            print(f"Mention not found in post with text: {self.text}")
+            logger.error(f"Mention not found in post with text: {self.text}")
             self.words = ["ValueError_No_Mention_Found"]
         else:
             self.words = words[mention_index + 1 :]

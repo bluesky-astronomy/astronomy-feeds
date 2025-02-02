@@ -1,6 +1,7 @@
 """Standard functions for working with clients. Mostly just wraps atproto."""
 from atproto import Client, Session, SessionEvent
 from .config import HANDLE, PASSWORD
+from astrofeed_lib import logger
 
 
 def get_client(
@@ -19,15 +20,15 @@ def get_client(
     # Login using previous session
     session = _get_session(HANDLE)
     if session and reuse_session:
-        # print("Reusing existing session")
+        # logger.info("Reusing existing session")
         try:
             client.login(session_string=session)
             return client
         except Exception as e:
-            print(f"Unable to log in with previous session! Reason: {e}")
+            logger.error(f"Unable to log in with previous session! Reason: {e}")
 
     # We revert to password login if we can't find a session or if there was an issue
-    # print("Logging in with password instead...")
+    # logger.info("Logging in with password instead...")
     
     client.login(HANDLE, PASSWORD)
     return client
@@ -48,9 +49,9 @@ class BotSessionUpdater:
 
     def on_session_change(self, event: SessionEvent, session: Session) -> None:
         """Callback to save session."""
-        print('Session changed:', event, repr(session))
+        logger.info('Session changed:', event, repr(session))
         if event in (SessionEvent.CREATE, SessionEvent.REFRESH):
-            # print('Saving changed session')
+            # logger.info('Saving changed session')
             self.save_session(session.export())
 
     def save_session(self, session_string: str) -> None:

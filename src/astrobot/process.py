@@ -5,34 +5,31 @@ from atproto import Client
 from .config import COMMAND_REGISTRY
 from .database import get_outstanding_bot_actions, teardown_connection, get_database
 from .notifications import LikeNotification, ReplyNotification, MentionNotification
-from icecream import ic
-
-# set up icecream
-ic.configureOutput(includeContext=True)
+from astrofeed_lib import logger
 
 
 def process_commands(client: Client, notifications: list[Notification]):
-    ic("Processing notifications...")
+    logger.info("Processing notifications...")
     # Get all mentions and try to see if any are new commands
     new_commands = _look_for_new_commands(notifications)
     updated_commands = _look_for_updates_to_multistep_commands(notifications)
 
-    ic(f"-> found {len(new_commands)} new commands")
+    logger.info(f"-> found {len(new_commands)} new commands")
     if new_commands:
         to_print = ", ".join(
             [f"{c.notification.author.handle}: {c.command}" for c in new_commands]
         )
-        ic(f"   with types: {to_print}")
-    ic(f"-> found {len(updated_commands)} valid updates to commands")
+        logger.info(f"   with types: {to_print}")
+    logger.info(f"-> found {len(updated_commands)} valid updates to commands")
     if updated_commands:
         to_print = ",".join(
             [f"{c.notification.author.handle}: {c.command}" for c in updated_commands]
         )
-        ic(f"   with types: {to_print}")
+        logger.info(f"   with types: {to_print}")
 
-    ic("Executing...")
+    logger.info("Executing...")
     for command in new_commands + updated_commands:
-        ic(
+        logger.info(
             f"-> running command {command.command} acting on {command.notification.author.handle}"
         )
         command.execute(client)
