@@ -55,7 +55,7 @@ def _get_mysql_database() -> PooledMySQLDatabase:
         host=host,
         port=port,
         ssl_disabled=ssl_disabled,
-        autoconnect=False
+        autoconnect=False,
     )
 
 
@@ -107,11 +107,19 @@ def get_database() -> DatabaseProxy:
 
 
 def setup_connection(database: DatabaseProxy) -> None:
-    if database is not None and database.is_closed():
+    if database is None:
+        raise Exception(
+            "Database Proxy is uninitialized - please pass a valid Database Proxy to "
+            "setup_connection"
+        )
+
+    if database.is_closed():
         logger.debug("Connecting to DB")
         database.connect()
     else:
-        raise Exception("Database Proxy in ambiguous state - please pass a valid Database Proxy to setup_connection")
+        logger.error(
+            "Exception setting up connection: database connection is already open"
+        )
 
 
 def teardown_connection(database: DatabaseProxy) -> None:
