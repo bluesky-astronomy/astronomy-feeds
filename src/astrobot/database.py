@@ -141,7 +141,7 @@ def get_outstanding_bot_actions(uris: None | list[str]) -> list:
     else:
         result = [x for x in BotActions.select().where(
             BotActions.complete == False, BotActions.latest_uri << uris).execute()]
-    # teardown_connection(get_database())
+    teardown_connection(get_database())
     return result
 
 
@@ -156,7 +156,7 @@ def get_candidate_stale_bot_actions(types: list, limit: int = 25, age: int = 28)
             BotActions.indexed_at > datetime.now() - timedelta(days=age),
         ).order_by(BotActions.checked_at).limit(limit)
 
-    # teardown_connection(get_database())
+    teardown_connection(get_database())
     return results
 
 
