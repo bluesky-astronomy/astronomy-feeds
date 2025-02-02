@@ -8,7 +8,7 @@ from astrobot.database import (
     get_candidate_stale_bot_actions,
     update_checked_at_time_of_bot_actions,
     teardown_connection,
-    get_database
+    get_database,
 )
 import warnings
 from icecream import ic
@@ -64,8 +64,10 @@ def get_notifications_from_stale_commands(
     those that we haven't had a notification for but where something may have happened
     since.
     """
-    actions_of_interest = get_candidate_stale_bot_actions(commands_to_check, age=age)
-    uris_of_interest = [x.latest_uri for x in actions_of_interest]
+    uris_of_interest, action_ids = get_candidate_stale_bot_actions(
+        commands_to_check, age=age
+    )
+
     posts = client.get_posts(uris_of_interest).posts
     posts = [post for post in posts if post.like_count > 0 or post.reply_count > 0]
 
@@ -88,8 +90,8 @@ def get_notifications_from_stale_commands(
     notifications.sort(key=lambda x: x.indexed_at)
 
     # Mark notifications as being done with
-    update_checked_at_time_of_bot_actions([action.id for action in actions_of_interest])
-    teardown_connection(get_database())
+    update_checked_at_time_of_bot_actions(action_ids)
+    # teardown_connection(get_database())
     return notifications
 
 
