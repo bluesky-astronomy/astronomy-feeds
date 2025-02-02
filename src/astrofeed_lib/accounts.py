@@ -1,7 +1,7 @@
 """Tools for handling lists of accounts and working with Bluesky DIDs etc."""
 
 from .database import Account
-from .database import get_database, setup_connection, teardown_connection
+from .database import DBConnection # get_database, setup_connection, teardown_connection
 import time
 
 
@@ -15,9 +15,13 @@ class AccountQuery:
         self.query_database = self.query_database
 
     def query_database(self) -> None:
+        with DBConnection as conn:
+            self.accounts = self.account_query()
+        """
         setup_connection(get_database())
         self.accounts = self.account_query()
         teardown_connection(get_database())
+        """
 
     def account_query(self):
         """Intended to be overwritten! Should return a set of accounts."""
@@ -28,7 +32,7 @@ class AccountQuery:
 
     def get_accounts(self) -> set:
         self.query_database()
-        return self.accounts  # type: ignore (because pylance is a silly thing here. this should always be a set)
+        return self.accounts  # type ignore because pylance is a silly thing here. this should always be a set
 
 
 class CachedAccountQuery(AccountQuery):
@@ -50,7 +54,7 @@ class CachedAccountQuery(AccountQuery):
         if is_overdue or self.accounts is None:
             self.query_database()
             self.last_query_time = time.time()
-        return self.accounts  # type: ignore (because pylance is a silly thing here. this should always be a set)
+        return self.accounts  # type ignore because pylance is a silly thing here. this should always be a set
 
 
 class CachedModeratorList(CachedAccountQuery):

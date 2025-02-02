@@ -4,10 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION
 from playhouse.pool import PooledMySQLDatabase
-from icecream import ic
-
-# set up icecream
-ic.configureOutput(includeContext=True)
+from astrofeed_lib import logger
 
 proxy: DatabaseProxy | None = None
 
@@ -23,12 +20,12 @@ def _check_database_variable():
         )
 
 
-def _get_mysql_database() -> PooledMySQLDatabase: # peewee.MySQLDatabase:
-    """Generates a MySQL database connection based on pre-set environment variable.
+def _get_mysql_database() -> PooledMySQLDatabase:
+    """Generates and/or grabs a MySQL database connection from the pool based on pre-set environment variable.
     This function expects a string that looks like this:
     mysql://USER:PASSWORD@HOST:PORT/NAME?ssl-mode=REQUIRED
     """
-    ic("Getting MySQL Database")
+    logger.debug("Getting a Pooled MySQL Database")
     _check_database_variable()
 
     # Todo can this be neater? May just be worth changing the env variable spec anyway, as the current format is a pain to process. May be a good to-do for when we migrate fully to new hosting.
@@ -48,16 +45,6 @@ def _get_mysql_database() -> PooledMySQLDatabase: # peewee.MySQLDatabase:
     if "ssl-mode=REQUIRED" in flags:
         ssl_disabled = False
 
-    """
-    return peewee.MySQLDatabase(
-        database_name,
-        user=user,
-        password=password,
-        host=host,
-        port=port,
-        ssl_disabled=ssl_disabled,
-    )
-    """
     return PooledMySQLDatabase(
         database_name,
         max_connections=10,
@@ -78,24 +65,21 @@ def _get_sqlite_database() -> peewee.SqliteDatabase:
     threads, and since this is just for running locally, not putting the time into figuring
     it out now
     """
-    ic("Getting SQLite Database")
+    logger.debug("Getting a Pooled SQLite Database")
     _check_database_variable()
-    
+
     # Check that the path seems to make sense
-    path_to_database = Path(BLUESKY_DATABASE)  # type: ignore
+    path_to_database: Path = Path(BLUESKY_DATABASE)
     if not path_to_database.exists():
-        ic(f"Unable to find an SQLite database at {path_to_database}")
+        logger.error(f"Unable to find an SQLite database at {path_to_database}")
         raise ValueError(f"Unable to find an SQLite database at {path_to_database}")
 
+    """
+    Would like to be able to use the PooledSqlliteDatabase, but this class doesn't like to be instantiated on one thread
+    and then accessed on another thread
+    return PooledSqliteDatabase(BLUESKY_DATABASE, autoconnect=False)
+    """
     return peewee.SqliteDatabase(BLUESKY_DATABASE, autoconnect=False)
-"""
-    return PooledSqliteDatabase(
-        BLUESKY_DATABASE,
-        max_connections=1,
-        stale_timeout=None,
-        timeout=5
-    )
-"""
 
 
 def get_database() -> DatabaseProxy:
@@ -103,17 +87,18 @@ def get_database() -> DatabaseProxy:
     Method used to grab a connection to the SQL Database. Handles checking if running in local vs. production
     mode, and connecting to the appropriate database.
 
-    MySQL Database proxy is a wrapper around a connection pool - calling open and close will
+    MySQL Database proxy is a wrapper around a connection pool - calling open and close will grab a connection from
+    the pool, or return a connection to the pool
     """
     global proxy
 
     if proxy is None:
-        ic("Need to instantiate a new database...")
+        logger.debug("Need to instantiate a new database...")
         if ASTROFEED_PRODUCTION:
-            ic("Production - grabbing the proxy to the MySql database")
+            logger.info("Production - grabbing the proxy to the MySql database")
             db = _get_mysql_database()
         else:
-            ic("Local environment - grabbing a connection to the SQLite database")
+            logger.info("Local environment - grabbing a proxy to the SQLite database")
             db = _get_sqlite_database()
         proxy = DatabaseProxy()
         proxy.initialize(db)
@@ -122,19 +107,36 @@ def get_database() -> DatabaseProxy:
 
 
 def setup_connection(database: DatabaseProxy) -> None:
-    # if not ASTROFEED_PRODUCTION:
-    #     ic("Connecting to DB")
-    if database.is_closed():
-        # if not ASTROFEED_PRODUCTION:
-        #     ic("Opening new connection")
+    if database is not None and database.is_closed():
+        logger.debug("Connecting to DB")
         database.connect()
+    else:
+        raise Exception("Database Proxy in ambiguous state - please pass a valid Database Proxy to setup_connection")
 
 
 def teardown_connection(database: DatabaseProxy) -> None:
-    # if not ASTROFEED_PRODUCTION:
-    #     ic("Closing DB connection")
-    if not database.is_closed():
-        database.close()
+    logger.debug("Closing DB connection")
+    if database is not None and not database.is_closed():
+        try:
+            database.close()
+        except Exception as ex:
+            logger.error(f"Exception trying to close DB connection {ex}")
+
+
+class DBConnection(object):
+    def __init__(self):
+        global proxy
+        proxy = get_database()
+
+    def __enter__(self):
+        global proxy
+        if proxy is not None and proxy.is_closed():
+            proxy.connect()
+        return proxy
+
+    def __exit__(self, type, value, traceback):
+        global proxy
+        teardown_connection(proxy)
 
 
 class BaseModel(peewee.Model):
@@ -191,16 +193,16 @@ class Account(BaseModel):
     is_valid = peewee.BooleanField(index=True)
     is_muted = peewee.BooleanField(index=True, default=False)  # New column 24/12/30
     is_banned = peewee.BooleanField(index=True, default=False)  # New column 24/12/30
-    
+
     # Counts on number of mod actions taken against this account
     hidden_count = peewee.IntegerField(default=0)  # New column 24/12/30
     warned_count = peewee.IntegerField(default=0)  # New column 24/12/30
     muted_count = peewee.IntegerField(default=0)  # New column 24/12/30
     banned_count = peewee.IntegerField(default=0)  # New column 24/12/30
-    
+
     # Whether or not account is a mod
     mod_level = peewee.IntegerField(null=False, index=True, unique=False, default=0)
-    
+
     # Deprecated columns
     # Todo remove eventually - will need to be removed from the db first though
     feed_all = peewee.BooleanField(default=False)
@@ -237,13 +239,5 @@ class ModActions(BaseModel):
 #     uri = peewee.CharField()
 #     cid = peewee.CharField()
 
-"""
-if get_database().is_closed():
-    get_database().connect()
-    get_database().create_tables([Post, SubscriptionState, Account, BotActions, ModActions])
-    if not get_database().is_closed():
-        get_database().close()
-"""
-setup_connection(get_database())
-get_database().create_tables([Post, SubscriptionState, Account, BotActions, ModActions])
-teardown_connection(get_database())
+with DBConnection() as conn:
+    conn.create_tables([Post, SubscriptionState, Account, BotActions, ModActions])
