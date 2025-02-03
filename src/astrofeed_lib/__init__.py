@@ -3,5 +3,17 @@ from .config import ASTROFEED_PRODUCTION, DEBUG_ENABLED
 
 # set up logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG if ASTROFEED_PRODUCTION is False or DEBUG_ENABLED is True else logging.INFO) # OR check if a debug flag is set for production
-logging.basicConfig(format='%(asctime)s %(name)s - [%(levelname)s] : %(message)s')
+
+# Decide on minimum logging level to log.
+_logging_level = logging.INFO
+if DEBUG_ENABLED or ASTROFEED_PRODUCTION is False:
+    _logging_level = logging.DEBUG
+
+# Set logging format. 
+# In production, the logging system captures timestamps, service name & logging level, so these aren't needed in the log.
+_logging_format = '%(asctime)s %(name)s - [%(levelname)s] : %(message)s'
+if ASTROFEED_PRODUCTION:
+    _logging_format = '%(message)s'
+
+logger.setLevel(_logging_level)
+logging.basicConfig(format=_logging_format)
