@@ -1,7 +1,7 @@
 """Main loop for the astrobot!"""
 
 import time
-from .client import get_client
+from astrofeed_lib.client import get_client
 from .notifications import (
     get_notifications,
     update_last_seen_time,
@@ -13,7 +13,9 @@ from .config import (
     NOTIFICATION_SLEEP_TIME,
     COMMAND_REGISTRY,
     MAX_COMMAND_AGE,
-    STALE_COMMAND_CHECK_INTERVAL
+    STALE_COMMAND_CHECK_INTERVAL,
+    HANDLE,
+    PASSWORD
 )
 from astrofeed_lib import logger
 
@@ -25,7 +27,7 @@ def run_bot():
         start_time = time.time()
 
         logger.info("Getting client...")
-        client = get_client()
+        client = get_client(HANDLE, PASSWORD)
 
         logger.info("Getting notifications...")
         notifications, notifications_seen_at = get_notifications(
