@@ -18,10 +18,7 @@ from astrofeed_firehose.config import BASE_URI, CURSOR_OVERRIDE, COMMITS_TO_ADD_
 import uvloop
 from faster_fifo import Queue
 from queue import Full
-import logging
-
-
-logger = logging.getLogger(__name__)
+from astrofeed_lib import logger
 
 
 def run_client(

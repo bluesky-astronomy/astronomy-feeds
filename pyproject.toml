@@ -28,12 +28,11 @@ dependencies = [
   "peewee>=3.16.2,<4.0",
   "pymysql>=1.1.0,<2.0", # If using a MySQL database
   "atproto==0.0.55",
-  "emoji>=2.8.0,<3.0", # Has a faster async implementation than others
+  "emoji>=2.8.0,<3.0", 
   "websockets>=13.0",
-  "icecream>=2.1.3",
 
   # astrofeed_firehose
-  "uvloop>=0.20",
+  "uvloop>=0.20", # Has a faster async implementation than others
   "faster-fifo>=1.5.2,<2.0",
 
   # astrofeed_server

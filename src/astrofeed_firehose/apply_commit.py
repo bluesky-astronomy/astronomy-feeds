@@ -11,10 +11,7 @@ from astrofeed_lib.accounts import CachedAccountQuery
 from astrofeed_lib.feeds import post_in_feeds
 from atproto import CAR, AtUri
 from atproto import models
-import logging
-
-
-logger = logging.getLogger(__name__)
+from astrofeed_lib import logger
 
 
 # This is our set of accounts that are signed up, including those that are muted/banned

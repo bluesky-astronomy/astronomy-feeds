@@ -16,6 +16,7 @@ from atproto import Client, models, client_utils, IdResolver
 from ..notifications import MentionNotification, LikeNotification, ReplyNotification
 from ..moderation import MODERATORS, signup_user, cancel_signup
 from typing import Callable
+from astrofeed_lib import logger
 
 
 RULES_POSTS = [
@@ -53,7 +54,7 @@ If you ever have any concerns or issues with moderation, get in touch with @mode
 
 
 def _execute_rules_sent(command: SignupCommand, client: Client):
-    print(f"SignupCommand: Sending feed rules to {command.notification.author.handle}")
+    logger.info(f"SignupCommand: Sending feed rules to {command.notification.author.handle}")
     account_entries = fetch_account_entry_for_did(command.notification.author.did)
     already_signed_up = any(
         [account.is_valid for account in account_entries]
@@ -90,7 +91,7 @@ DESCRIPTION_TEXT = "Great! 😊\n\nNext off, please reply to this post with one 
 
 
 def _execute_get_description(command: SignupCommand, client: Client):
-    print(
+    logger.info(
         f"SignupCommand: asking for signup description from {command.notification.author.handle}"
     )
 
@@ -126,7 +127,7 @@ MODERATOR_TEXT = "Thanks! The last step now is to get a moderator to approve you
 
 
 def _execute_get_moderator(command: SignupCommand, client: Client):
-    print(
+    logger.info(
         f"SignupCommand: asking for moderator input on signup of {command.notification.author.handle}"
     )
     # Build the post to send from the current mod list
@@ -185,7 +186,7 @@ COMPLETE_QUOTES = {
 def _execute_complete(
     command: SignupCommand, client: Client, reply_in_thread: bool = True
 ):
-    print(f"SignupCommand: signing up {command.notification.author.handle}")
+    logger.info(f"SignupCommand: signing up {command.notification.author.handle}")
 
     # Since we take a LikeNotification which doesn't define root_ref, if we want to
     # continue replying in the thread then we'll have to get root_ref
@@ -233,7 +234,7 @@ def _execute_complete(
 
 
 def _execute_cancel(command: SignupCommand, client: Client, reply_in_thread: bool = True):
-    print(f"SignupCommand: cancelling signup {command.notification.author.handle}")
+    logger.info(f"SignupCommand: cancelling signup {command.notification.author.handle}")
     root, parent = send_thread(
         client,
         ["Signup request cancelled."],
@@ -317,7 +318,7 @@ class SignupCommand(MultiStepCommand):
             if notification.words[0] == "cancel":
                 return SignupCommand(notification, _execute_cancel)
 
-        print(
+        logger.info(
             f"Attempted to match a notification to command {MultiStepCommand.command}, "
             f"but notification is not a valid match. Type: {notification.__class__}; "
             f"author: {notification.author.handle}"

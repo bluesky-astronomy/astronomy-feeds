@@ -24,10 +24,7 @@ from queue import Empty
 from atproto import parse_subscribe_repos_message
 from atproto import models
 from atproto.exceptions import ModelError
-import logging
-
-
-logger = logging.getLogger(__name__)
+from astrofeed_lib import logger
 
 
 def run_commit_processor(

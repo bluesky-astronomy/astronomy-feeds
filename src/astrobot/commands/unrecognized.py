@@ -7,6 +7,7 @@ from ._base import Command
 from ..post import send_post
 from ..database import new_bot_action
 from atproto import Client
+from astrofeed_lib import logger
 
 
 unrecognized_command_text = "Sorry, but I don't recognize that command."
@@ -20,7 +21,7 @@ class UnrecognizedCommand(Command):
         self.extra = extra
 
         # In general, we probably always want this logged for informational purposes
-        print(
+        logger.info(
             f"UNRECOGNIZED COMMAND: failed to find command in post from "
             f"{notification.author.handle} with text {notification.text}"
         )

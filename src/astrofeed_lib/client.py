@@ -1,5 +1,5 @@
 """Standard functions for working with Bluesky clients."""
-
+from astrofeed_lib import logger
 from atproto import Client, Session, SessionEvent
 
 
@@ -19,7 +19,7 @@ def get_client(handle: str, password: str, reuse_session: bool = True) -> Client
             client.login(session_string=session)
             return client
         except Exception as e:
-            print(f"Unable to log in with previous session! Reason: {e}")
+            logger.error(f"Unable to log in with previous session! Reason: {e}")
 
     # We revert to password login if we can't find a session or if there was an issue
     client.login(handle, password)
@@ -41,7 +41,7 @@ class BotSessionUpdater:
 
     def on_session_change(self, event: SessionEvent, session: Session) -> None:
         """Callback to save session."""
-        print("Session changed:", event, repr(session))
+        logger.info(f"Session changed: {repr(event)}, {repr(session)}")
         if event in (SessionEvent.CREATE, SessionEvent.REFRESH):
             self.save_session(session.export())
 

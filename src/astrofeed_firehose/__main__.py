@@ -3,16 +3,8 @@ firehose client and post processor on separate subprocesses.
 """
 
 import time
-import logging
 from astrofeed_firehose.manager import FirehoseProcessingManager
-
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s %(levelname)s] %(message)s",
-    datefmt="%y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+from astrofeed_lib import logger
 
 
 if __name__ == "__main__":

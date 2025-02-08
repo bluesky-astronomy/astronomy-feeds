@@ -1,9 +1,6 @@
 import os
 from typing import Final
-import logging
-
-
-logger = logging.getLogger(__name__)
+# from astrofeed_lib import logger
 
 
 # ------------------------
