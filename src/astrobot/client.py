@@ -49,7 +49,7 @@ class BotSessionUpdater:
 
     def on_session_change(self, event: SessionEvent, session: Session) -> None:
         """Callback to save session."""
-        logger.info('Session changed:', event, repr(session))
+        logger.info(f"Session changed: {repr(event)}, {repr(session)}")
         if event in (SessionEvent.CREATE, SessionEvent.REFRESH):
             # logger.info('Saving changed session')
             self.save_session(session.export())
