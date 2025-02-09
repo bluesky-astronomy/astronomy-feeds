@@ -2,7 +2,8 @@ from flask import Flask, jsonify, request
 from astrofeed_lib import config
 from astrofeed_lib.database import get_database, setup_connection, teardown_connection
 from astrofeed_lib.algorithm import get_posts
-
+from astrofeed_lib import logger
+from astrofeed_lib.request_log import _RequestLog
 
 # Haven't yet worked out how to get a local Flask debug with VS Code to like a relative
 # import, and how to get a Gunicorn running server on Digital Ocean to not *need* one =(
@@ -113,6 +114,10 @@ def get_feed_skeleton():
     try:
         cursor = request.args.get("cursor", default=None, type=str)
         limit = request.args.get("limit", default=20, type=int)
+        logger.info(f"request for {feed} with cursor {cursor} and limit {limit}")
+        req: _RequestLog = _RequestLog()
+        req.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did="")
+        logger.info(f"full request log: {req}")
         body = get_posts(feed, cursor, limit)
     # except ValueError:
     #     return "Malformed cursor", 400
