@@ -1,3 +1,9 @@
+'''Infrastructure for created bluesky notification objects
+
+todo:
+    * replace oject type hints with actual specific subclasses
+'''
+
 from atproto import models
 
 supported_notification_types = ["mention", "reply", "like"]
@@ -60,7 +66,7 @@ def construct_like_record(
     return models.app.bsky.feed.like.Record(created_at=created_at, subject=subject, py_type=py_type)
 
 #
-# "build" methods put specific kinds of objects together, with logic and/or field value choices
+# "build" functions put specific kinds of objects together, with logic and/or field value choices
 # particular to those objects
 #
 def build_reply_ref(
