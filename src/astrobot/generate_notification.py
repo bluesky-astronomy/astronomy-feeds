@@ -114,7 +114,8 @@ def build_notification(
         py_type = 'app.bsky.notification.listNotifications#notification',
 
         # important quantities to have easy control of on user end
-        text : str = "post text"
+        record_text : str = None,
+        author_did : str = None
 ) -> models.app.bsky.notification.list_notifications.Notification:
     '''builds a notification object
     
@@ -131,11 +132,13 @@ def build_notification(
     match notification_type:
         case "mention":
             if author is None:
-                author = build_profileview(did="mentioning account did",
-                                           handle="mentioning account profile handle",
-                                           avatar="link to mentioning account profile image",
-                                           description="mentioning account profile description",
-                                           display_name="mentioning account profile display name")
+                author = build_profileview(
+                    did=(author_did if not author_did is None else "mentioning account did"),
+                    handle="mentioning account profile handle",
+                    avatar="link to mentioning account profile image",
+                    description="mentioning account profile description",
+                    display_name="mentioning account profile display name"
+                )
 
             cid = "mentioning post cid"
 
@@ -144,7 +147,10 @@ def build_notification(
             if record is None:
                 facet_feature = construct_facet_mention(did="mentioned account did")
                 facets = [construct_facet_main(features=[facet_feature], index=construct_facet_byteslice())]
-                record = construct_post_record(text=text, facets=facets)
+                record = construct_post_record(
+                    text=(record_text if not record_text is None else "mentioning post text"),
+                    facets=facets
+                )
 
             uri = "mentioning post uri"
 
@@ -152,30 +158,37 @@ def build_notification(
 
         case "reply":
             if author is None:
-                author = build_profileview(did="replying account did",
-                                           handle="replying account profile handle",
-                                           avatar="link to replying account profile image",
-                                           description="replying account profile description",
-                                           display_name="replying account profile display name")
+                author = build_profileview(
+                    did=(author_did if not author_did is None else "replying account did"),
+                    handle="replying account profile handle",
+                    avatar="link to replying account profile image",
+                    description="replying account profile description",
+                    display_name="replying account profile display name"
+                )
 
             cid    = "replying post cid"
 
             reason = "reply"
 
             if record is None:
-                reply = build_reply_ref(parent_ref_cid="replied-to post cid",
-                                        parent_ref_uri="replied-to post uri",
-                                        root_ref_cid="replied-to post's root cid",
-                                        root_ref_uri="replied-to post's root uri")
-                record = construct_post_record(text=text, reply=reply)
+                reply = build_reply_ref(
+                    parent_ref_cid="replied-to post cid",
+                    parent_ref_uri="replied-to post uri",
+                    root_ref_cid="replied-to post's root post cid",
+                    root_ref_uri="replied-to post's root post uri"
+                )
+                record = construct_post_record(
+                    text=(record_text if not record_text is None else "mentioning post text"),
+                    reply=reply
+                )
 
             uri = "replying post uri"
 
-            reason_subject = "replied-to post uri"
+            reason_subject = record.reply.parent.uri
 
         case "like":
             if author is None:
-                author = build_profileview(did="liking account did",
+                author = build_profileview(did=(author_did if not author_did is None else "liking account did"),
                                            handle="liking account profile handle",
                                            avatar="link to liking account profile image",
                                            description="liking account profile description",
@@ -191,7 +204,7 @@ def build_notification(
 
             uri = "like uri"
 
-            reason_subject = "liked post uri"
+            reason_subject = record.subject.uri
 
         case _:
             # default, should not reach here
