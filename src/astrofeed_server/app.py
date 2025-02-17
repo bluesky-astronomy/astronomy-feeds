@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from astrofeed_lib import config
 from astrofeed_lib.database import get_database, setup_connection, teardown_connection
-from astrofeed_lib.algorithm import get_posts
+from astrofeed_lib.algorithm import get_posts, get_feed_logs
 from astrofeed_lib import logger
 from astrofeed_lib.request_log import _RequestLog
 
@@ -65,6 +65,7 @@ def index():
         <ul>
         <li><a href="/.well-known/did.json">/.well-known/did.json</a></li>
         <li><a href="/xrpc/app.bsky.feed.describeFeedGenerator">/xrpc/app.bsky.feed.describeFeedGenerator</a></li>
+        <li><a href="/xrpc/app.bsky.feed.getFeedLog?feed=at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/astro-all">/xrpc/app.bsky.feed.getFeedLog?feed=at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/astro-all</a></li>
         </ul>
         """
 
@@ -116,8 +117,11 @@ def get_feed_skeleton():
         limit = request.args.get("limit", default=20, type=int)
         logger.info(f"request for {feed} with cursor {cursor} and limit {limit}")
         req: _RequestLog = _RequestLog()
-        req.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did="")
-        logger.info(f"full request log: {req}")
+        req.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did=""
+                        , request_host=request.headers.get("Host")
+                        , request_referer=request.headers.get("Referer")
+                        , request_user_agent=request.headers.get("User-Agent"))
+        # logger.info(f"full request log: {req}")
         body = get_posts(feed, cursor, limit)
     # except ValueError:
     #     return "Malformed cursor", 400
@@ -129,6 +133,22 @@ def get_feed_skeleton():
     if cursor is None:
         add_pinned_post_to_feed(body)
 
+    return jsonify(body)
+
+
+@app.route("/xrpc/app.bsky.feed.getFeedLog", methods=["GET"])
+def get_feed_log():
+    feed_uri = request.args.get("feed", default=None, type=str)
+
+    # Check that the feed is configured
+    if feed_uri not in config.FEED_URIS:
+        return "Unsupported algorithm", 400
+    feed = config.FEED_URIS[feed_uri]
+
+    try:
+        body = get_feed_logs(feed)
+    finally:
+        pass
     return jsonify(body)
 
 

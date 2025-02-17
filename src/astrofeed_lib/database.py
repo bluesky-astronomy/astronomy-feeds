@@ -247,13 +247,16 @@ class ActivityLog(BaseModel):
     request_limit = peewee.IntegerField(index=False, null=False, default=0)
     request_is_scrolled = peewee.BooleanField(null=False, default=False)
     request_user_did = peewee.CharField(index=True, null=True)
-
+    request_host = peewee.CharField(index=False, null=True)
+    request_referer = peewee.CharField(index=False, null=True)
+    request_user_agent = peewee.CharField(index=False, null=True)
 
 # class Signups(BaseModel):
 #     did = peewee.CharField(index=True)
 #     status = peewee.CharField(index=True)
 #     uri = peewee.CharField()
 #     cid = peewee.CharField()
+
 
 with DBConnection() as conn:
     conn.create_tables([Post, SubscriptionState, Account, BotActions, ModActions, ActivityLog])
