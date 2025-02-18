@@ -33,7 +33,7 @@ def test_joke_unit():
     if ASTROFEED_PRODUCTION: raise ConnectionRefusedError("Attempting to run offline unit test in production mode; aborting.")
 
     # create a joke command object with a dummy notification
-    joke_notification = build_notification("mention", record_text=f"@{HANDLE}", author_did="test_joke_unit")
+    joke_notification = build_notification("mention", record_text=f"@{HANDLE} joke", author_did="test_joke_unit")
     joke_command = JokeCommand(MentionNotification(joke_notification))
 
     # execute the command with a dummy client
