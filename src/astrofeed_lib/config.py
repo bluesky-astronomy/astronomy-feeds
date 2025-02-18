@@ -15,7 +15,10 @@ import os
 # Whether or not we're in production mode. Within this module, production mode causes
 # the following things:
 # 1. We expect a remote MySQL database instead of a local SQLite one
-ASTROFEED_PRODUCTION = os.getenv("ASTROFEED_PRODUCTION", "False").lower() in {"true", "1"}
+ASTROFEED_PRODUCTION = os.getenv("ASTROFEED_PRODUCTION", "False").lower() in {
+    "true",
+    "1",
+}
 DEBUG_ENABLED = os.getenv("ASTROFEED_DEBUG", "False").lower() in {"true", "1"}
 
 
@@ -66,20 +69,22 @@ FEED_TERMS = {
         "emoji": [],
         "words": ["#astrophoto", "#astrophotos", "#astrophotography"],
     },
+    "research": {"emoji": [""], "words": ["#astroresearch", "#astronomyresearch"]},  # New
+
     # ASTRONOMY TOPICS
     "cosmology": {"emoji": [], "words": ["#cosmology"]},
-    "exoplanets": {"emoji": ["🪐"], "words": ["#exoplanet", "#exoplanets"]},
-    "extragalactic": {"emoji": [], "words": ["#extragalactic"]},
+    "exoplanets": {"emoji": [], "words": ["#exoplanet", "#exoplanets"]},
+    "extragalactic": {"emoji": [], "words": ["#extragalactic", "#extragalacticastro"]},
     "highenergy": {"emoji": [], "words": ["#highenergyastro"]},
     "instrumentation": {"emoji": [], "words": ["#instrumentation"]},
     "methods": {"emoji": [], "words": ["#astromethods", "#astrocoding", "#astrocode"]},
-    "milkyway": {"emoji": [], "words": ["#milkyway"]},
+    "milkyway": {"emoji": [], "words": ["#galactic", "#galacticastro"]},
     "planetary": {"emoji": [], "words": ["#planetaryscience", "#planetsci"]},
     "radio": {"emoji": [], "words": ["#radioastronomy", "#radioastro"]},
-    # "solar": {"emoji": [], "words": ["#solarastronomy", "#solarastro", "#thesun"]},
+    "solar": {"emoji": [], "words": ["#heliophysics", "#solarastro", "#thesun"]},  # New
     "stellar": {
         "emoji": [],
-        "words": ["#stars", "#stellarastrononomy", "#stellarastro"],
+        "words": ["#starscience", "#stellarastrononomy", "#stellarastro"],
     },
     # ASTRONOMY / OTHER
     "education": {"emoji": [], "words": ["#astroeducation", "#astroedu"]},
@@ -91,6 +96,9 @@ FEED_TERMS = {
 # server. The astrofeed-server Flask app hosts them.
 NON_FIREHOSE_FEEDS = {"signup": {"emoji": [], "words": []}}
 
+# There are also a number of feeds that ANY account can post to.
+GENERAL_FEEDS = {"questions": {"emoji": [], "words": ["#askanastronomer"]}}
+
 # Dict containing all feeds *to be published*! key:value pairs of the name as published
 # and internal (short) name. The short name is used throughout databases. The name as
 # published is the URI where the feed is.
@@ -101,7 +109,7 @@ FEED_NAMING_SCHEME_RULEBREAKERS = {
     "all": "astro-all"
 }  # The astrosky feed has an inconsistent name!
 FEED_URIS = {}
-for a_feed in (FEED_TERMS | NON_FIREHOSE_FEEDS).keys():
+for a_feed in (FEED_TERMS | NON_FIREHOSE_FEEDS | GENERAL_FEEDS).keys():
     if a_feed in FEED_NAMING_SCHEME_RULEBREAKERS:
         key = FEED_URI + FEED_NAMING_SCHEME_RULEBREAKERS[a_feed]
     else:
