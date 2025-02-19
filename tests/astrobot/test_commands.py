@@ -8,21 +8,27 @@ from astrofeed_lib.database import BotActions, DBConnection
 
 from atproto import Client, models
 
-import os, pickle
 from datetime import datetime
 
 class DummyClient(Client):
     '''Replaces certain atproto.Client methods with offline-test appropriate alternatives'''
-    # instead of actually sending an image/post, pickle all the values that would be used to send it
+    def __init__(self, base_url = None, *args, **kwargs):
+        super().__init__(base_url, *args, **kwargs)
+
+        # instance variable to capture values that would be used to send post
+        self.send_post_call_signature = dict()
+
+    # instead of actually sending an image/post, store values from call signature
     def send_post(self, text, profile_identify = None, reply_to = None, embed = None, langs = None, facets = None):
-        with open("send_post_call_signature.pickle","wb") as file:
-            pickle.dump({"text" : text, 
-                         "profile_identify" : profile_identify, 
-                         "reply_to" : reply_to, 
-                         "embed" : embed, 
-                         "langs" : langs, 
-                         "facets" : facets}, 
-                         file=file)
+        self.send_post_call_signature.update({
+            "text" : text, 
+            "profile_identify" : profile_identify, 
+            "reply_to" : reply_to, 
+            "embed" : embed, 
+            "langs" : langs, 
+            "facets" : facets
+            }
+        )
         
         # need to return something with a CID and URI to not break the post.send_post method used by the joke command
         return construct_strong_ref_main()
@@ -41,9 +47,7 @@ def test_joke_unit():
     joke_command.execute(dummy_client)
 
     # extract send_post argiuments and remove pickle file
-    with open("send_post_call_signature.pickle","rb") as file:
-        send_post_call_signature = pickle.load(file=file)
-    os.remove("send_post_call_signature.pickle")
+    send_post_call_signature = dummy_client.send_post_call_signature
 
     # extract database entry, and remove from database
     with BotActions._meta.database as DBConnection:
