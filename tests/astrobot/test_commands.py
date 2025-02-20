@@ -1,3 +1,6 @@
+from datetime import datetime
+from atproto import Client, models
+
 from astrobot.commands.joke import JokeCommand, jokes
 from astrobot.notifications import MentionNotification
 from astrobot.generate_notification import build_notification, build_reply_ref, construct_strong_ref_main
@@ -6,11 +9,7 @@ from astrobot.config import HANDLE
 from astrofeed_lib.config import ASTROFEED_PRODUCTION
 from astrofeed_lib.database import BotActions, DBConnection
 
-from atproto import Client, models
-
-from datetime import datetime
-
-class DummyClient(Client):
+class MockClient(Client):
     '''Replaces certain atproto.Client methods with offline-test appropriate alternatives'''
     def __init__(self, base_url = None, *args, **kwargs):
         super().__init__(base_url, *args, **kwargs)
@@ -18,7 +17,7 @@ class DummyClient(Client):
         # instance variable to capture values that would be used to send post
         self.send_post_call_signature = dict()
 
-    # instead of actually sending an image/post, store values from call signature
+    # instead of actually sending a post, store values that would be sent
     def send_post(self, text, profile_identify = None, reply_to = None, embed = None, langs = None, facets = None):
         self.send_post_call_signature.update({
             "text" : text, 
@@ -38,16 +37,16 @@ def test_joke_unit():
     # until I can redirect database access, make sure we're not sending anything to live database
     if ASTROFEED_PRODUCTION: raise ConnectionRefusedError("Attempting to run offline unit test in production mode; aborting.")
 
-    # create a joke command object with a dummy notification
+    # create a joke command object with a mock notification
     joke_notification = build_notification("mention", record_text=f"@{HANDLE} joke", author_did="test_joke_unit")
     joke_command = JokeCommand(MentionNotification(joke_notification))
 
-    # execute the command with a dummy client
-    dummy_client = DummyClient()
-    joke_command.execute(dummy_client)
+    # execute the command with a mock client
+    mock_client = MockClient()
+    joke_command.execute(mock_client)
 
-    # extract send_post argiuments and remove pickle file
-    send_post_call_signature = dummy_client.send_post_call_signature
+    # extract send_post arguments
+    send_post_call_signature = mock_client.send_post_call_signature
 
     # extract database entry, and remove from database
     with BotActions._meta.database as DBConnection:
