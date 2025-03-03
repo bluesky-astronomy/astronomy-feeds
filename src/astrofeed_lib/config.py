@@ -69,8 +69,7 @@ FEED_TERMS = {
         "emoji": [],
         "words": ["#astrophoto", "#astrophotos", "#astrophotography"],
     },
-    "research": {"emoji": [""], "words": ["#astroresearch", "#astronomyresearch"]},  # New
-
+    "research": {"emoji": ["☄️"], "words": ["#astrosci"]},  # New
     # ASTRONOMY TOPICS
     "cosmology": {"emoji": [], "words": ["#cosmology"]},
     "exoplanets": {"emoji": [], "words": ["#exoplanet", "#exoplanets"]},
@@ -81,15 +80,11 @@ FEED_TERMS = {
     "milkyway": {"emoji": [], "words": ["#galactic", "#galacticastro"]},
     "planetary": {"emoji": [], "words": ["#planetaryscience", "#planetsci"]},
     "radio": {"emoji": [], "words": ["#radioastronomy", "#radioastro"]},
-    "solar": {"emoji": [], "words": ["#heliophysics", "#solarastro", "#thesun"]},  # New
-    "stellar": {
-        "emoji": [],
-        "words": ["#starscience", "#stellarastrononomy", "#stellarastro"],
-    },
+    "solar": {"emoji": [], "words": ["#heliophysics", "#solarastro"]},  # New
+    "stellar": {"emoji": [], "words": ["#stellarastrononomy", "#stellarastro"]},
     # ASTRONOMY / OTHER
     "education": {"emoji": [], "words": ["#astroeducation", "#astroedu"]},
     "history": {"emoji": [], "words": ["#astrohistory", "#historyofastronomy"]},
-    # "questions": {"emoji": [], "words": ["#askanastronomer"]},
 }
 
 # These are a number of feeds that aren't from the firehose but are hosted on the same
