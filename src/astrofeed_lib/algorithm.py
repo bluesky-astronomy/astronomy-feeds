@@ -1,7 +1,7 @@
 from .database import Account, Post, BotActions, ActivityLog
 from .accounts import CachedAccountQuery
 from datetime import datetime
-from typing import Optional, Final
+from typing import Optional, Final, Any
 from astrofeed_lib import logger
 
 
@@ -32,8 +32,11 @@ def _select_activity_log_by_feed(feed: str):
            .order_by(ActivityLog.request_dt))
 
 
-def _create_activity_log(logs: list[ActivityLog]):
-    return [{"log": log.id} for log in logs]
+def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
+    return [{"id": log.id, "request_dt": log.request_dt, "request_feed_uri": log.request_feed_uri
+             , "request_is_scrolled": log.request_is_scrolled, "request_limit": log.request_limit
+             , "request_user_did": log.request_user_did, "request_host": log.request_host
+             , "request_referer": log.request_referer, "request_user_agent": log.request_user_agent} for log in logs]
 
 
 def _create_feed(posts):
@@ -45,9 +48,9 @@ def get_feed_logs(feed: str) -> dict:
     logs = _select_activity_log_by_feed(feed)
     logger.info(f"Loaded logs from DB: {logs}")
     # Create the actual feed to send back to the user!
-    log_uris = _create_activity_log(logs)
+    log_details: list[dict[str, Any]] = _create_activity_log(logs)
 
-    return {"logs": log_uris}
+    return {"logs": log_details}
 
 
 def _handle_cursor(cursor, posts):

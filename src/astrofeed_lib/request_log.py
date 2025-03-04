@@ -1,5 +1,5 @@
 from astrofeed_lib import logger
-from astrofeed_lib.database import ActivityLog
+from astrofeed_lib.database import ActivityLog, DBConnection
 import datetime
 
 
@@ -59,19 +59,21 @@ class _RequestLog:
         request.request_host = request_host
         request.request_user_agent = request_user_agent
         self.log.append(request)
+
         # want to move this call to save to the DB off-thread
-        self.dump_to_database()
+        #self.dump_to_database()
 
     def dump_to_database(self) -> None:
-        for req in self.log:
-            log: ActivityLog = ActivityLog()
-            log.request_dt = req.request_dt
-            log.request_host = req.request_host
-            log.request_referer = req.request_referer
-            log.request_limit = req.request_limit
-            log.request_is_scrolled = req.request_is_scrolled
-            log.request_user_agent = req.request_user_agent
-            log.request_feed_uri = req.request_feed_uri
-            log.request_user_did = req.request_user_did
-            log.save()
+        with DBConnection() as conn:
+            for req in self.log:
+                log: ActivityLog = ActivityLog()
+                log.request_dt = req.request_dt
+                log.request_host = req.request_host
+                log.request_referer = req.request_referer
+                log.request_limit = req.request_limit
+                log.request_is_scrolled = req.request_is_scrolled
+                log.request_user_agent = req.request_user_agent
+                log.request_feed_uri = req.request_feed_uri
+                log.request_user_did = req.request_user_did
+                log.save()
         self.log = []

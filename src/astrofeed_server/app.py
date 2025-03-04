@@ -1,9 +1,14 @@
 from flask import Flask, jsonify, request
+import schedule
+from threading import Event, Thread
+import time
+import signal
 from astrofeed_lib import config
 from astrofeed_lib.database import get_database, setup_connection, teardown_connection
 from astrofeed_lib.algorithm import get_posts, get_feed_logs
 from astrofeed_lib import logger
 from astrofeed_lib.request_log import _RequestLog
+from astrofeed_server.auth import AuthorizationError, validate_auth
 
 # Haven't yet worked out how to get a local Flask debug with VS Code to like a relative
 # import, and how to get a Gunicorn running server on Digital Ocean to not *need* one =(
@@ -111,13 +116,20 @@ def get_feed_skeleton():
 
     # if authorization is not None:
 
+
+    requester_did: str = ""
+    try:
+        requester_did = validate_auth(request)
+    except AuthorizationError:
+        requester_did = "Unknown"
+
     # Query the algorithm
     try:
         cursor = request.args.get("cursor", default=None, type=str)
         limit = request.args.get("limit", default=20, type=int)
         logger.info(f"request for {feed} with cursor {cursor} and limit {limit}")
         req: _RequestLog = _RequestLog()
-        req.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did=""
+        req.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did=requester_did
                         , request_host=request.headers.get("Host")
                         , request_referer=request.headers.get("Referer")
                         , request_user_agent=request.headers.get("User-Agent"))
@@ -151,6 +163,55 @@ def get_feed_log():
         pass
     return jsonify(body)
 
+
+def dump_log_to_db():
+    logger.info("Dumping log to DB")
+    req: _RequestLog = _RequestLog()
+    req.dump_to_database()
+
+
+def run_continuously(interval:int = 1) -> Event:
+    """Continuously run, while executing pending jobs at each
+    elapsed time interval.
+    @return cease_continuous_run: threading. Event which can
+    be set to cease continuous run. Please note that it is
+    *intended behavior that run_continuously() does not run
+    missed jobs*. For example, if you've registered a job that
+    should run every minute and you set a continuous run
+    interval of one hour then your job won't be run 60 times
+    at each interval but only once.
+    """
+    cease_continuous_run = Event()
+
+    class ScheduleThread(Thread):
+        @classmethod
+        def run(cls):
+            while not cease_continuous_run.is_set():
+                schedule.run_pending()
+                time.sleep(interval)
+
+    continuous_thread = ScheduleThread()
+    continuous_thread.start()
+    return cease_continuous_run
+
+
+def shutdown_handler(signum, frame):
+    logger.warn("Shutting down Flask server...")
+    # Perform cleanup tasks here, e.g., closing database connections,
+    # releasing resources, etc.
+    # Stop the background thread
+    stop_run_continuously.set()
+    if not get_database().is_closed():
+        teardown_connection(get_database())
+    #one last dump of the logs to the DB so we don't lose the last minute
+    dump_log_to_db()
+    exit(0)
+
+signal.signal(signal.SIGINT, shutdown_handler)
+signal.signal(signal.SIGTERM, shutdown_handler)
+schedule.every(1).minutes.do(dump_log_to_db)
+# Start the background thread
+stop_run_continuously = run_continuously()
 
 if __name__ == "__main__":
     app.run(debug=True)
