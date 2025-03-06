@@ -1,10 +1,11 @@
+from dataclasses import dataclass
 from astrofeed_lib import logger
 from astrofeed_lib.database import ActivityLog, DBConnection
 import datetime
 import copy
 from threading import Lock
 
-
+@dataclass
 class _Request:
     """
     Data class representing an in-memory log of the request to the server for the BlueSky Astronomy Feeds
@@ -70,6 +71,7 @@ class RequestLog:
         :return: None
         """
         logger.debug("Adding request to collection")
+        """
         request: _Request = _Request()
         request.request_dt = datetime.datetime.utcnow()
         request.request_limit = limit
@@ -79,6 +81,18 @@ class RequestLog:
         request.request_referer = request_referer
         request.request_host = request_host
         request.request_user_agent = request_user_agent
+        """
+        request: _Request = _Request(
+            request_id=0,
+            request_dt=datetime.datetime.utcnow(),
+            request_limit=limit,
+            request_is_scrolled=is_scrolled,
+            request_user_did=user_did,
+            request_feed_uri=feed,
+            request_referer=request_referer,
+            request_host=request_host,
+            request_user_agent=request_user_agent,
+        )
         self.log.append(request)
 
 

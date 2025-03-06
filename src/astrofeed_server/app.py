@@ -7,7 +7,7 @@ from astrofeed_lib import config
 from astrofeed_lib.database import get_database, setup_connection, teardown_connection
 from astrofeed_lib.algorithm import get_posts, get_feed_logs
 from astrofeed_lib import logger
-from astrofeed_lib.request_log import RequestLog
+from astrofeed_server.request_log import RequestLog
 from astrofeed_server.auth import AuthorizationError, validate_auth
 
 # Haven't yet worked out how to get a local Flask debug with VS Code to like a relative
@@ -206,6 +206,7 @@ def shutdown_handler(signum, frame):
     dump_log_to_db()
     exit(0)
 
+
 signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
 # Schedule the job to dump the in-memory log of requests to the database to run every 1 minute
@@ -214,4 +215,6 @@ schedule.every(1).minutes.do(dump_log_to_db)
 stop_run_continuously = run_continuously()
 
 if __name__ == "__main__":
+    logger.info("__name__ == '__main__'")
+
     app.run(debug=True)
