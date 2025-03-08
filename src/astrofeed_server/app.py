@@ -206,7 +206,8 @@ def shutdown_handler(signum, frame):
     dump_log_to_db()
     exit(0)
 
-
+# this is outside the "if __name__ == "__main__" since using gunicorn doesn't call this module as main, and this
+# code needs to run
 signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
 # Schedule the job to dump the in-memory log of requests to the database to run every 1 minute
@@ -215,6 +216,4 @@ schedule.every(1).minutes.do(dump_log_to_db)
 stop_run_continuously = run_continuously()
 
 if __name__ == "__main__":
-    logger.info("__name__ == '__main__'")
-
     app.run(debug=True)

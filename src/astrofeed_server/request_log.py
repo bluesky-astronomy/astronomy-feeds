@@ -71,17 +71,6 @@ class RequestLog:
         :return: None
         """
         logger.debug("Adding request to collection")
-        """
-        request: _Request = _Request()
-        request.request_dt = datetime.datetime.utcnow()
-        request.request_limit = limit
-        request.request_is_scrolled = is_scrolled
-        request.request_user_did = user_did
-        request.request_feed_uri = feed
-        request.request_referer = request_referer
-        request.request_host = request_host
-        request.request_user_agent = request_user_agent
-        """
         request: _Request = _Request(
             request_id=0,
             request_dt=datetime.datetime.utcnow(),
