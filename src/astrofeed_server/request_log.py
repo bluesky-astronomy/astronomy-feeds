@@ -33,23 +33,20 @@ class _Request:
                 f"Request_user_agent: {self.request_user_agent}")
 
 
-class RequestLog:
+class _RequestLog:
     """
-    Singleton class so all threads of the Flask server get ahold of this instance and update the
+    wrapper class so all threads of the Flask server get ahold of this instance and update the
     request log. A separate job is scheduled from the Flask server to call the 'dump_to_database' method of the class
     on a regular schedule to save the in-memory information to the configured database
     """
-    _self = None
     log: list[_Request] = None
-
-    def __new__(cls):
-        if cls._self is None:
-            cls._self = super().__new__(cls)
-        return cls._self
+    lock: Lock = None
 
     def __init__(self):
         if self.log is None:
             self.log: list[_Request] = []
+        if self.lock is None:
+            self.lock: Lock = Lock()
 
     def __str__(self) -> str:
         ret_str: str = ""
@@ -82,7 +79,8 @@ class RequestLog:
             request_host=request_host,
             request_user_agent=request_user_agent,
         )
-        self.log.append(request)
+        with self.lock:
+            self.log.append(request)
 
 
     def dump_to_database(self) -> None:
@@ -94,8 +92,7 @@ class RequestLog:
         saving the data to the database table
         :return: None
         """
-        lock:Lock = Lock()
-        with lock:
+        with self.lock:
             # copy the list and clear the old one to avoid losing any data
             temp_log: list[_Request] = copy.deepcopy(self.log)
             self.log = []
@@ -103,13 +100,16 @@ class RequestLog:
         # now go through the copied list and save to the database
         with DBConnection() as conn:
             for req in temp_log:
-                log: ActivityLog = ActivityLog()
-                log.request_dt = req.request_dt
-                log.request_host = req.request_host
-                log.request_referer = req.request_referer
-                log.request_limit = req.request_limit
-                log.request_is_scrolled = req.request_is_scrolled
-                log.request_user_agent = req.request_user_agent
-                log.request_feed_uri = req.request_feed_uri
-                log.request_user_did = req.request_user_did
-                log.save()
+                act_log: ActivityLog = ActivityLog()
+                act_log.request_dt = req.request_dt
+                act_log.request_host = req.request_host
+                act_log.request_referer = req.request_referer
+                act_log.request_limit = req.request_limit
+                act_log.request_is_scrolled = req.request_is_scrolled
+                act_log.request_user_agent = req.request_user_agent
+                act_log.request_feed_uri = req.request_feed_uri
+                act_log.request_user_did = req.request_user_did
+                act_log.save()
+
+
+request_log:_RequestLog = _RequestLog()

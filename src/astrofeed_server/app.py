@@ -7,8 +7,9 @@ from astrofeed_lib import config
 from astrofeed_lib.database import get_database, setup_connection, teardown_connection
 from astrofeed_lib.algorithm import get_posts, get_feed_logs
 from astrofeed_lib import logger
-from astrofeed_server.request_log import RequestLog
+from astrofeed_server.request_log import request_log
 from astrofeed_server.auth import AuthorizationError, validate_auth
+
 
 # Haven't yet worked out how to get a local Flask debug with VS Code to like a relative
 # import, and how to get a Gunicorn running server on Digital Ocean to not *need* one =(
@@ -107,28 +108,15 @@ def get_feed_skeleton():
         return "Unsupported algorithm", 400
     feed = config.FEED_URIS[feed_uri]
 
-    # Get the user's DID
-    # try:
-    #     authorization = request.headers['Authorization']
-    # except Exception as e:
-    #     authorization = None
-    #     print("Authorization not in request header!")
-
-    # if authorization is not None:
-
-
-    try:
-        requester_did = validate_auth(request)
-    except AuthorizationError:
-        requester_did = "Unknown"
+    requester_did = get_requester_did()
 
     # Query the algorithm
     try:
         cursor = request.args.get("cursor", default=None, type=str)
         limit = request.args.get("limit", default=20, type=int)
         logger.debug(f"request for {feed} with cursor {cursor} and limit {limit}")
-        req: RequestLog = RequestLog()
-        req.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did=requester_did
+        #req: _RequestLog = _RequestLog()
+        request_log.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did=requester_did
                         , request_host=request.headers.get("Host")
                         , request_referer=request.headers.get("Referer")
                         , request_user_agent=request.headers.get("User-Agent"))
@@ -145,6 +133,14 @@ def get_feed_skeleton():
         add_pinned_post_to_feed(body)
 
     return jsonify(body)
+
+
+def get_requester_did():
+    try:
+        requester_did = validate_auth(request)
+    except AuthorizationError:
+        requester_did = "Unknown"
+    return requester_did
 
 
 @app.route("/xrpc/app.bsky.feed.getFeedLog", methods=["GET"])
@@ -165,8 +161,7 @@ def get_feed_log():
 
 def dump_log_to_db():
     logger.info("Dumping log to DB")
-    req: RequestLog = RequestLog()
-    req.dump_to_database()
+    request_log.dump_to_database()
 
 
 def run_continuously(interval:int = 1) -> Event:
