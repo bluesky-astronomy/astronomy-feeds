@@ -1,7 +1,9 @@
 """Set of functions specifying everything about all feeds."""
+
 import re
+from typing import Iterable
 import emoji
-from .config import FEED_TERMS
+from .config import FEED_TERMS, GENERAL_FEEDS
 
 
 def remove_links_from_post(post: str) -> str:
@@ -22,12 +24,12 @@ def remove_punctuation_from_post(post: str) -> str:
 
 
 def remove_emoji_from_post(post: str) -> str:
-    return emoji.replace_emoji(post, replace='')
+    return emoji.replace_emoji(post, replace="")
 
 
 def cleaned_word_list(post: str) -> list:
-    """Generates a list of all words in a post. 
-    
+    """Generates a list of all words in a post.
+
     Words include a space at the start AND end, like:
     ' #astro '
     ' space '
@@ -40,7 +42,7 @@ def cleaned_word_list(post: str) -> list:
 
 
 FEED_TERMS_WITH_SPACES = dict()
-for feed, terms in FEED_TERMS.items():
+for feed, terms in (FEED_TERMS | GENERAL_FEEDS).items():
     if terms is not None:
         FEED_TERMS_WITH_SPACES[feed] = {}
         FEED_TERMS_WITH_SPACES[feed]["emoji"] = terms["emoji"]
@@ -49,27 +51,34 @@ for feed, terms in FEED_TERMS.items():
         FEED_TERMS_WITH_SPACES[feed] = None
 
 
-def label_post(labels, post, words, feed, terms, database_feed_prefix: str = "feed_"):
+def label_post(labels, post, words, feed, database_feed_prefix: str = "feed_"):
     """Labels a post as being in a given feed."""
-    feed = database_feed_prefix + feed
+    terms = FEED_TERMS_WITH_SPACES[feed]
+
+    feed_in_db = database_feed_prefix + feed
+
     # Special case: if there are no terms specified, then it's automatically added to this feed
     # Todo: this may want to be coded more neatly
     if terms is None:
-        labels[feed] = True
+        labels[feed_in_db] = True
         return
-    
+
     # Otherwise, we check against all feeds
     # Firstly, check emoji
-    labels[feed] = _emoji_in_post(terms, post)
+    labels[feed_in_db] = _emoji_in_post(terms, post)
 
     # Then check words if the emoji wasn't already a hit
-    if not labels[feed]:
-        labels[feed] = _word_in_post(terms, words)
+    if not labels[feed_in_db]:
+        labels[feed_in_db] = _word_in_post(terms, words)
 
     # Special case: add all posts in other feeds to the Astronomy feed
-    # Todo: this may want to be coded more neatly
-    if labels[feed] and feed != "astro":
+    # Todo: this may want to be coded more neatly, its an absolute mess!!!
+    if labels[feed_in_db] and feed != "astro" and feed != "questions" and feed != "all":
         labels[database_feed_prefix + "astro"] = True
+
+        # Special case: add all posts in science feeds to the research feed
+        if feed != "research" and feed != "astrophotos":
+            labels[database_feed_prefix + "research"] = True
 
 
 def _emoji_in_post(terms, post):
@@ -80,13 +89,23 @@ def _word_in_post(terms, words):
     return any([word in terms["words"] for word in words])
 
 
-def post_in_feeds(post: str, database_feed_prefix: str = "feed_") -> dict:
+def post_in_feeds(
+    post: str, feeds: None | Iterable[str] = None, database_feed_prefix: str = "feed_"
+) -> dict:
     """Tests if a given post is in the defined feeds by checking its text; returns none if so."""
     words = cleaned_word_list(post)
     labels = {}
-    
-    for feed, terms in FEED_TERMS_WITH_SPACES.items():
-        label_post(labels, post, words, feed, terms, database_feed_prefix=database_feed_prefix)
-        
+
+    if feeds is None:
+        feeds = FEED_TERMS_WITH_SPACES.keys()
+
+    for feed in feeds:
+        label_post(
+            labels,
+            post,
+            words,
+            feed,
+            database_feed_prefix=database_feed_prefix,
+        )
+
     return labels
-    

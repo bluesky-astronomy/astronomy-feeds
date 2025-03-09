@@ -61,7 +61,7 @@ def new_bot_action(
     if latest_uri is None:
         latest_uri = command.notification.parent_ref.uri
     if latest_cid is None:
-        latest_cid = command.notification.parent_ref.uri
+        latest_cid = command.notification.parent_ref.cid
 
     # db.connect(reuse_if_open=True)
     setup_connection(get_database())

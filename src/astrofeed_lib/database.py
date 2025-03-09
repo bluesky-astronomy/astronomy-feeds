@@ -158,13 +158,15 @@ class Post(BaseModel):
     cid = peewee.CharField(index=True)
     author = peewee.CharField(index=True)
     text = peewee.CharField()
-    hidden = peewee.BooleanField(index=True, default=False)  # New column 24/12/30
+    hidden = peewee.BooleanField(index=True, default=False)
+    likes = peewee.IntegerField(default=0)  # New column 26/02/25
 
     # Feed booleans
     # Main feeds
     feed_all = peewee.BooleanField(default=False, index=True)
     feed_astro = peewee.BooleanField(default=False, index=True)
     feed_astrophotos = peewee.BooleanField(default=False, index=True)
+    feed_research = peewee.BooleanField(default=False, index=True)  # New column 26/02/25
 
     # Astronomy topics
     feed_cosmology = peewee.BooleanField(default=False, index=True)
@@ -176,11 +178,15 @@ class Post(BaseModel):
     feed_milkyway = peewee.BooleanField(default=False, index=True)
     feed_planetary = peewee.BooleanField(default=False, index=True)
     feed_radio = peewee.BooleanField(default=False, index=True)
+    feed_solar = peewee.BooleanField(default=False, index=True)  # New column 26/02/25
     feed_stellar = peewee.BooleanField(default=False, index=True)
 
     # Astrononmy / other
     feed_education = peewee.BooleanField(default=False, index=True)
     feed_history = peewee.BooleanField(default=False, index=True)
+
+    # General
+    feed_questions = peewee.BooleanField(default=False, index=True)  # New column 26/02/25
 
     # feed_moderation = peewee.BooleanField(default=False)
     # reply_parent = peewee.CharField(null=True, default=None)
