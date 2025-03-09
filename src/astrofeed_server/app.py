@@ -1,12 +1,10 @@
 from flask import Flask, jsonify, request
-import schedule
-from threading import Event, Thread
+from threading import Thread
 import time
 import signal
-from astrofeed_lib import config
+from astrofeed_lib import config, logger
 from astrofeed_lib.database import get_database, setup_connection, teardown_connection
 from astrofeed_lib.algorithm import get_posts, get_feed_logs
-from astrofeed_lib import logger
 from astrofeed_server.request_log import request_log
 from astrofeed_server.auth import AuthorizationError, validate_auth
 
@@ -161,55 +159,31 @@ def get_feed_log():
 
 
 def dump_log_to_db():
-    logger.info("Dumping log to DB")
-    request_log.dump_to_database()
-
-
-def run_continuously(interval:int = 1) -> Event:
-    """Continuously run, while executing pending jobs at each
-    elapsed time interval.
-    @return cease_continuous_run: threading. Event which can
-    be set to cease continuous run. Please note that it is
-    *intended behavior that run_continuously() does not run
-    missed jobs*. For example, if you've registered a job that
-    should run every minute and you set a continuous run
-    interval of one hour then your job won't be run 60 times
-    at each interval but only once.
-    """
-    cease_continuous_run = Event()
-
-    class ScheduleThread(Thread):
-        @classmethod
-        def run(cls):
-            while not cease_continuous_run.is_set():
-                schedule.run_pending()
-                time.sleep(interval)
-
-    continuous_thread = ScheduleThread()
-    continuous_thread.start()
-    return cease_continuous_run
+    while True:
+        logger.info("Dumping log to DB")
+        request_log.dump_to_database()
+        time.sleep(60)
 
 
 def shutdown_handler(signum, frame):
     logger.warn("Shutting down Flask server...")
     # Perform cleanup tasks here, e.g., closing database connections,
     # releasing resources, etc.
-    # Stop the background thread
-    stop_run_continuously.set()
     if not get_database().is_closed():
         teardown_connection(get_database())
-    #one last dump of the logs to the DB so we don't lose the last minute
-    dump_log_to_db()
+    #one last dump of the logs to the DB so we don't lose the last minute worth of logs
+    request_log.dump_to_database()
     exit(0)
 
-# this is outside the "if __name__ == "__main__" since using gunicorn doesn't call this module as main, and this
+# this is outside the "if __name__ == "__main__"" since using gunicorn doesn't seem to call this module as main, and this
 # code needs to run
 signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
 # Schedule the job to dump the in-memory log of requests to the database to run every 1 minute
-schedule.every(1).minutes.do(dump_log_to_db)
-# Start the background thread
-stop_run_continuously = run_continuously()
+log_dumper: Thread = Thread(target=dump_log_to_db)
+log_dumper.daemon = True
+log_dumper.start()
+
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
