@@ -247,9 +247,10 @@ class ActivityLog(BaseModel):
     request_limit = peewee.IntegerField(index=False, null=False, default=0)
     request_is_scrolled = peewee.BooleanField(null=False, default=False)
     request_user_did = peewee.CharField(index=True, null=True)
-    request_host = peewee.CharField(index=False, null=True)
-    request_referer = peewee.CharField(index=False, null=True)
-    request_user_agent = peewee.CharField(index=False, null=True)
+    # Below three attributes are not being pulled or logged - no need to create them in the DB table
+    # request_host = peewee.CharField(index=False, null=True)
+    # request_referer = peewee.CharField(index=False, null=True)
+    # request_user_agent = peewee.CharField(index=False, null=True)
 
 # class Signups(BaseModel):
 #     did = peewee.CharField(index=True)

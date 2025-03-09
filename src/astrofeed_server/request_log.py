@@ -16,11 +16,11 @@ class _Request:
     request_limit: int
     request_is_scrolled: bool
     request_user_did: str
-    # request_host and request_referer could be logged, but since they are almost always proxied from the
-    # BlueSky server, this data is meaningless to us
+    # request_host, request_referer, and user_agent could be logged, but since they are almost always proxied from the
+    # BlueSky server, this data is likely meaningless to us
     # request_host: str
     # request_referer: str
-    request_user_agent: str
+    # request_user_agent: str
 
     def __str__(self):
         return (f"REQUEST-------\n"
@@ -32,12 +32,13 @@ class _Request:
                 f"Request_user_did: {self.request_user_did}\n"
                 # f"Request_host: {self.request_host}\n"
                 # f"Request_referer: {self.request_referer}\n"
-                f"Request_user_agent: {self.request_user_agent}")
+                # f"Request_user_agent: {self.request_user_agent}"
+        )
 
 
 class _RequestLog:
     """
-    wrapper class so all threads of the Flask server get ahold of this instance and update the
+    wrapper class so all threads of the Flask server get a hold of this instance and update the
     request log. A separate job is scheduled from the Flask server to call the 'dump_to_database' method of the class
     on a regular schedule to save the in-memory information to the configured database
     """
@@ -59,7 +60,8 @@ class _RequestLog:
     def add_request(self, feed: str, limit: int, is_scrolled: bool, user_did: str
                     # , request_host: str
                     # , request_referer: str
-                    , request_user_agent: str) -> None:
+                    #, request_user_agent: str
+                    ) -> None:
         """
         Build a _Request object from the input information and add it to the in-memory list of requests for the feed.
         :param feed: BlueSky Astronomy Feed being requested
@@ -81,7 +83,7 @@ class _RequestLog:
             request_feed_uri=feed,
             # request_referer=request_referer,
             # request_host=request_host,
-            request_user_agent=request_user_agent,
+            # request_user_agent=request_user_agent,
         )
         with self.lock:
             self.log.append(request)
@@ -110,7 +112,7 @@ class _RequestLog:
                 # act_log.request_referer = req.request_referer
                 act_log.request_limit = req.request_limit
                 act_log.request_is_scrolled = req.request_is_scrolled
-                act_log.request_user_agent = req.request_user_agent
+                #act_log.request_user_agent = req.request_user_agent
                 act_log.request_feed_uri = req.request_feed_uri
                 act_log.request_user_did = req.request_user_did
                 act_log.save()

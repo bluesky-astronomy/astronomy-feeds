@@ -119,7 +119,8 @@ def get_feed_skeleton():
         request_log.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did=requester_did
                         # , request_host=request.headers.get("Host")
                         # , request_referer=request.headers.get("Referer")
-                        , request_user_agent=request.headers.get("User-Agent"))
+                        #, request_user_agent=request.headers.get("User-Agent")
+                                )
 
         body = get_posts(feed, cursor, limit)
     # except ValueError:
@@ -143,7 +144,7 @@ def get_requester_did():
     return requester_did
 
 
-@app.route("/xrpc/app.bsky.feed.getFeedLog", methods=["GET"])
+@app.route("/xrpc/app.getFeedLog", methods=["GET"])
 def get_feed_log():
     feed_uri = request.args.get("feed", default=None, type=str)
 
