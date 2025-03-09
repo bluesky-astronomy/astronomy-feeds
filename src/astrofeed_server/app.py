@@ -115,10 +115,10 @@ def get_feed_skeleton():
         cursor = request.args.get("cursor", default=None, type=str)
         limit = request.args.get("limit", default=20, type=int)
         logger.debug(f"request for {feed} with cursor {cursor} and limit {limit}")
-        #req: _RequestLog = _RequestLog()
+
         request_log.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did=requester_did
-                        , request_host=request.headers.get("Host")
-                        , request_referer=request.headers.get("Referer")
+                        # , request_host=request.headers.get("Host")
+                        # , request_referer=request.headers.get("Referer")
                         , request_user_agent=request.headers.get("User-Agent"))
 
         body = get_posts(feed, cursor, limit)

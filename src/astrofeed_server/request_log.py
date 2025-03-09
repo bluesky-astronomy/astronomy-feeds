@@ -16,8 +16,10 @@ class _Request:
     request_limit: int
     request_is_scrolled: bool
     request_user_did: str
-    request_host: str
-    request_referer: str
+    # request_host and request_referer could be logged, but since they are almost always proxied from the
+    # BlueSky server, this data is meaningless to us
+    # request_host: str
+    # request_referer: str
     request_user_agent: str
 
     def __str__(self):
@@ -28,8 +30,8 @@ class _Request:
                 f"Request_limit: {self.request_limit}\n"
                 f"Request_is_scrolled: {self.request_is_scrolled}\n"
                 f"Request_user_did: {self.request_user_did}\n"
-                f"Request_host: {self.request_host}\n"
-                f"Request_referer: {self.request_referer}\n"
+                # f"Request_host: {self.request_host}\n"
+                # f"Request_referer: {self.request_referer}\n"
                 f"Request_user_agent: {self.request_user_agent}")
 
 
@@ -54,8 +56,10 @@ class _RequestLog:
             ret_str += str(req)
         return ret_str
 
-    def add_request(self, feed: str, limit: int, is_scrolled: bool, user_did: str, request_host: str,
-                    request_referer: str, request_user_agent: str) -> None:
+    def add_request(self, feed: str, limit: int, is_scrolled: bool, user_did: str
+                    # , request_host: str
+                    # , request_referer: str
+                    , request_user_agent: str) -> None:
         """
         Build a _Request object from the input information and add it to the in-memory list of requests for the feed.
         :param feed: BlueSky Astronomy Feed being requested
@@ -75,8 +79,8 @@ class _RequestLog:
             request_is_scrolled=is_scrolled,
             request_user_did=user_did,
             request_feed_uri=feed,
-            request_referer=request_referer,
-            request_host=request_host,
+            # request_referer=request_referer,
+            # request_host=request_host,
             request_user_agent=request_user_agent,
         )
         with self.lock:
@@ -102,8 +106,8 @@ class _RequestLog:
             for req in temp_log:
                 act_log: ActivityLog = ActivityLog()
                 act_log.request_dt = req.request_dt
-                act_log.request_host = req.request_host
-                act_log.request_referer = req.request_referer
+                # act_log.request_host = req.request_host
+                # act_log.request_referer = req.request_referer
                 act_log.request_limit = req.request_limit
                 act_log.request_is_scrolled = req.request_is_scrolled
                 act_log.request_user_agent = req.request_user_agent
