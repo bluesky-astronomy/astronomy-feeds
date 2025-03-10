@@ -94,24 +94,26 @@ class _RequestLog:
         saving the data to the database table
         :return: None
         """
+        logger.info("Dumping log to DB")
         with self.lock:
             # copy the list and clear the old one to avoid losing any data
             temp_log: list[_Request] = copy.deepcopy(self.log)
             self.log = []
 
         # now go through the copied list and save to the database
+        log_to_save: list[ActivityLog] = []
         with DBConnection() as conn:
             for req in temp_log:
-                act_log: ActivityLog = ActivityLog()
-                act_log.request_dt = req.request_dt
-                # act_log.request_host = req.request_host
-                # act_log.request_referer = req.request_referer
-                act_log.request_limit = req.request_limit
-                act_log.request_is_scrolled = req.request_is_scrolled
-                #act_log.request_user_agent = req.request_user_agent
-                act_log.request_feed_uri = req.request_feed_uri
-                act_log.request_user_did = req.request_user_did
-                act_log.save()
+                act_log: ActivityLog = ActivityLog(request_dt=req.request_dt
+                                                   , request_limit=req.request_limit
+                                                   , request_is_scrolled=req.request_is_scrolled
+                                                   , request_feed_uri=req.request_feed_uri
+                                                   , request_user_did=req.request_user_did)
+
+                log_to_save.append(act_log)
+
+            with conn.atomic():
+                ActivityLog.bulk_create(log_to_save, batch_size=100)
 
 
 request_log:_RequestLog = _RequestLog()

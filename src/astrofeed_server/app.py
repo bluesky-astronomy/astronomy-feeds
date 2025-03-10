@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, request
-from threading import Thread
+from threading import Thread, Event
 import time
 import signal
 from astrofeed_lib import config, logger
@@ -142,7 +142,7 @@ def get_requester_did():
     return requester_did
 
 
-@app.route("/xrpc/app.getFeedLog", methods=["GET"])
+@app.route("/api/app.getFeedLog", methods=["GET"])
 def get_feed_log():
     feed_uri = request.args.get("feed", default=None, type=str)
 
@@ -158,11 +158,23 @@ def get_feed_log():
     return jsonify(body)
 
 
-def dump_log_to_db():
-    while True:
-        logger.info("Dumping log to DB")
+def dump_log_to_db(stop_event: Event = None):
+    while stop_event is None or not stop_event.is_set():
         request_log.dump_to_database()
-        time.sleep(60)
+        # instead of time.sleep(x), which will block for x seconds before allowing a kill signal to execute the rest
+        # of the method, use the wait method on Event. This allows the "pause" to be interrupted and the rest of the
+        # method to be executed for cleanup
+        # https://stackoverflow.com/questions/5114292/break-interrupt-a-time-sleep-in-python
+        stop_event.wait(60)
+    # one last dump of the logs to the DB so we don't lose the last minute worth of logs
+    logger.info("One last request log dump to DB before shutting down")
+    request_log.dump_to_database()
+
+
+# Schedule the job to dump the in-memory log of requests to the database to run every 1 minute
+log_dumper_stop_event: Event = Event()
+log_dumper: Thread = Thread(target=dump_log_to_db, args=(log_dumper_stop_event,))
+log_dumper.start()
 
 
 def shutdown_handler(signum, frame):
@@ -171,19 +183,14 @@ def shutdown_handler(signum, frame):
     # releasing resources, etc.
     if not get_database().is_closed():
         teardown_connection(get_database())
-    #one last dump of the logs to the DB so we don't lose the last minute worth of logs
-    request_log.dump_to_database()
+    # set stop event on the log dumper thread so it can clean up gracefully before exiting
+    log_dumper_stop_event.set()
     exit(0)
 
 # this is outside the "if __name__ == "__main__"" since using gunicorn doesn't seem to call this module as main, and this
 # code needs to run
 signal.signal(signal.SIGINT, shutdown_handler)
 signal.signal(signal.SIGTERM, shutdown_handler)
-# Schedule the job to dump the in-memory log of requests to the database to run every 1 minute
-log_dumper: Thread = Thread(target=dump_log_to_db)
-log_dumper.daemon = True
-log_dumper.start()
-
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -25,16 +25,14 @@ def _select_posts(feed, limit):
 
 def _select_activity_log_by_feed(feed: str):
     return(ActivityLog.select(ActivityLog.id, ActivityLog.request_dt, ActivityLog.request_feed_uri
-                              , ActivityLog.request_is_scrolled, ActivityLog.request_limit
-                              , ActivityLog.request_user_did)
+                              , ActivityLog.request_is_scrolled, ActivityLog.request_limit)
            .where(ActivityLog.request_feed_uri == feed)
            .order_by(ActivityLog.request_dt))
 
 
 def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
     return [{"id": log.id, "request_dt": log.request_dt, "request_feed_uri": log.request_feed_uri
-             , "request_is_scrolled": log.request_is_scrolled, "request_limit": log.request_limit
-             , "request_user_did": log.request_user_did} for log in logs]
+             , "request_is_scrolled": log.request_is_scrolled, "request_limit": log.request_limit} for log in logs]
 
 
 def _create_feed(posts):
