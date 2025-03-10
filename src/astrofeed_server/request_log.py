@@ -42,14 +42,10 @@ class _RequestLog:
     request log. A separate job is scheduled from the Flask server to call the 'dump_to_database' method of the class
     on a regular schedule to save the in-memory information to the configured database
     """
-    log: list[_Request] = None
-    lock: Lock = None
 
     def __init__(self):
-        if self.log is None:
-            self.log: list[_Request] = []
-        if self.lock is None:
-            self.lock: Lock = Lock()
+        self.log: list[_Request] = []
+        self.lock: Lock = Lock()
 
     def __str__(self) -> str:
         ret_str: str = ""
