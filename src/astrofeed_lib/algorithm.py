@@ -23,11 +23,12 @@ def _select_posts(feed, limit):
     )
 
 
-def _select_activity_log_by_feed(feed: str):
+def _select_activity_log_by_feed(feed: str, limit: int = 50):
     return(ActivityLog.select(ActivityLog.id, ActivityLog.request_dt, ActivityLog.request_feed_uri
                               , ActivityLog.request_is_scrolled, ActivityLog.request_limit)
            .where(ActivityLog.request_feed_uri == feed)
-           .order_by(ActivityLog.request_dt))
+           .order_by(ActivityLog.request_dt)
+           .limit(limit))
 
 
 def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
