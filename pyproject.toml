@@ -28,19 +28,14 @@ dependencies = [
   "peewee>=3.16.2,<4.0",
   "pymysql>=1.1.0,<2.0", # If using a MySQL database
   "atproto==0.0.55",
-  "emoji>=2.8.0,<3.0", 
+  "emoji>=2.8.0,<3.0",
   "websockets>=13.0",
-
   # astrofeed_firehose
   "uvloop>=0.20", # Has a faster async implementation than others
   "faster-fifo>=1.5.2,<2.0",
-
   # astrofeed_server
   "Flask>=2.3.2,<3.0",
   "gunicorn>=20.1.0,",
-
-  # astrobot
-  # (none)
 ]
 
 [project.optional-dependencies]
