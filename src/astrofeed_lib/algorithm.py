@@ -1,7 +1,8 @@
-from .database import Account, Post, BotActions
+from .database import Account, Post, BotActions, ActivityLog
 from .accounts import CachedAccountQuery
 from datetime import datetime
-from typing import Optional, Final
+from typing import Optional, Final, Any
+from astrofeed_lib import logger
 
 
 VALID_ACCOUNTS = CachedAccountQuery(
@@ -22,9 +23,31 @@ def _select_posts(feed, limit):
     )
 
 
+def _select_activity_log_by_feed(feed: str, limit: int = 50):
+    return(ActivityLog.select(ActivityLog.id, ActivityLog.request_dt, ActivityLog.request_feed_uri
+                              , ActivityLog.request_is_scrolled, ActivityLog.request_limit)
+           .where(ActivityLog.request_feed_uri == feed)
+           .order_by(ActivityLog.request_dt)
+           .limit(limit))
+
+
+def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
+    return [{"id": log.id, "request_dt": log.request_dt, "request_feed_uri": log.request_feed_uri
+             , "request_is_scrolled": log.request_is_scrolled, "request_limit": log.request_limit} for log in logs]
+
+
 def _create_feed(posts):
     """Turns list of posts into a sorted"""
     return [{"post": post.uri} for post in posts]
+
+
+def get_feed_logs(feed: str) -> dict:
+    logs = _select_activity_log_by_feed(feed)
+    logger.info(f"Loaded logs from DB: {logs}")
+    # Create the actual feed to send back to the user!
+    log_details: list[dict[str, Any]] = _create_activity_log(logs)
+
+    return {"logs": log_details}
 
 
 def _handle_cursor(cursor, posts):
