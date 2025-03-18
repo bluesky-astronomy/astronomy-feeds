@@ -16,15 +16,12 @@ def build_dev_db(
         take_frac : float = 0.0, 
         sampling_strategy : str = "last"
     ):
-    """Reduce volume of stored data, by sampling given amount according to given strategy.
-
-    For the moment, this is built assuming that we have a 'complete' database (all models have associated 
-    dataframes of data), and the method itself demands that we at least have a Post table to initially 
-    sample from.
+    """Sample from larger SQLite database to create smaller SQLite database, following schema from astrofeed_lib.database
 
     in:
         source_database_name: string representing path to source database
         destination_database_name: string representing path to developed database to create
+        overwrite_existing: boolean indicating whether a pre-existing developer database should be replaced
         take_num: number of entries to take from Post table (mutually exclusive with take_frac)
         take_frac: fraction of entries to take from Post table (mutually exclusive with take_num)
         sampling_strategy: string indicating sampling strategy to use            
@@ -47,9 +44,9 @@ def build_dev_db(
             warnings.warn(f"Found pre-existing file {destination_database_name}, and overwrite_existing=True: removing and replacing file.")
             os.remove(destination_database_name)
         else:
-            raise FileExistsError(f"Found pre-existing file {destination_database_name}, and overwrite_existing=False:\n \
-                                  please select another name for new database; move, remove, or rename existing \n\
-                                  dev database; or re-run with argument 'overwrite_existing=True' to overwrite.")
+            raise FileExistsError(f"Found pre-existing file {destination_database_name}, and overwrite_existing=False: " \
+                                  "please select another name for new database; move, remove, or rename existing " \
+                                  "dev database; or re-run with argument 'overwrite_existing=True' to overwrite.")
     db_conn_destination = peewee.SqliteDatabase(destination_database_name)
     for model in to_write.keys():
         with model.bind_ctx(db_conn_destination):
@@ -58,8 +55,8 @@ def build_dev_db(
     # only two sampling strategies implemented, default to last n posts
     supported_sampling_strategies = ["first", "last"]
     if(sampling_strategy not in supported_sampling_strategies):
-        warnings.warn(f"dev_database/DB/truncate: \n\
-                        Sampling strategy must be one of {supported_sampling_strategies}; setting sampling_strategy='last'.")
+        warnings.warn("dev_database/DB/truncate: "\
+                      f"Sampling strategy must be one of {supported_sampling_strategies}; setting sampling_strategy='last'.")
         sampling_strategy = "last"
 
     # now we build a dictionary of data to write (in the form of lists of dicts)
@@ -68,12 +65,12 @@ def build_dev_db(
         total_posts = Post.select().count()
 
         if(((take_num!=0) == (take_frac!=0)) or (take_num < 0 or take_frac < 0)):
-            raise ValueError(f"dev_database/DB/truncate: \n\
-                                must specify a positive (nonzero) value for only one of take_num or take_frac.")
+            raise ValueError(f"dev_database/DB/truncate: "\
+                             "must specify a positive (nonzero) value for only one of take_num or take_frac.")
         elif(take_num > 0):
             if(take_num > total_posts):
-                warnings.warn(f"dev_database/DB/truncate: \n\
-                        {take_num} Post entries requested, but only {total_posts} available. Setting take_num={total_posts}")
+                warnings.warn("dev_database/DB/truncate: " \
+                              f"{take_num} Post entries requested, but only {total_posts} available. Setting take_num={total_posts}")
                 take_num = total_posts
         else:
             if(take_frac > 1):
@@ -181,9 +178,9 @@ class DB():
         format = format.lower()
 
         if(format not in self.supported_source_formats):
-            raise NotImplementedError(f"dev_database/DB/populate_from_source: \
-                                        {format} not a supported format, please use one of the following: \
-                                        {self.supported_source_formats}")
+            raise NotImplementedError("dev_database/DB/populate_from_source: " \
+                                      f"{format} not a supported format, please use one of the following: " \
+                                      f"{self.supported_source_formats}")
 
         match format:
             case "parquet":
@@ -194,9 +191,9 @@ class DB():
                         if os.path.isfile(target_file):
                             self.data[model_name] = pandas.read_parquet(target_file)
                         else:
-                            raise FileNotFoundError(f"dev_database/DB/populate_from_source: \
-                                                      No source file found for {model_name} table (looking for {target_file}).\n \
-                                                      Source directory must contain files for each of these tables: ({self.models.keys()})")
+                            raise FileNotFoundError(f"dev_database/DB/populate_from_source: " \
+                                                    f"No source file found for {model_name} table (looking for {target_file}). " \
+                                                    f"Source directory must contain files for each of these tables: ({self.models.keys()})")
                 else:
                     raise NotADirectoryError(f"dev_database/DB/populate_from_source: No such directory '{source}': expecting a directory.")
 
@@ -205,21 +202,21 @@ class DB():
 
                 # first, make sure we're given a pre-existing database file
                 if not os.path.isfile(source):
-                    raise FileNotFoundError(f"dev_database/DB/populate_from_source: \
-                                            Unable to find {source} file; must be a pre-existing SQLite database file.")
+                    raise FileNotFoundError("dev_database/DB/populate_from_source: " \
+                                            f"Unable to find {source} file; must be a pre-existing SQLite database file.")
                 try:
                     source_db_conn = peewee.SqliteDatabase(source)
                     source_tables = source_db_conn.get_tables()
                 except peewee.DatabaseError as err:
-                    print(f"dev_database/DB/populate_from_source: \
-                          could not parse {source} as an SqLite database file.")
+                    print("dev_database/DB/populate_from_source: " \
+                          f"could not parse {source} as an SqLite database file.")
                     raise err
 
                 # now check to make sure that the database is complete
                 if set(source_tables) != set([table_name.lower() for table_name in self.models.keys()]):
-                    raise RuntimeError(f"dev_database/DB/populate_from_source: \n\
-                                            Database at {source} does not contain all necessary tables to populate a \n\
-                                            new database (has {source_tables} tables, must have {self.models.keys()} tables).")
+                    raise RuntimeError(f"dev_database/DB/populate_from_source: " \
+                                       f"Database at {source} does not contain all necessary tables to populate a "\
+                                       f"new database (has {source_tables} tables, must have {self.models.keys()} tables).")
 
                 # now we can try to transfer database data to our internal representation
                 for model_name, model in self.models.items():
@@ -227,14 +224,14 @@ class DB():
                         with model.bind_ctx(source_db_conn):
                             self.data[model_name] = pandas.DataFrame(model.select().dicts())
                     except peewee.DatabaseError as err:
-                        print(f"dev_database/DB/populate_from_source: \
-                            {model} table from {source} database does not match defined schema.")
+                        print("dev_database/DB/populate_from_source: "\
+                              f"{model} table from {source} database does not match defined schema.")
                         raise err
 
             case _:
-                raise NotImplementedError(f"dev_database/DB/populate_from_source: \
-                                            {format} not a supported format, please use one of the following: \
-                                            {self.supported_source_formats}")
+                raise NotImplementedError("dev_database/DB/populate_from_source: "\
+                                          f"{format} not a supported format, please use one of the following: "\
+                                          f"{self.supported_source_formats}")
 
     def truncate(self, take_num : int = 0, take_frac : float = 0, sampling : str = "last"):
         """Reduce volume of stored data, by sampling given amount according to given strategy.
@@ -251,13 +248,13 @@ class DB():
 
         # make sure our take_num/take_frac make sense
         if(((take_num!=0) == (take_frac!=0)) or (take_num < 0 or take_frac < 0)):
-            raise ValueError(f"dev_database/DB/truncate: \
-                               must specify a positive (nonzero) value for only one of take_num or take_frac.")
+            raise ValueError("dev_database/DB/truncate: "\
+                             "must specify a positive (nonzero) value for only one of take_num or take_frac.")
         elif(take_num > 0):
             total_posts = len(self.data["Post"])
             if(take_num > total_posts):
-                warnings.warn(f"dev_database/DB/truncate: \
-                       {take_num} Post entries requested, but only {total_posts} available. Setting take_num={total_posts}")
+                warnings.warn("dev_database/DB/truncate: "\
+                              f"{take_num} Post entries requested, but only {total_posts} available. Setting take_num={total_posts}")
                 take_num = total_posts
         else:
             if(take_frac > 1):
@@ -267,8 +264,8 @@ class DB():
 
         # only three sampling strategies implemented, default to last n posts
         if(sampling not in self.supported_sampling_strategies):
-            warnings.warn(f"dev_database/DB/truncate: \
-                            Sampling must be one of {self.supported_sampling_strategies}; setting sampling='last'.")
+            warnings.warn("dev_database/DB/truncate: "\
+                          f"Sampling must be one of {self.supported_sampling_strategies}; setting sampling='last'.")
             sampling = "last"
 
         # initial sampling of Post
@@ -366,8 +363,8 @@ class DB():
             # also maintaining MySQL dev databases, can use other checks to distinguish
             db_conn = model._meta.database
             if type(db_conn) is peewee.MySQLDatabase:
-                raise ConnectionRefusedError("dev_database/write: MySQL database connection detected during write, \
-                                              might be trying to write to prodution database; aborting.")
+                raise ConnectionRefusedError("dev_database/write: MySQL database connection detected during write, " \
+                                              "might be trying to write to prodution database; aborting.")
 
             # make the table for our model in the database if it doesn't already exist
             if model_name not in db_conn.get_tables():
@@ -403,9 +400,9 @@ def build_dev_db_from_parquet(data_source: str,
         truncation_strat: strategy to use for truncation
         overwrite_existing: boolean indicating whether to overwrite a pre-existing database
     """
-    warnings.warn(f"You are using a deprecated method for building a developer database, which has not \n\
-                  been tested against the updated database schema. Unexpected results may occur, procede \n\
-                  at your own risk.")
+    warnings.warn("You are using a deprecated method for building a developer database, which has not "\
+                  "been tested against the updated database schema. Unexpected results may occur, procede "\
+                  "at your own risk.")
 
     # initialize database
     if(os.path.isfile(database_name)):
@@ -413,9 +410,9 @@ def build_dev_db_from_parquet(data_source: str,
             warnings.warn(f"Found pre-existing file {database_name}, and overwrite_existing=True: removing file.")
             os.remove(database_name)
         else:
-            raise FileExistsError(f"Found pre-existing file {database_name}, and overwrite_existing=False:\n \
-                                  please select another name for new database; move, remove, or rename existing \
-                                  dev database; or re-run with argument 'overwrite_existing=True' to overwrite.")
+            raise FileExistsError(f"Found pre-existing file {database_name}, and overwrite_existing=False: " \
+                                  "please select another name for new database; move, remove, or rename existing "\
+                                  "dev database; or re-run with argument 'overwrite_existing=True' to overwrite.")
 
     database_engine = database_engine.lower()
     match database_engine:
