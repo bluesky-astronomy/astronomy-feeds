@@ -33,7 +33,9 @@ DESIRED_NOTIFICATIONS = {"like", "mention", "reply"}
 HANDLE = _get_handle("ASTROBOT_HANDLE")  # Name of handle environment variable
 PASSWORD = _get_password("ASTROBOT_PASSWORD")  # Name of password environment variable
 MAX_COMMAND_AGE = 120  # Maximum age of a command before we ignore it, in days.
-STALE_COMMAND_CHECK_INTERVAL = 20  # How many loops to wait before checking for stale commands
+STALE_COMMAND_CHECK_INTERVAL = (
+    20  # How many loops to wait before checking for stale commands
+)
 
 # Setup command registry
 COMMAND_REGISTRY = CommandRegistry()

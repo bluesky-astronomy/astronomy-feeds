@@ -54,7 +54,9 @@ If you ever have any concerns or issues with moderation, get in touch with @mode
 
 
 def _execute_rules_sent(command: SignupCommand, client: Client):
-    logger.info(f"SignupCommand: Sending feed rules to {command.notification.author.handle}")
+    logger.info(
+        f"SignupCommand: Sending feed rules to {command.notification.author.handle}"
+    )
     account_entries = fetch_account_entry_for_did(command.notification.author.did)
     already_signed_up = any(
         [account.is_valid for account in account_entries]
@@ -97,14 +99,30 @@ def _execute_get_description(command: SignupCommand, client: Client):
 
     # Check to see if they replied with yes
     # Todo: could be more sophisticated here, e.g. if a smartass replies 'no' we probably don't want to have the bot act like an idiot and ask them to say yes
-    valid_yes = {"yes", "y", "ye", "yeah", "yess", "yes.", "yes,", "yes!", "'yes'", "'yes", "yes'", "yea"}
+    valid_yes = {
+        "yes",
+        "y",
+        "ye",
+        "yeah",
+        "yess",
+        "yes.",
+        "yes,",
+        "yes!",
+        "'yes'",
+        "'yes",
+        "yes'",
+        "yea",
+    }
     if not any([x in valid_yes for x in command.notification.words]):
         # Check if the bot has already replied
         from astrobot.config import HANDLE  # sorry it's here, avoids a circ import
-        thread = client.get_post_thread(command.notification.notification.uri, parent_height=0)
+
+        thread = client.get_post_thread(
+            command.notification.notification.uri, parent_height=0
+        )
         if any([HANDLE == reply.post.author.handle for reply in thread.thread.replies]):
             return
-        
+
         # Otherwise, send some help text
         root, parent = send_post(
             client,
@@ -233,12 +251,16 @@ def _execute_complete(
     update_bot_action(command, "complete", parent.uri, parent.cid)
 
 
-def _execute_cancel(command: SignupCommand, client: Client, reply_in_thread: bool = True):
-    logger.info(f"SignupCommand: cancelling signup {command.notification.author.handle}")
+def _execute_cancel(
+    command: SignupCommand, client: Client, reply_in_thread: bool = True
+):
+    logger.info(
+        f"SignupCommand: cancelling signup {command.notification.author.handle}"
+    )
     root, parent = send_thread(
         client,
         ["Signup request cancelled."],
-        #quotes=COMPLETE_QUOTES,
+        # quotes=COMPLETE_QUOTES,
         root_post=command.notification.root_ref,
         parent_post=command.notification.parent_ref,
     )

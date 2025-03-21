@@ -5,11 +5,13 @@ import datetime
 import copy
 from threading import Lock
 
+
 @dataclass
 class _Request:
     """
     Data class representing an in-memory log of the request to the server for the BlueSky Astronomy Feeds
     """
+
     request_id: int
     request_dt: datetime
     request_feed_uri: str
@@ -23,16 +25,17 @@ class _Request:
     # request_user_agent: str
 
     def __str__(self):
-        return (f"REQUEST-------\n"
-                f"Request_id: {self.request_id}\n"
-                f"Request_dt: {self.request_dt}\n"
-                f"Request_feed_uri: {self.request_feed_uri}\n"
-                f"Request_limit: {self.request_limit}\n"
-                f"Request_is_scrolled: {self.request_is_scrolled}\n"
-                f"Request_user_did: {self.request_user_did}\n"
-                # f"Request_host: {self.request_host}\n"
-                # f"Request_referer: {self.request_referer}\n"
-                # f"Request_user_agent: {self.request_user_agent}"
+        return (
+            f"REQUEST-------\n"
+            f"Request_id: {self.request_id}\n"
+            f"Request_dt: {self.request_dt}\n"
+            f"Request_feed_uri: {self.request_feed_uri}\n"
+            f"Request_limit: {self.request_limit}\n"
+            f"Request_is_scrolled: {self.request_is_scrolled}\n"
+            f"Request_user_did: {self.request_user_did}\n"
+            # f"Request_host: {self.request_host}\n"
+            # f"Request_referer: {self.request_referer}\n"
+            # f"Request_user_agent: {self.request_user_agent}"
         )
 
 
@@ -53,11 +56,16 @@ class _RequestLog:
             ret_str += str(req)
         return ret_str
 
-    def add_request(self, feed: str, limit: int, is_scrolled: bool, user_did: str
-                    # , request_host: str
-                    # , request_referer: str
-                    #, request_user_agent: str
-                    ) -> None:
+    def add_request(
+        self,
+        feed: str,
+        limit: int,
+        is_scrolled: bool,
+        user_did: str,
+        # , request_host: str
+        # , request_referer: str
+        # , request_user_agent: str
+    ) -> None:
         """
         Build a _Request object from the input information and add it to the in-memory list of requests for the feed.
         :param feed: BlueSky Astronomy Feed being requested
@@ -84,7 +92,6 @@ class _RequestLog:
         with self.lock:
             self.log.append(request)
 
-
     def dump_to_database(self) -> None:
         """
         Take the in-memory RequestLog and save it to the database. Lock this action to ensure we don't have another
@@ -104,11 +111,13 @@ class _RequestLog:
         log_to_save: list[ActivityLog] = []
         with DBConnection() as conn:
             for req in temp_log:
-                act_log: ActivityLog = ActivityLog(request_dt=req.request_dt
-                                                   , request_limit=req.request_limit
-                                                   , request_is_scrolled=req.request_is_scrolled
-                                                   , request_feed_uri=req.request_feed_uri
-                                                   , request_user_did=req.request_user_did)
+                act_log: ActivityLog = ActivityLog(
+                    request_dt=req.request_dt,
+                    request_limit=req.request_limit,
+                    request_is_scrolled=req.request_is_scrolled,
+                    request_feed_uri=req.request_feed_uri,
+                    request_user_did=req.request_user_did,
+                )
 
                 log_to_save.append(act_log)
 
@@ -116,4 +125,4 @@ class _RequestLog:
                 ActivityLog.bulk_create(log_to_save, batch_size=100)
 
 
-request_log:_RequestLog = _RequestLog()
+request_log: _RequestLog = _RequestLog()

@@ -60,7 +60,9 @@ class CommandRegistry:
 
         # Otherwise, say it isn't recognized.
         commands_as_list = ", ".join([f"'{x}'" for x in self._commands.keys()])
-        return UnrecognizedCommand(notification, extra=f"\n\nValid commands: {commands_as_list}")  # Todo could overflow post limit when more added; also will contain mod commands
+        return UnrecognizedCommand(
+            notification, extra=f"\n\nValid commands: {commands_as_list}"
+        )  # Todo could overflow post limit when more added; also will contain mod commands
 
     def get_matching_multistep_command(
         self, notification: LikeNotification | ReplyNotification
@@ -80,14 +82,13 @@ class CommandRegistry:
             )
 
         return command.create_from_partial_step(notification)
-    
+
     def list_commands(self) -> list[str]:
         return list(self._commands.keys())
-    
+
     def list_multistep_commands(self) -> list[str]:
         command_names = []
         for command_name, command in self._commands.items():
             if issubclass(command, MultiStepCommand):
                 command_names.append(command_name)
         return command_names
-

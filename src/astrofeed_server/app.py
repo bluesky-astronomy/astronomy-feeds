@@ -1,18 +1,18 @@
-from flask import Flask, jsonify, request
-from threading import Thread, Event
-import time
 import signal
-from astrofeed_lib import config, logger
-from astrofeed_lib.database import get_database, setup_connection, teardown_connection
-from astrofeed_lib.algorithm import get_posts, get_feed_logs
-from astrofeed_server.request_log import request_log
-from astrofeed_server.auth import AuthorizationError, validate_auth
+from threading import Thread, Event
 
+from flask import Flask, jsonify, request
+
+from astrofeed_lib import config, logger
+from astrofeed_lib.algorithm import get_posts, get_feed_logs
+from astrofeed_lib.database import get_database, setup_connection, teardown_connection
+from astrofeed_server.auth import AuthorizationError, validate_auth
+from astrofeed_server.request_log import request_log
 
 # Haven't yet worked out how to get a local Flask debug with VS Code to like a relative
 # import, and how to get a Gunicorn running server on Digital Ocean to not *need* one =(
 # TODO: make this less of a hack
-try: 
+try:
     from .pinned import add_pinned_post_to_feed
 except ModuleNotFoundError:
     from astrofeed_server.pinned import add_pinned_post_to_feed
@@ -42,12 +42,16 @@ def index():
     feed_urls = []
 
     for uri, name in config.FEED_URIS.items():
-        link = f"<li><a href=\"/xrpc/app.bsky.feed.getFeedSkeleton?feed={uri}\">{name}</a>"
+        link = (
+            f'<li><a href="/xrpc/app.bsky.feed.getFeedSkeleton?feed={uri}">{name}</a>'
+        )
         if name in config.FEED_TERMS:
             if config.FEED_TERMS[name] is None:
                 terms = "all posts by validated users"
             else:
-                terms = ', '.join(config.FEED_TERMS[name]["emoji"] + config.FEED_TERMS[name]["words"])
+                terms = ", ".join(
+                    config.FEED_TERMS[name]["emoji"] + config.FEED_TERMS[name]["words"]
+                )
             feed_urls.append(link + f" ({terms})</li>")
         else:
             feed_urls.append(link + " (feed for moderation purposes)</li>")
@@ -84,7 +88,11 @@ def did_json():
             "@context": ["https://www.w3.org/ns/did/v1"],
             "id": config.SERVICE_DID,
             "service": [
-                {"id": "#bsky_fg", "type": "BskyFeedGenerator", "serviceEndpoint": f"https://{config.HOSTNAME}"}
+                {
+                    "id": "#bsky_fg",
+                    "type": "BskyFeedGenerator",
+                    "serviceEndpoint": f"https://{config.HOSTNAME}",
+                }
             ],
         }
     )
@@ -93,7 +101,10 @@ def did_json():
 @app.route("/xrpc/app.bsky.feed.describeFeedGenerator", methods=["GET"])
 def describe_feed_generator():
     feeds = [{"uri": uri} for uri in config.FEED_URIS.values()]
-    response = {"encoding": "application/json", "body": {"did": config.SERVICE_DID, "feeds": feeds}}
+    response = {
+        "encoding": "application/json",
+        "body": {"did": config.SERVICE_DID, "feeds": feeds},
+    }
     return jsonify(response)
 
 
@@ -114,11 +125,15 @@ def get_feed_skeleton():
         limit = request.args.get("limit", default=20, type=int)
         logger.debug(f"request for {feed} with cursor {cursor} and limit {limit}")
 
-        request_log.add_request(feed=feed, limit=limit, is_scrolled=cursor is not None, user_did=requester_did
-                        # , request_host=request.headers.get("Host")
-                        # , request_referer=request.headers.get("Referer")
-                        #, request_user_agent=request.headers.get("User-Agent")
-                                )
+        request_log.add_request(
+            feed=feed,
+            limit=limit,
+            is_scrolled=cursor is not None,
+            user_did=requester_did,
+            # , request_host=request.headers.get("Host")
+            # , request_referer=request.headers.get("Referer")
+            # , request_user_agent=request.headers.get("User-Agent")
+        )
 
         body = get_posts(feed, cursor, limit)
     # except ValueError:
@@ -186,6 +201,7 @@ def shutdown_handler(signum, frame):
     # set stop event on the log dumper thread so it can clean up gracefully before exiting
     log_dumper_stop_event.set()
     exit(0)
+
 
 # this is outside the "if __name__ == "__main__"" since using gunicorn doesn't seem to call this module as main, and this
 # code needs to run

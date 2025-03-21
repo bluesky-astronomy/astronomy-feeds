@@ -26,7 +26,7 @@ def check_post_image(image, image_alt):
     """Check that there's valid image and valid alt text if an image is specified"""
     if image is None:
         return
-    # Todo: probably not needed; 
+    # Todo: probably not needed;
     # if not isinstance(image, bytes):
     #     raise ValueError("image must be a bytes representation of the image's data!")
     if not isinstance(image_alt, str):
