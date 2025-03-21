@@ -26,8 +26,10 @@ class ModeratorHideCommand(Command):
 
     def execute_good_permissions(self, client: Client):
         # Default failure case
-        explanation = "Unable to hide post: this command must be in reply to the post to hide."
-        
+        explanation = (
+            "Unable to hide post: this command must be in reply to the post to hide."
+        )
+
         # Check that this post is a reply to something
         if hasattr(self.notification.notification.record, "reply"):
             # Attempt to hide the post it's replied to

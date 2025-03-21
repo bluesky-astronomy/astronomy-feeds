@@ -1,7 +1,9 @@
 """Tools for handling lists of accounts and working with Bluesky DIDs etc."""
 
 from .database import Account
-from .database import DBConnection # get_database, setup_connection, teardown_connection
+from .database import (
+    DBConnection,
+)  # get_database, setup_connection, teardown_connection
 import time
 
 

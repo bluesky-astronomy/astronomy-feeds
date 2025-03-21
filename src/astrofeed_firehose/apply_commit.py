@@ -75,7 +75,7 @@ def _delete_posts(cursor: int, posts_to_delete: list[str]):
     """Removes posts from the database."""
     if not posts_to_delete:
         return
-    
+
     Post.delete().where(Post.uri.in_(posts_to_delete))  # type: ignore (pylance is wrong)
     logger.info(f"Deleted posts: {len(posts_to_delete)} (cursor={cursor})")
 

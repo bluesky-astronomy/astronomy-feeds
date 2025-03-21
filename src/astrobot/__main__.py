@@ -15,7 +15,7 @@ from .config import (
     MAX_COMMAND_AGE,
     STALE_COMMAND_CHECK_INTERVAL,
     HANDLE,
-    PASSWORD
+    PASSWORD,
 )
 from astrofeed_lib import logger
 

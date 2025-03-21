@@ -5,9 +5,7 @@ from typing import Optional, Final, Any
 from astrofeed_lib import logger
 
 
-VALID_ACCOUNTS = CachedAccountQuery(
-    flags=[Account.is_valid], query_interval=60
-)
+VALID_ACCOUNTS = CachedAccountQuery(flags=[Account.is_valid], query_interval=60)
 
 CURSOR_END_OF_FEED: Final[str] = "eof"
 
@@ -24,16 +22,31 @@ def _select_posts(feed, limit):
 
 
 def _select_activity_log_by_feed(feed: str, limit: int = 50):
-    return(ActivityLog.select(ActivityLog.id, ActivityLog.request_dt, ActivityLog.request_feed_uri
-                              , ActivityLog.request_is_scrolled, ActivityLog.request_limit)
-           .where(ActivityLog.request_feed_uri == feed)
-           .order_by(ActivityLog.request_dt)
-           .limit(limit))
+    return (
+        ActivityLog.select(
+            ActivityLog.id,
+            ActivityLog.request_dt,
+            ActivityLog.request_feed_uri,
+            ActivityLog.request_is_scrolled,
+            ActivityLog.request_limit,
+        )
+        .where(ActivityLog.request_feed_uri == feed)
+        .order_by(ActivityLog.request_dt)
+        .limit(limit)
+    )
 
 
 def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
-    return [{"id": log.id, "request_dt": log.request_dt, "request_feed_uri": log.request_feed_uri
-             , "request_is_scrolled": log.request_is_scrolled, "request_limit": log.request_limit} for log in logs]
+    return [
+        {
+            "id": log.id,
+            "request_dt": log.request_dt,
+            "request_feed_uri": log.request_feed_uri,
+            "request_is_scrolled": log.request_is_scrolled,
+            "request_limit": log.request_limit,
+        }
+        for log in logs
+    ]
 
 
 def _create_feed(posts):
