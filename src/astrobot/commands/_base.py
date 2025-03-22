@@ -35,7 +35,7 @@ class Command(ABC):
     def user_cannot_use_command(self):
         """Work out if a user is allowed to use this command based on the command's
         self.level. Returns False if they *can* use it, or True if they cannot.
-        
+
         Command levels explained:
         =0: any user may use
         >0: any moderator with a level greater than or equal to level may use
@@ -43,7 +43,7 @@ class Command(ABC):
         # Level == 0 -> no permissions are on this command!
         if self.level == 0:
             return False
-        
+
         # Hence, must have level > 0 -> requires mod permissions
         author_did = self.notification.author.did
         if author_did in MODERATORS.get_accounts_above_level(self.level):
