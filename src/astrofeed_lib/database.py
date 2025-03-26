@@ -263,6 +263,13 @@ class ActivityLog(BaseModel):
     # request_user_agent = peewee.CharField(index=False, null=True)
 
 
+class FeedStat(BaseModel):
+    request_feed_uri = peewee.CharField()
+    year = peewee.IntegerField()
+    month = peewee.IntegerField
+    day = peewee.IntegerField
+    num_request = peewee.IntegerField
+
 # class Signups(BaseModel):
 #     did = peewee.CharField(index=True)
 #     status = peewee.CharField(index=True)

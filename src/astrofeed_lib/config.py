@@ -60,7 +60,7 @@ FEED_URI = "at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/"
 # These feed terms also interact with the database specification. The Post table in the
 # database contains boolean columns feed_all, feed_astro, ... etc for each one of the
 # feeds.
-FEED_TERMS = {
+FEED_TERMS: dict[str, list[str]] = {
     # "EXAMPLE": {"emoji": [], "words": []},
     # MAIN FEEDS
     "all": None,

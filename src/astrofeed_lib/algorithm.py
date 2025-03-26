@@ -1,9 +1,13 @@
-from .database import Account, Post, BotActions, ActivityLog
-from .accounts import CachedAccountQuery
+import operator
 from datetime import datetime
+from functools import reduce
 from typing import Optional, Final, Any
-from astrofeed_lib import logger
 
+from peewee import fn
+
+from astrofeed_lib import logger
+from .accounts import CachedAccountQuery
+from .database import Account, Post, BotActions, ActivityLog, FeedStat
 
 VALID_ACCOUNTS = CachedAccountQuery(flags=[Account.is_valid], query_interval=60)
 
@@ -21,7 +25,7 @@ def _select_posts(feed, limit):
     )
 
 
-def _select_activity_log_by_feed(feed: str, limit: int = 50):
+def _select_activity_log_by_feed(feed: str, limit: int):
     return (
         ActivityLog.select(
             ActivityLog.id,
@@ -34,6 +38,64 @@ def _select_activity_log_by_feed(feed: str, limit: int = 50):
         .order_by(ActivityLog.request_dt)
         .limit(limit)
     )
+
+
+def _select_activity_log_by_date(date: str, limit: int):
+    return (
+        ActivityLog.select(
+            ActivityLog.id,
+            ActivityLog.request_dt,
+            ActivityLog.request_feed_uri,
+            ActivityLog.request_is_scrolled,
+            ActivityLog.request_limit,
+        )
+        .where(
+            fn.date_trunc("day", ActivityLog.request_dt)
+            == datetime.strptime(date, "%Y-%m-%d")
+        )
+        .limit(limit)
+    )
+
+
+def _select_activity_log_by_did(did: str, limit: int):
+    return (
+        ActivityLog.select(
+            ActivityLog.id,
+            ActivityLog.request_dt,
+            ActivityLog.request_feed_uri,
+            ActivityLog.request_is_scrolled,
+            ActivityLog.request_limit,
+        )
+        .where(ActivityLog.request_user_did == did)
+        .order_by(ActivityLog.request_dt)
+        .limit(limit)
+    )
+
+
+def _select_feed_stats_by_feed(feed: str, year: int, month: str, day: int):
+    conditions: list = list()
+    group_conditions: list = list()
+    conditions.append(ActivityLog.request_feed_uri == feed)
+    group_conditions.append("request_feed_uri")
+    fields = [ActivityLog.request_feed_uri]
+    if year != 0:
+        conditions.append(fn.strftime("%Y", ActivityLog.request_dt) == str(year))
+        group_conditions.append("year")
+        fields.append(fn.strftime("%Y", ActivityLog.request_dt).alias("year"))
+    if month != "0":
+        conditions.append(fn.strftime("%m", ActivityLog.request_dt) == month)
+        group_conditions.append("month")
+        fields.append(fn.strftime("%m", ActivityLog.request_dt).alias("month"))
+    if day != 0:
+        conditions.append(fn.strftime("%e", ActivityLog.request_dt) == str(day))
+        group_conditions.append("day")
+        fields.append(fn.strftime("%e", ActivityLog.request_dt).alias("day"))
+
+    where_condition: str = reduce(operator.and_, conditions)
+    group_condition: str = ", ".join(group_conditions)
+
+    fields.append(fn.count(ActivityLog.id).alias("num_requests"))
+    return ActivityLog.select(*fields).where(where_condition).group_by(group_condition)
 
 
 def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
@@ -49,18 +111,67 @@ def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
     ]
 
 
+def _create_feed_stats(logs: list[ActivityLog]) -> list[dict[str, Any]]:
+    return [
+        {
+            "feed": feed.request_feed_uri,
+            "year": feed.year,
+            "month": feed.month,
+            "day": feed.day,
+            "num_requests": feed.num_requests,
+        }
+        for feed in logs
+    ]
+
+
 def _create_feed(posts):
     """Turns list of posts into a sorted"""
     return [{"post": post.uri} for post in posts]
 
 
-def get_feed_logs(feed: str) -> dict:
-    logs = _select_activity_log_by_feed(feed)
+def get_feed_logs_by_feed(feed: str, limit: int) -> dict:
+    logs = _select_activity_log_by_feed(feed, limit)
     logger.info(f"Loaded logs from DB: {logs}")
     # Create the actual feed to send back to the user!
     log_details: list[dict[str, Any]] = _create_activity_log(logs)
 
     return {"logs": log_details}
+
+
+def get_feed_logs_by_date(date: str, limit: int) -> dict:
+    logs = _select_activity_log_by_date(date, limit)
+    logger.info(f"Loaded logs from DB: {logs}")
+    # Create the actual feed to send back to the user!
+    log_details: list[dict[str, Any]] = _create_activity_log(logs)
+
+    return {"logs": log_details}
+
+
+def get_feed_logs_by_did(did: str, limit: int) -> dict:
+    logs = _select_activity_log_by_did(did, limit)
+    logger.info(f"Loaded logs from DB: {logs}")
+    # Create the actual feed to send back to the user!
+    log_details: list[dict[str, Any]] = _create_activity_log(logs)
+
+    return {"logs": log_details}
+
+
+def get_feed_stats_by_month(year: int, month: int) -> dict:
+    pass
+
+
+def get_feed_stats_by_year(year: int) -> dict:
+    pass
+
+
+def get_feed_stats_by_feed(
+    feed: str, year: int = 0, month: str = "0", day: int = 0
+) -> dict:
+    stats = _select_feed_stats_by_feed(feed, year, month, day)
+    logger.info(f"Loaded stats from DB with SQL: {stats}")
+    feed_stats: list[dict[str, Any]] = _create_feed_stats(stats)
+    logger.info(f"Processed stats: {feed_stats}")
+    return {"stats": feed_stats}
 
 
 def _handle_cursor(cursor, posts):

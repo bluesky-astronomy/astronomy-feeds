@@ -1,10 +1,16 @@
 import signal
 from threading import Thread, Event
+from typing import Final
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 
 from astrofeed_lib import config, logger
-from astrofeed_lib.algorithm import get_posts, get_feed_logs
+from astrofeed_lib.algorithm import (
+    get_posts,
+    get_feed_logs_by_feed,
+    get_feed_logs_by_date,
+    get_feed_stats_by_feed,
+)
 from astrofeed_lib.database import get_database, setup_connection, teardown_connection
 from astrofeed_server.auth import AuthorizationError, validate_auth
 from astrofeed_server.request_log import request_log
@@ -17,6 +23,7 @@ try:
 except ModuleNotFoundError:
     from astrofeed_server.pinned import add_pinned_post_to_feed
 
+_FEED_LOG_RETURN_LIMIT: Final[int] = 50
 
 app = Flask(__name__)
 
@@ -73,7 +80,6 @@ def index():
         <ul>
         <li><a href="/.well-known/did.json">/.well-known/did.json</a></li>
         <li><a href="/xrpc/app.bsky.feed.describeFeedGenerator">/xrpc/app.bsky.feed.describeFeedGenerator</a></li>
-        <li><a href="/xrpc/app.bsky.feed.getFeedLog?feed=at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/astro-all">/xrpc/app.bsky.feed.getFeedLog?feed=at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/astro-all</a></li>
         </ul>
         """
 
@@ -157,9 +163,22 @@ def get_requester_did():
     return requester_did
 
 
-@app.route("/api/app.getFeedLog", methods=["GET"])
-def get_feed_log():
+@app.route("/api/app.getFeedList", methods=["GET"])
+# http://127.0.0.1:5000//api/app.getFeedList
+def get_feed_list():
+    try:
+        body: Response = jsonify(config.FEED_TERMS)
+    except:
+        return "Unsupported algorithm", 404
+    return body
+
+
+@app.route("/api/app.getFeedStats", methods=["GET"])
+def get_feed_stats():
     feed_uri = request.args.get("feed", default=None, type=str)
+    year = request.args.get("year", default=0, type=int)
+    month = request.args.get("month", default="0", type=str)
+    day = request.args.get("day", default=0, type=int)
 
     # Check that the feed is configured
     if feed_uri not in config.FEED_URIS:
@@ -167,9 +186,40 @@ def get_feed_log():
     feed = config.FEED_URIS[feed_uri]
 
     try:
-        body = get_feed_logs(feed)
+        body = get_feed_stats_by_feed(feed=feed, year=year, month=month, day=day)
     finally:
         pass
+    logger.info(f"body: {body}")
+    return jsonify(body)
+
+
+@app.route("/api/app.getFeedLog", methods=["GET"])
+# http://127.0.0.1:5000/api/app.getFeedLog?feed=at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/radio&limit=10
+def get_feed_log():
+    feed_uri = request.args.get("feed", default=None, type=str)
+    limit = request.args.get("limit", default=_FEED_LOG_RETURN_LIMIT, type=int)
+
+    # Check that the feed is configured
+    if feed_uri not in config.FEED_URIS:
+        return "Unsupported algorithm", 400
+    feed = config.FEED_URIS[feed_uri]
+
+    try:
+        body = get_feed_logs_by_feed(feed, limit)
+    finally:
+        pass
+    return jsonify(body)
+
+
+@app.route("/api/app.getFeedLogByDate", methods=["GET"])
+# http://127.0.0.1:5000//api/app.getFeedLogByDate?date=2025-03-21&limit=10
+def get_feed_log_by_date():
+    date = request.args.get("date", default=None, type=str)
+    limit = request.args.get("limit", default=_FEED_LOG_RETURN_LIMIT, type=int)
+    try:
+        body = get_feed_logs_by_date(date, limit)
+    except ValueError:
+        return "Ensure the Date is in YYYY-MM-DD format", 400
     return jsonify(body)
 
 
