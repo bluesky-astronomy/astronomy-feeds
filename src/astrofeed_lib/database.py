@@ -263,12 +263,14 @@ class ActivityLog(BaseModel):
     # request_user_agent = peewee.CharField(index=False, null=True)
 
 
-class FeedStat(BaseModel):
-    request_feed_uri = peewee.CharField()
-    year = peewee.IntegerField()
-    month = peewee.IntegerField
-    day = peewee.IntegerField
-    num_request = peewee.IntegerField
+class NormalizedFeedStats(BaseModel):
+    request_feed_uri = peewee.CharField(index=True)
+    year = peewee.IntegerField(index=True)
+    month = peewee.IntegerField(index=True)
+    day = peewee.IntegerField(index=True)
+    hour = peewee.IntegerField(index=True)
+    day_of_week = peewee.IntegerField(index=True)
+
 
 # class Signups(BaseModel):
 #     did = peewee.CharField(index=True)
@@ -279,5 +281,5 @@ class FeedStat(BaseModel):
 
 with DBConnection() as conn:
     conn.create_tables(
-        [Post, SubscriptionState, Account, BotActions, ModActions, ActivityLog]
+        [Post, SubscriptionState, Account, BotActions, ModActions, ActivityLog, NormalizedFeedStats]
     )

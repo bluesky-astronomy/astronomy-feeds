@@ -177,19 +177,23 @@ def get_feed_list():
 def get_feed_stats():
     feed_uri = request.args.get("feed", default=None, type=str)
     year = request.args.get("year", default=0, type=int)
-    month = request.args.get("month", default="0", type=str)
+    month = request.args.get("month", default=0, type=int)
     day = request.args.get("day", default=0, type=int)
+    hour = request.args.get("hour", default=-1, type=int)
+    day_of_week = request.args.get("day_of_week", default=-1, type=int)
 
     # Check that the feed is configured
-    if feed_uri not in config.FEED_URIS:
-        return "Unsupported algorithm", 400
-    feed = config.FEED_URIS[feed_uri]
+    if feed_uri != "all":
+        if feed_uri not in config.FEED_URIS:
+            return "Unsupported algorithm", 400
+        feed = config.FEED_URIS[feed_uri]
+    else:
+        feed = "all"
 
     try:
-        body = get_feed_stats_by_feed(feed=feed, year=year, month=month, day=day)
+        body = get_feed_stats_by_feed(feed=feed, year=year, month=month, day=day, hour=hour, day_of_week=day_of_week)
     finally:
         pass
-    logger.info(f"body: {body}")
     return jsonify(body)
 
 

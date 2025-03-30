@@ -7,7 +7,7 @@ from peewee import fn
 
 from astrofeed_lib import logger
 from .accounts import CachedAccountQuery
-from .database import Account, Post, BotActions, ActivityLog, FeedStat
+from .database import Account, Post, BotActions, ActivityLog, NormalizedFeedStats
 
 VALID_ACCOUNTS = CachedAccountQuery(flags=[Account.is_valid], query_interval=60)
 
@@ -72,31 +72,45 @@ def _select_activity_log_by_did(did: str, limit: int):
     )
 
 
-def _select_feed_stats_by_feed(feed: str, year: int, month: str, day: int):
+def _select_feed_stats_by_feed(feed: str, year: int, month: int, day: int, hour: int, day_of_week: int):
     conditions: list = list()
     group_conditions: list = list()
-    conditions.append(ActivityLog.request_feed_uri == feed)
-    group_conditions.append("request_feed_uri")
-    fields = [ActivityLog.request_feed_uri]
+    if feed != "all":
+        conditions.append(NormalizedFeedStats.request_feed_uri == feed)
+    else:
+        conditions.append("1=1")
+
+    group_conditions.append(NormalizedFeedStats.request_feed_uri)
+    fields = [NormalizedFeedStats.request_feed_uri]
     if year != 0:
-        conditions.append(fn.strftime("%Y", ActivityLog.request_dt) == str(year))
-        group_conditions.append("year")
-        fields.append(fn.strftime("%Y", ActivityLog.request_dt).alias("year"))
-    if month != "0":
-        conditions.append(fn.strftime("%m", ActivityLog.request_dt) == month)
-        group_conditions.append("month")
-        fields.append(fn.strftime("%m", ActivityLog.request_dt).alias("month"))
+        conditions.append(NormalizedFeedStats.year == year)
+        group_conditions.append(NormalizedFeedStats.year)
+        fields.append(NormalizedFeedStats.year)
+    if month != 0:
+        conditions.append(NormalizedFeedStats.month == month)
+        group_conditions.append(NormalizedFeedStats.month)
+        fields.append(NormalizedFeedStats.month)
     if day != 0:
-        conditions.append(fn.strftime("%e", ActivityLog.request_dt) == str(day))
-        group_conditions.append("day")
-        fields.append(fn.strftime("%e", ActivityLog.request_dt).alias("day"))
+        conditions.append(NormalizedFeedStats.day == day)
+        group_conditions.append(NormalizedFeedStats.day)
+        fields.append(NormalizedFeedStats.day)
+    if hour != -1:
+        conditions.append(NormalizedFeedStats.hour == hour)
+        group_conditions.append(NormalizedFeedStats.hour)
+        fields.append(NormalizedFeedStats.hour)
+    if day_of_week != -1:
+        conditions.append(NormalizedFeedStats.day_of_week == day_of_week)
+        group_conditions.append(NormalizedFeedStats.day_of_week)
+        fields.append(NormalizedFeedStats.day_of_week)
 
     where_condition: str = reduce(operator.and_, conditions)
-    group_condition: str = ", ".join(group_conditions)
+    #group_condition: str = ", ".join(group_conditions)
 
-    fields.append(fn.count(ActivityLog.id).alias("num_requests"))
-    return ActivityLog.select(*fields).where(where_condition).group_by(group_condition)
+    fields.append(fn.count(1).alias("num_requests"))
 
+    sql = NormalizedFeedStats.select(*fields).where(where_condition)
+    sql = sql.group_by(group_conditions)
+    return sql
 
 def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
     return [
@@ -111,16 +125,18 @@ def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
     ]
 
 
-def _create_feed_stats(logs: list[ActivityLog]) -> list[dict[str, Any]]:
+def _create_feed_stats(stats: list[NormalizedFeedStats]) -> list[dict[str, Any]]:
     return [
         {
-            "feed": feed.request_feed_uri,
-            "year": feed.year,
-            "month": feed.month,
-            "day": feed.day,
-            "num_requests": feed.num_requests,
+            "feed": stat.request_feed_uri,
+            "year": stat.year,
+            "month": stat.month,
+            "day": stat.day,
+            "hour": stat.hour,
+            "day_of_week": stat.day_of_week,
+            "num_requests": stat.num_requests,
         }
-        for feed in logs
+        for stat in stats
     ]
 
 
@@ -165,10 +181,10 @@ def get_feed_stats_by_year(year: int) -> dict:
 
 
 def get_feed_stats_by_feed(
-    feed: str, year: int = 0, month: str = "0", day: int = 0
+    feed: str, year: int = 0, month: int = 0, day: int = 0, hour: int = -1, day_of_week: int = -1
 ) -> dict:
-    stats = _select_feed_stats_by_feed(feed, year, month, day)
-    logger.info(f"Loaded stats from DB with SQL: {stats}")
+    stats = _select_feed_stats_by_feed(feed, year, month, day, hour, day_of_week)
+    logger.info(f"Loaded stats from DB with SQL: {stats.sql()}")
     feed_stats: list[dict[str, Any]] = _create_feed_stats(stats)
     logger.info(f"Processed stats: {feed_stats}")
     return {"stats": feed_stats}
