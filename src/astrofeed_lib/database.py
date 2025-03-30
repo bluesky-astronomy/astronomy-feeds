@@ -65,7 +65,7 @@ def _get_sqlite_database() -> peewee.SqliteDatabase:
     threads, and since this is just for running locally, not putting the time into figuring
     it out now
     """
-    logger.debug("Getting a Pooled SQLite Database")
+    logger.debug("Getting an SQLite Database")
     _check_database_variable()
 
     # Check that the path seems to make sense

@@ -174,7 +174,7 @@ def get_feed_list():
 
 
 @app.route("/api/app.getFeedStats", methods=["GET"])
-def get_feed_stats():
+def api_get_feed_stats():
     feed_uri = request.args.get("feed", default=None, type=str)
     year = request.args.get("year", default=0, type=int)
     month = request.args.get("month", default=0, type=int)
