@@ -9,7 +9,7 @@ from astrofeed_lib.algorithm import (
     get_posts,
     get_feed_logs_by_feed,
     get_feed_logs_by_date,
-    get_feed_stats_by_feed,
+    get_feed_stats,
 )
 from astrofeed_lib.database import get_database, setup_connection, teardown_connection
 from astrofeed_server.auth import AuthorizationError, validate_auth
@@ -191,7 +191,14 @@ def get_feed_stats():
         feed = "all"
 
     try:
-        body = get_feed_stats_by_feed(feed=feed, year=year, month=month, day=day, hour=hour, day_of_week=day_of_week)
+        body = get_feed_stats(
+            feed=feed,
+            year=year,
+            month=month,
+            day=day,
+            hour=hour,
+            day_of_week=day_of_week,
+        )
     finally:
         pass
     return jsonify(body)

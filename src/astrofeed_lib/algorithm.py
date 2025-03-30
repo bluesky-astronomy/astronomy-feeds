@@ -72,7 +72,9 @@ def _select_activity_log_by_did(did: str, limit: int):
     )
 
 
-def _select_feed_stats_by_feed(feed: str, year: int, month: int, day: int, hour: int, day_of_week: int):
+def _select_feed_stats(
+    feed: str, year: int, month: int, day: int, hour: int, day_of_week: int
+):
     conditions: list = list()
     group_conditions: list = list()
     if feed != "all":
@@ -104,13 +106,13 @@ def _select_feed_stats_by_feed(feed: str, year: int, month: int, day: int, hour:
         fields.append(NormalizedFeedStats.day_of_week)
 
     where_condition: str = reduce(operator.and_, conditions)
-    #group_condition: str = ", ".join(group_conditions)
 
     fields.append(fn.count(1).alias("num_requests"))
 
     sql = NormalizedFeedStats.select(*fields).where(where_condition)
-    sql = sql.group_by(group_conditions)
+    sql = sql.group_by(*group_conditions)
     return sql
+
 
 def _create_activity_log(logs: list[ActivityLog]) -> list[dict[str, Any]]:
     return [
@@ -172,18 +174,15 @@ def get_feed_logs_by_did(did: str, limit: int) -> dict:
     return {"logs": log_details}
 
 
-def get_feed_stats_by_month(year: int, month: int) -> dict:
-    pass
-
-
-def get_feed_stats_by_year(year: int) -> dict:
-    pass
-
-
-def get_feed_stats_by_feed(
-    feed: str, year: int = 0, month: int = 0, day: int = 0, hour: int = -1, day_of_week: int = -1
+def get_feed_stats(
+    feed: str = "all",
+    year: int = 0,
+    month: int = 0,
+    day: int = 0,
+    hour: int = -1,
+    day_of_week: int = -1,
 ) -> dict:
-    stats = _select_feed_stats_by_feed(feed, year, month, day, hour, day_of_week)
+    stats = _select_feed_stats(feed, year, month, day, hour, day_of_week)
     logger.info(f"Loaded stats from DB with SQL: {stats.sql()}")
     feed_stats: list[dict[str, Any]] = _create_feed_stats(stats)
     logger.info(f"Processed stats: {feed_stats}")

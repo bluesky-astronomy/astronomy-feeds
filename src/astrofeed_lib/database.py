@@ -281,5 +281,13 @@ class NormalizedFeedStats(BaseModel):
 
 with DBConnection() as conn:
     conn.create_tables(
-        [Post, SubscriptionState, Account, BotActions, ModActions, ActivityLog, NormalizedFeedStats]
+        [
+            Post,
+            SubscriptionState,
+            Account,
+            BotActions,
+            ModActions,
+            ActivityLog,
+            NormalizedFeedStats,
+        ]
     )
