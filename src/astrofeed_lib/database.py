@@ -291,3 +291,14 @@ with DBConnection() as conn:
             NormalizedFeedStats,
         ]
     )
+
+"""
+SQL to initially populate NormalizedFeedStats:
+insert into normalizedfeedstats
+select id, request_feed_uri, strftime('%Y', request_dt)
+, strftime('%m', request_dt)
+, strftime('%e', request_dt)
+, strftime('%k', request_dt)
+, strftime('%w', request_dt)
+from activitylog;
+"""

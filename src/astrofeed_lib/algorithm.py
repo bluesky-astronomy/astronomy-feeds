@@ -73,7 +73,16 @@ def _select_activity_log_by_did(did: str, limit: int):
 
 
 def _select_feed_stats(
-    feed: str, year: int, month: int, day: int, hour: int, day_of_week: int
+    feed: str,
+    year: int,
+    month: int,
+    day: int,
+    hour: int,
+    day_of_week: int,
+    group_by_feed: bool,
+    group_by_year: bool,
+    group_by_month: bool,
+    group_by_day_of_week: bool,
 ):
     conditions: list = list()
     group_conditions: list = list()
@@ -81,17 +90,22 @@ def _select_feed_stats(
         conditions.append(NormalizedFeedStats.request_feed_uri == feed)
     else:
         conditions.append("1=1")
-
-    group_conditions.append(NormalizedFeedStats.request_feed_uri)
+    if group_by_feed:
+        group_conditions.append(NormalizedFeedStats.request_feed_uri)
     fields = [NormalizedFeedStats.request_feed_uri]
+
     if year != 0:
         conditions.append(NormalizedFeedStats.year == year)
-        group_conditions.append(NormalizedFeedStats.year)
         fields.append(NormalizedFeedStats.year)
+    elif group_by_year:
+        fields.append(NormalizedFeedStats.year)
+        group_conditions.append(NormalizedFeedStats.year)
     if month != 0:
         conditions.append(NormalizedFeedStats.month == month)
-        group_conditions.append(NormalizedFeedStats.month)
         fields.append(NormalizedFeedStats.month)
+    elif group_by_month:
+        fields.append(NormalizedFeedStats.month)
+        group_conditions.append(NormalizedFeedStats.month)
     if day != 0:
         conditions.append(NormalizedFeedStats.day == day)
         group_conditions.append(NormalizedFeedStats.day)
@@ -102,8 +116,10 @@ def _select_feed_stats(
         fields.append(NormalizedFeedStats.hour)
     if day_of_week != -1:
         conditions.append(NormalizedFeedStats.day_of_week == day_of_week)
-        group_conditions.append(NormalizedFeedStats.day_of_week)
         fields.append(NormalizedFeedStats.day_of_week)
+    elif group_by_day_of_week:
+        fields.append(NormalizedFeedStats.day_of_week)
+        group_conditions.append(NormalizedFeedStats.day_of_week)
 
     where_condition: str = reduce(operator.and_, conditions)
 
@@ -181,11 +197,26 @@ def get_feed_stats(
     day: int = 0,
     hour: int = -1,
     day_of_week: int = -1,
+    group_by_feed: bool = False,
+    group_by_year: bool = False,
+    group_by_month: bool = False,
+    group_by_day_of_week: bool = False,
 ) -> dict:
-    stats = _select_feed_stats(feed, year, month, day, hour, day_of_week)
-    logger.info(f"Loaded stats from DB with SQL: {stats.sql()}")
+    stats = _select_feed_stats(
+        feed,
+        year,
+        month,
+        day,
+        hour,
+        day_of_week,
+        group_by_feed,
+        group_by_year,
+        group_by_month,
+        group_by_day_of_week,
+    )
+    logger.debug(f"Loaded stats from DB with SQL: {stats.sql()}")
     feed_stats: list[dict[str, Any]] = _create_feed_stats(stats)
-    logger.info(f"Processed stats: {feed_stats}")
+    logger.debug(f"Processed stats: {feed_stats}")
     return {"stats": feed_stats}
 
 
