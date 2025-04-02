@@ -168,14 +168,17 @@ def get_requester_did():
 def get_feed_list():
     try:
         body: Response = jsonify(config.FEED_TERMS)
-    except:
+    except Exception as e:
+        logger.error(f"Exception getting feed list: {e}")
         return "Unsupported algorithm", 404
     return body
 
 
 @app.route("/api/app.getFeedStats", methods=["GET"])
+# http://127.0.0.1:5000/api/app.getFeedStats?feed=all&month=3&group_by_feed=True&group_by_hour=True
+# http://127.0.0.1:5000/api/app.getFeedStats?feed=at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/cosmology&group_by_day_of_week=True
 def api_get_feed_stats():
-    feed_uri = request.args.get("feed", default=None, type=str)
+    feed_uri = request.args.get("feed", default="all", type=str)
     year = request.args.get("year", default=0, type=int)
     month = request.args.get("month", default=0, type=int)
     day = request.args.get("day", default=0, type=int)
@@ -184,6 +187,7 @@ def api_get_feed_stats():
     group_by_feed = request.args.get("group_by_feed", default=False, type=bool)
     group_by_year = request.args.get("group_by_year", default=False, type=bool)
     group_by_month = request.args.get("group_by_month", default=False, type=bool)
+    group_by_hour = request.args.get("group_by_hour", default=False, type=bool)
     group_by_day_of_week = request.args.get("group_by_day_of_week", default=False, type=bool)
 
     # Check that the feed is configured
@@ -205,6 +209,7 @@ def api_get_feed_stats():
             group_by_feed=group_by_feed,
             group_by_year=group_by_year,
             group_by_month=group_by_month,
+            group_by_hour=group_by_hour,
             group_by_day_of_week=group_by_day_of_week,
         )
     finally:

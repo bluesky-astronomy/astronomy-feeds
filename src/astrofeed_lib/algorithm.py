@@ -82,6 +82,7 @@ def _select_feed_stats(
     group_by_feed: bool,
     group_by_year: bool,
     group_by_month: bool,
+    group_by_hour: bool,
     group_by_day_of_week: bool,
 ):
     conditions: list = list()
@@ -108,12 +109,14 @@ def _select_feed_stats(
         group_conditions.append(NormalizedFeedStats.month)
     if day != 0:
         conditions.append(NormalizedFeedStats.day == day)
-        group_conditions.append(NormalizedFeedStats.day)
         fields.append(NormalizedFeedStats.day)
+        group_conditions.append(NormalizedFeedStats.day)
     if hour != -1:
         conditions.append(NormalizedFeedStats.hour == hour)
-        group_conditions.append(NormalizedFeedStats.hour)
         fields.append(NormalizedFeedStats.hour)
+    elif group_by_hour:
+        fields.append(NormalizedFeedStats.hour)
+        group_conditions.append(NormalizedFeedStats.hour)
     if day_of_week != -1:
         conditions.append(NormalizedFeedStats.day_of_week == day_of_week)
         fields.append(NormalizedFeedStats.day_of_week)
@@ -200,6 +203,7 @@ def get_feed_stats(
     group_by_feed: bool = False,
     group_by_year: bool = False,
     group_by_month: bool = False,
+    group_by_hour: bool = False,
     group_by_day_of_week: bool = False,
 ) -> dict:
     stats = _select_feed_stats(
@@ -212,6 +216,7 @@ def get_feed_stats(
         group_by_feed,
         group_by_year,
         group_by_month,
+        group_by_hour,
         group_by_day_of_week,
     )
     logger.debug(f"Loaded stats from DB with SQL: {stats.sql()}")
