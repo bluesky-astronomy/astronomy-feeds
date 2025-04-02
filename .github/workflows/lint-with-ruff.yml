@@ -6,7 +6,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: astral-sh/ruff-action@v3.2.2
+    - uses: astral-sh/ruff-action@v3
       with:
         src: "./src"
-    - run: ruff check
