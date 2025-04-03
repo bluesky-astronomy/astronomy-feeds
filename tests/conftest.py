@@ -5,6 +5,7 @@ from atproto import Client
 from peewee import SqliteDatabase
 
 from astrofeed_lib.database import proxy
+from astrofeed_lib.config import ASTROFEED_PRODUCTION
 from astrobot.generate_notification import construct_strong_ref_main
 from test_lib.test_database import build_test_db
 
@@ -31,6 +32,12 @@ class MockClient(Client):
         
         # need to return something with a CID and URI to not break the post.send_post method used by the joke command
         return construct_strong_ref_main()
+
+@pytest.fixture(scope="function", autouse=True)
+def check_production():
+    '''check, for each test, that we have not entered production mode before running'''
+    if ASTROFEED_PRODUCTION:
+        raise ConnectionRefusedError("Attempting to run offline unit test in production mode; aborting.")
 
 @pytest.fixture(scope="function")
 def mock_client():
