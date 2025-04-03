@@ -178,7 +178,7 @@ def build_notification(
     to be able to set the values of at call time; this list may expand as needed.
     """
     # make sure we can do the type of notification requested
-    if not notification_type in supported_notification_types:
+    if notification_type not in supported_notification_types:
         raise ValueError(
             f"build_notification: passed unsupported type={notification_type}; can only generate notifications of types in {supported_notification_types}"
         )
@@ -190,7 +190,7 @@ def build_notification(
                 author = build_profileview(
                     did=(
                         author_did
-                        if not author_did is None
+                        if author_did is not None
                         else "mentioning account did"
                     ),
                     handle="mentioning account profile handle",
@@ -213,7 +213,7 @@ def build_notification(
                 record = construct_post_record(
                     text=(
                         record_text
-                        if not record_text is None
+                        if record_text is not None
                         else "mentioning post text"
                     ),
                     facets=facets,
@@ -227,7 +227,7 @@ def build_notification(
             if author is None:
                 author = build_profileview(
                     did=(
-                        author_did if not author_did is None else "replying account did"
+                        author_did if author_did is not None else "replying account did"
                     ),
                     handle="replying account profile handle",
                     avatar="link to replying account profile image",
@@ -249,7 +249,7 @@ def build_notification(
                 record = construct_post_record(
                     text=(
                         record_text
-                        if not record_text is None
+                        if record_text is not None
                         else "mentioning post text"
                     ),
                     reply=reply,
@@ -263,7 +263,7 @@ def build_notification(
             if author is None:
                 author = build_profileview(
                     did=(
-                        author_did if not author_did is None else "liking account did"
+                        author_did if author_did is not None else "liking account did"
                     ),
                     handle="liking account profile handle",
                     avatar="link to liking account profile image",

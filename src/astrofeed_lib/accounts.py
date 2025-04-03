@@ -17,7 +17,7 @@ class AccountQuery:
         self.query_database = self.query_database
 
     def query_database(self) -> None:
-        with DBConnection() as conn:
+        with DBConnection():
             self.accounts = self.account_query()
         """
         setup_connection(get_database())
