@@ -188,7 +188,9 @@ def api_get_feed_stats():
     group_by_year = request.args.get("group_by_year", default=False, type=bool)
     group_by_month = request.args.get("group_by_month", default=False, type=bool)
     group_by_hour = request.args.get("group_by_hour", default=False, type=bool)
-    group_by_day_of_week = request.args.get("group_by_day_of_week", default=False, type=bool)
+    group_by_day_of_week = request.args.get(
+        "group_by_day_of_week", default=False, type=bool
+    )
 
     # Check that the feed is configured
     if feed_uri != "all":
