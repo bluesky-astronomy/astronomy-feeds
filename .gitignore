@@ -6,6 +6,9 @@
 # Saved session files from client logins
 *.session
 
+# Ruff stuff
+.ruff_cache
+
 
 ## Default Python .gitignore
 .DS_Store
