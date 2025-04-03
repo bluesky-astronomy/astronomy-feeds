@@ -7,8 +7,6 @@ from astrobot.post import get_post
 from astrobot.database import (
     get_candidate_stale_bot_actions,
     update_checked_at_time_of_bot_actions,
-    teardown_connection,
-    get_database,
 )
 import warnings
 from astrofeed_lib import logger

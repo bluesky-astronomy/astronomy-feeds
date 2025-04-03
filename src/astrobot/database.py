@@ -145,13 +145,14 @@ def get_outstanding_bot_actions(uris: None | list[str]) -> list:
     result: list
     if uris is None:
         result = [
-            x for x in BotActions.select().where(BotActions.complete == False).execute()
-        ]  # noqa: E712
+            x
+            for x in BotActions.select().where(BotActions.complete == False).execute()  # noqa: E712
+        ]
     else:
         result = [
             x
             for x in BotActions.select()
-            .where(BotActions.complete == False, BotActions.latest_uri << uris)
+            .where(BotActions.complete == False, BotActions.latest_uri << uris)  # noqa: E712
             .execute()
         ]
     teardown_connection(get_database())

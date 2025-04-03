@@ -74,7 +74,7 @@ def build_dev_db(
 
         if ((take_num != 0) == (take_frac != 0)) or (take_num < 0 or take_frac < 0):
             raise ValueError(
-                f"dev_database/DB/truncate: "
+                "dev_database/DB/truncate: "
                 "must specify a positive (nonzero) value for only one of take_num or take_frac."
             )
         elif take_num > 0:
