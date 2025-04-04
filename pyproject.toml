@@ -43,16 +43,10 @@ dependencies = [
 dev_db = [
   "pandas>=2.0,<3" # If (re-)building the developer database
 ]
-test = ["pytest"]
 
 [project.urls]
 "Homepage" = "https://astronomy.blue/"
 "Bug Reports" = "https://github.com/bluesky-astronomy/astronomy-feeds"
-
-[tool.pytest.ini_options]
-pythonpath = "/home/vince/work/astrosky/dev/astronomy-feeds/.venv/bin/python"
-addopts = ["--import-mode=importlib"]
-testpaths = ["/home/vince/work/astrosky/dev/astronomy-feeds/tests"]
 
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
