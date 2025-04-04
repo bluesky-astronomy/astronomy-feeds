@@ -139,7 +139,7 @@ class DBConnection(object):
     def __enter__(self):
         global proxy
         if proxy is not None and proxy.is_closed():
-            proxy.connect()
+            setup_connection(proxy)
         return proxy
 
     def __exit__(self, type, value, traceback):
@@ -166,7 +166,9 @@ class Post(BaseModel):
     feed_all = peewee.BooleanField(default=False, index=True)
     feed_astro = peewee.BooleanField(default=False, index=True)
     feed_astrophotos = peewee.BooleanField(default=False, index=True)
-    feed_research = peewee.BooleanField(default=False, index=True)  # New column 26/02/25
+    feed_research = peewee.BooleanField(
+        default=False, index=True
+    )  # New column 26/02/25
 
     # Astronomy topics
     feed_cosmology = peewee.BooleanField(default=False, index=True)
@@ -186,7 +188,9 @@ class Post(BaseModel):
     feed_history = peewee.BooleanField(default=False, index=True)
 
     # General
-    feed_questions = peewee.BooleanField(default=False, index=True)  # New column 26/02/25
+    feed_questions = peewee.BooleanField(
+        default=False, index=True
+    )  # New column 26/02/25
 
     # feed_moderation = peewee.BooleanField(default=False)
     # reply_parent = peewee.CharField(null=True, default=None)
@@ -258,6 +262,7 @@ class ActivityLog(BaseModel):
     # request_referer = peewee.CharField(index=False, null=True)
     # request_user_agent = peewee.CharField(index=False, null=True)
 
+
 # class Signups(BaseModel):
 #     did = peewee.CharField(index=True)
 #     status = peewee.CharField(index=True)
@@ -266,4 +271,6 @@ class ActivityLog(BaseModel):
 
 
 with DBConnection() as conn:
-    conn.create_tables([Post, SubscriptionState, Account, BotActions, ModActions, ActivityLog])
+    conn.create_tables(
+        [Post, SubscriptionState, Account, BotActions, ModActions, ActivityLog]
+    )

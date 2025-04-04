@@ -1,7 +1,9 @@
 """Tools for handling lists of accounts and working with Bluesky DIDs etc."""
 
 from .database import Account
-from .database import DBConnection # get_database, setup_connection, teardown_connection
+from .database import (
+    DBConnection,
+)  # get_database, setup_connection, teardown_connection
 import time
 
 
@@ -15,7 +17,7 @@ class AccountQuery:
         self.query_database = self.query_database
 
     def query_database(self) -> None:
-        with DBConnection() as conn:
+        with DBConnection():
             self.accounts = self.account_query()
         """
         setup_connection(get_database())

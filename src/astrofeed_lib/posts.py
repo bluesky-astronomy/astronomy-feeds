@@ -1,6 +1,9 @@
 """Tools for handling lists of posts in the database."""
 
-from .database import Post, DBConnection #, get_database, setup_connection, teardown_connection
+from .database import (
+    Post,
+    DBConnection,
+)  # , get_database, setup_connection, teardown_connection
 import time
 from datetime import datetime, timedelta
 from typing import Final
@@ -21,13 +24,14 @@ class PostQuery:
         self.query_database = self.query_database
 
     def query_database(self) -> None:
-        with DBConnection() as conn:
+        with DBConnection():
             self.posts = self.post_query()
         """
         setup_connection(get_database())
         self.posts = self.post_query()
         teardown_connection(get_database())
         """
+
     def post_query(self):
         """Intended to be overwritten! Should return a set of posts."""
         return {
