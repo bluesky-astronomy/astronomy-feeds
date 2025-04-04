@@ -227,7 +227,7 @@ def build_notification(
                     reply = None
 
                 record = construct_post_record(
-                    text=(record_text if not record_text is None else "mentioning post text"),
+                    text=(record_text if record_text is not None else "mentioning post text"),
                     facets=facets,
                     reply=reply
                 )
