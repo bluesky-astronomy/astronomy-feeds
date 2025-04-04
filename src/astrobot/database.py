@@ -198,11 +198,11 @@ def update_checked_at_time_of_bot_actions(ids: list):
 def hide_post_by_uri(uri: str, did: str) -> tuple[bool, str]:
     """Hides a post from the feeds. Returns a string saying if there was (or wasn't) success."""
     # db.connect(reuse_if_open=True)
-    setup_connection(get_database())
     account_entries = fetch_account_entry_for_did(did)
     post_entires = fetch_post_entry_for_uri(uri)
 
     # Perform checks on account & post
+    setup_connection(get_database())
     if len(account_entries) == 0:
         return False, "Unable to hide post: post author is not signed up to the feeds."
     if len(post_entires) == 0:
@@ -219,6 +219,7 @@ def hide_post_by_uri(uri: str, did: str) -> tuple[bool, str]:
     # Hide the post
     post, account = post_entires[0], account_entries[0]
     if post.hidden:
+        teardown_connection(get_database())
         return False, "Unable to hide post: post already hidden."
 
     post.hidden = True
