@@ -79,7 +79,6 @@ def _select_feed_stats(
     day: int,
     hour: int,
     day_of_week: int,
-    group_by_feed: bool,
     group_by_year: bool,
     group_by_month: bool,
     group_by_hour: bool,
@@ -90,36 +89,44 @@ def _select_feed_stats(
     if feed != "all":
         conditions.append(NormalizedFeedStats.request_feed_uri == feed)
     else:
-        conditions.append("1=1")
-    if group_by_feed:
-        group_conditions.append(NormalizedFeedStats.request_feed_uri)
+        conditions.append(True)
+
+    group_conditions.append(NormalizedFeedStats.request_feed_uri)
     fields = [NormalizedFeedStats.request_feed_uri]
 
     if year != 0:
         conditions.append(NormalizedFeedStats.year == year)
         fields.append(NormalizedFeedStats.year)
+        group_conditions.append(NormalizedFeedStats.year)
     elif group_by_year:
         fields.append(NormalizedFeedStats.year)
         group_conditions.append(NormalizedFeedStats.year)
+
     if month != 0:
         conditions.append(NormalizedFeedStats.month == month)
+        group_conditions.append(NormalizedFeedStats.month)
         fields.append(NormalizedFeedStats.month)
     elif group_by_month:
         fields.append(NormalizedFeedStats.month)
         group_conditions.append(NormalizedFeedStats.month)
+
     if day != 0:
         conditions.append(NormalizedFeedStats.day == day)
         fields.append(NormalizedFeedStats.day)
         group_conditions.append(NormalizedFeedStats.day)
+
     if hour != -1:
         conditions.append(NormalizedFeedStats.hour == hour)
         fields.append(NormalizedFeedStats.hour)
+        group_conditions.append(NormalizedFeedStats.hour)
     elif group_by_hour:
         fields.append(NormalizedFeedStats.hour)
         group_conditions.append(NormalizedFeedStats.hour)
+
     if day_of_week != -1:
         conditions.append(NormalizedFeedStats.day_of_week == day_of_week)
         fields.append(NormalizedFeedStats.day_of_week)
+        group_conditions.append(NormalizedFeedStats.day_of_week)
     elif group_by_day_of_week:
         fields.append(NormalizedFeedStats.day_of_week)
         group_conditions.append(NormalizedFeedStats.day_of_week)
@@ -200,7 +207,6 @@ def get_feed_stats(
     day: int = 0,
     hour: int = -1,
     day_of_week: int = -1,
-    group_by_feed: bool = False,
     group_by_year: bool = False,
     group_by_month: bool = False,
     group_by_hour: bool = False,
@@ -213,7 +219,6 @@ def get_feed_stats(
         day,
         hour,
         day_of_week,
-        group_by_feed,
         group_by_year,
         group_by_month,
         group_by_hour,

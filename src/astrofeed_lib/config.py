@@ -19,6 +19,10 @@ ASTROFEED_PRODUCTION = os.getenv("ASTROFEED_PRODUCTION", "False").lower() in {
     "true",
     "1",
 }
+ASTROFEED_POSTGRES = os.getenv("ASTROFEED_POSTGRES", "False").lower() in {
+    "true",
+    "1",
+}
 DEBUG_ENABLED = os.getenv("ASTROFEED_DEBUG", "False").lower() in {"true", "1"}
 
 
