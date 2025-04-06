@@ -7,7 +7,7 @@ from peewee import SqliteDatabase
 from astrofeed_lib.database import proxy
 from astrofeed_lib.config import ASTROFEED_PRODUCTION
 from astrobot.generate_notification import construct_strong_ref_main
-from test_lib.test_database import build_test_db
+from tests.test_lib.test_database import build_test_db
 
 # mock client class to replace the network-connected methods
 class MockClient(Client):

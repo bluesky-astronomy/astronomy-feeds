@@ -9,9 +9,9 @@ from astrobot.notifications import MentionNotification
 from astrobot.generate_notification import build_notification, build_reply_ref
 from astrobot.config import HANDLE
 from astrobot.post import get_embed_info, get_reply_info
-from test_lib.test_database import testdb_account_entry, testdb_post_entry, generate_testdb_post_by_author
+from tests.test_lib.test_database import testdb_account_entry, testdb_post_entry, generate_testdb_post_by_author
 
-from conftest import MockClient
+from tests.conftest import MockClient
 
 #
 # utility functions

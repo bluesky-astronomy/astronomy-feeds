@@ -51,3 +51,8 @@ dev = [
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+addopts = ["--import-mode=importlib"]
+testpaths = ["tests"]
