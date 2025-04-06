@@ -36,12 +36,12 @@ dependencies = [
   # astrofeed_server
   "Flask>=2.3.2,<3.0",
   "gunicorn>=20.1.0,",
-  "ruff"
 ]
 
 [project.optional-dependencies]
-dev_db = [
-  "pandas>=2.0,<3" # If (re-)building the developer database
+dev = [
+  "pytest",
+  "ruff",
 ]
 
 [project.urls]
