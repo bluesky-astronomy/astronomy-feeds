@@ -35,7 +35,7 @@ def test_joke(test_db_conn, mock_client):
 
     with DBConnection():
         test_entry = BotActions.select().where(BotActions.did == "test_joke_unit")[0]
-    assert test_entry.indexed_at < datetime.utcnow()          # better datetime test?
+    assert test_entry.indexed_at < datetime.now()          # better datetime test?
     assert test_entry.did == joke_notification.author.did
     assert test_entry.type == joke_command.command
     assert test_entry.stage == "complete"
@@ -45,4 +45,4 @@ def test_joke(test_db_conn, mock_client):
     assert test_entry.latest_cid == joke_notification.cid
     assert test_entry.complete
     assert test_entry.authorized
-    assert test_entry.checked_at < datetime.utcnow()          # ditto above
+    assert test_entry.checked_at < datetime.now()          # ditto above

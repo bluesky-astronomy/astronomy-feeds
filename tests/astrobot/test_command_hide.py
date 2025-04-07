@@ -89,7 +89,7 @@ def check_botactions_entry(hide_command : ModeratorHideCommand, botaction : BotA
     with DBConnection():
         mod_level = Account.select().where(Account.did == hide_command.notification.author.did)[0].mod_level
 
-    assert botaction.indexed_at < datetime.utcnow()
+    assert botaction.indexed_at < datetime.now()
     assert botaction.did == hide_command.notification.author.did
     assert botaction.type == hide_command.command
     assert botaction.stage == "complete"
@@ -99,11 +99,11 @@ def check_botactions_entry(hide_command : ModeratorHideCommand, botaction : BotA
     assert botaction.latest_cid == hide_command.notification.parent_ref.cid
     assert botaction.complete
     assert botaction.authorized == (mod_level >= hide_command.level)
-    assert botaction.checked_at < datetime.utcnow()
+    assert botaction.checked_at < datetime.now()
 
 def check_modactions_entry(hide_command : ModeratorHideCommand, modaction : ModActions):
     '''Checks that the ModActions table entry reflects data in the executed hide command.'''
-    assert modaction.indexed_at < datetime.utcnow()
+    assert modaction.indexed_at < datetime.now()
     assert modaction.did_mod == hide_command.notification.notification.author.did
     assert modaction.did_user == hide_command.notification.notification.record.reply.parent.uri.replace("at://", "").split("/")[0]
     assert modaction.expiry is None
