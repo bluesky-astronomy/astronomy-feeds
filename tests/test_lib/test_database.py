@@ -4,7 +4,6 @@ import warnings
 
 from dataclasses import dataclass, asdict
 from abc import ABC
-from random import choice
 from uuid import uuid4
 
 from astrofeed_lib.database import Account, Post, BotActions, ModActions
@@ -150,11 +149,12 @@ def build_test_db(
             if len(mod_accounts := [account for account in accounts if account.mod_level>0]) == 0:
                 raise ValueError("build_test_db: manually specified account entries do not contain " \
                                  "at least one entry with mod_level>0 (required for automatic ModActions entries)")
-            for account in accounts:
-                data[Account].append(asdict(account))
+            for i in range(len(accounts)):
+                account = accounts[i]
+                mod_account = mod_accounts[i % len(mod_accounts)]
 
-                mod_account = choice(mod_accounts)
                 modaction, botaction = generate_testdb_signup_entries(added_account=account, mod_account=mod_account)
+                data[Account].append(asdict(account))
                 data[ModActions].append(asdict(modaction))
                 data[BotActions].append(asdict(botaction))
 
