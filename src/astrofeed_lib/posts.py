@@ -24,7 +24,7 @@ class PostQuery:
         self.query_database = self.query_database
 
     def query_database(self) -> None:
-        with DBConnection() as _:
+        with DBConnection():
             self.posts = self.post_query()
         """
         setup_connection(get_database())
