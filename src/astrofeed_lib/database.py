@@ -179,7 +179,7 @@ class DBConnection(object):
     def __enter__(self):
         global proxy
         if proxy is not None and proxy.is_closed():
-            proxy.connect()
+            setup_connection(proxy)
         return proxy
 
     def __exit__(self, type, value, traceback):
