@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import asdict
 
 from astrofeed_lib.database import BotActions, ModActions, Post, Account
@@ -99,7 +99,7 @@ def check_botactions_entry(hide_command: ModeratorHideCommand, botaction: BotAct
             .mod_level
         )
 
-    assert botaction.indexed_at < datetime.now()
+    assert botaction.indexed_at < datetime.now(timezone.utc)
     assert botaction.did == hide_command.notification.author.did
     assert botaction.type == hide_command.command
     assert botaction.stage == "complete"
@@ -109,12 +109,12 @@ def check_botactions_entry(hide_command: ModeratorHideCommand, botaction: BotAct
     assert botaction.latest_cid == hide_command.notification.parent_ref.cid
     assert botaction.complete
     assert botaction.authorized == (mod_level >= hide_command.level)
-    assert botaction.checked_at < datetime.now()
+    assert botaction.checked_at < datetime.now(timezone.utc)
 
 
 def check_modactions_entry(hide_command: ModeratorHideCommand, modaction: ModActions):
     """Checks that the ModActions table entry reflects data in the executed hide command."""
-    assert modaction.indexed_at < datetime.now()
+    assert modaction.indexed_at < datetime.now(timezone.utc)
     assert modaction.did_mod == hide_command.notification.notification.author.did
     assert (
         modaction.did_user
