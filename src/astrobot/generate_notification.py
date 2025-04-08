@@ -8,6 +8,7 @@ from atproto import models
 
 supported_notification_types = ["mention", "reply", "mention reply", "like"]
 
+
 #
 # "construct" functions, which are just wrappers around various atproto constructors
 #
@@ -154,22 +155,21 @@ def build_profileview(
 
 
 def build_notification(
-        notification_type : str,
-        author : object = None,
-        cid : str = "notifying post cid",
-        indexed_at : str = "datetime indexed at",
-        is_read : bool = False,
-        reason : str = "reason for notification",
-        record : object = None,
-        uri : str = "template uri",
-        labels : list = [],
-        reason_subject : str = None,
-        py_type = 'app.bsky.notification.listNotifications#notification',
-
-        # important quantities to have easy control of on user end
-        record_text : str = None,
-        author_did : str = None,
-        record_reply : models.app.bsky.feed.post.ReplyRef | None = None
+    notification_type: str,
+    author: object = None,
+    cid: str = "notifying post cid",
+    indexed_at: str = "datetime indexed at",
+    is_read: bool = False,
+    reason: str = "reason for notification",
+    record: object = None,
+    uri: str = "template uri",
+    labels: list = [],
+    reason_subject: str = None,
+    py_type="app.bsky.notification.listNotifications#notification",
+    # important quantities to have easy control of on user end
+    record_text: str = None,
+    author_did: str = None,
+    record_reply: models.app.bsky.feed.post.ReplyRef | None = None,
 ) -> models.app.bsky.notification.list_notifications.Notification:
     """builds a notification object
 
@@ -188,7 +188,7 @@ def build_notification(
     match notification_type:
         case "mention" | "mention reply":
             # it seems that a post that is a mention and reply will generate a reason=mention
-            # notification object with a non-None reply feature, that is identical to a 
+            # notification object with a non-None reply feature, that is identical to a
             # non-replying mention notification in all other ways
             if author is None:
                 author = build_profileview(
@@ -209,27 +209,35 @@ def build_notification(
 
             if record is None:
                 facet_feature = construct_facet_mention(did="mentioned account did")
-                facets = [construct_facet_main(features=[facet_feature], index=construct_facet_byteslice())]
+                facets = [
+                    construct_facet_main(
+                        features=[facet_feature], index=construct_facet_byteslice()
+                    )
+                ]
 
                 # check for necessity of reply ref
-                if(notification_type == "mention reply"):
+                if notification_type == "mention reply":
                     # do we have a reply ref provided already?
-                    if(record_reply is not None):
+                    if record_reply is not None:
                         reply = record_reply
                     else:
                         reply = build_reply_ref(
                             parent_ref_cid="replied-to post cid",
                             parent_ref_uri="replied-to post uri",
                             root_ref_cid="replied-to post's root post cid",
-                            root_ref_uri="replied-to post's root post uri"
+                            root_ref_uri="replied-to post's root post uri",
                         )
                 else:
                     reply = None
 
                 record = construct_post_record(
-                    text=(record_text if record_text is not None else "mentioning post text"),
+                    text=(
+                        record_text
+                        if record_text is not None
+                        else "mentioning post text"
+                    ),
                     facets=facets,
-                    reply=reply
+                    reply=reply,
                 )
 
             uri = "mentioning post uri"
@@ -254,14 +262,14 @@ def build_notification(
 
             if record is None:
                 # do we have a reply ref provided already?
-                if(record_reply is not None):
+                if record_reply is not None:
                     reply = record_reply
                 else:
                     reply = build_reply_ref(
                         parent_ref_cid="replied-to post cid",
                         parent_ref_uri="replied-to post uri",
                         root_ref_cid="replied-to post's root post cid",
-                        root_ref_uri="replied-to post's root post uri"
+                        root_ref_uri="replied-to post's root post uri",
                     )
 
                 record = construct_post_record(
