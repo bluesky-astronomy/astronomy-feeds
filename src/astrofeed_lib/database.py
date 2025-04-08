@@ -2,8 +2,8 @@ import peewee
 from peewee import DatabaseProxy
 from datetime import datetime
 from pathlib import Path
-from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION
-from playhouse.pool import PooledMySQLDatabase
+from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION, ASTROFEED_POSTGRES
+from playhouse.pool import PooledMySQLDatabase, PooledPostgresqlDatabase
 from astrofeed_lib import logger
 
 proxy: DatabaseProxy | None = None
@@ -15,9 +15,38 @@ def _check_database_variable():
             "You must set the BLUESKY_DATABASE environment variable to use the "
             "Astronomy feed databases. If ASTROFEED_PRODUCTION is unset (i.e. False), "
             "then this env var should be a path to a local SQLite dev database; if it "
-            "is set (i.e. True), then this variable should be set to a MySQL database "
+            "is set (i.e. True), then this variable should be set to a PostgreSQL or MySQL database "
             "connection string."
         )
+
+
+def _get_postgresql_database() -> PooledPostgresqlDatabase:
+    logger.debug("Getting a Pooled PostgreSQL Database")
+    _check_database_variable()
+
+    connection_string = BLUESKY_DATABASE.replace("postgres://", "")  # type: ignore
+    first_half, second_half = connection_string.split("/")
+    user_details, host_details = first_half.split("@")
+
+    # 2. Deal with user & host
+    user, password = user_details.split(":")
+    host, port = host_details.split(":")
+    port = int(port)
+
+    # 3. Deal with name and flags
+    database_name, flags = second_half.split("?")
+
+    return PooledPostgresqlDatabase(
+        database_name,
+        max_connections=10,
+        stale_timeout=None,
+        timeout=5,
+        user=user,
+        password=password,
+        host=host,
+        port=port,
+        autoconnect=False,
+    )
 
 
 def _get_mysql_database() -> PooledMySQLDatabase:
@@ -65,7 +94,7 @@ def _get_sqlite_database() -> peewee.SqliteDatabase:
     threads, and since this is just for running locally, not putting the time into figuring
     it out now
     """
-    logger.debug("Getting a Pooled SQLite Database")
+    logger.debug("Getting an SQLite Database")
     _check_database_variable()
 
     # Check that the path seems to make sense
@@ -93,13 +122,24 @@ def get_database() -> DatabaseProxy:
     global proxy
 
     if proxy is None:
-        logger.debug("Need to instantiate a new database...")
         if ASTROFEED_PRODUCTION:
-            logger.info("Production - grabbing the proxy to the MySql database")
-            db = _get_mysql_database()
+            if ASTROFEED_POSTGRES:
+                logger.info("Production - grabbing a proxy to the PostgreSQL database")
+                db = _get_postgresql_database()
+            else:
+                logger.info("Production - grabbing the proxy to the MySql database")
+                db = _get_mysql_database()
         else:
-            logger.info("Local environment - grabbing a proxy to the SQLite database")
-            db = _get_sqlite_database()
+            if ASTROFEED_POSTGRES:
+                logger.info(
+                    "Local environment - grabbing a proxy to the PostgreSQL database"
+                )
+                db = _get_postgresql_database()
+            else:
+                logger.info("Local environment - grabbing the SQLite database")
+                db = _get_sqlite_database()
+
+        logger.debug("Need to instantiate a new database connection...")
         proxy = DatabaseProxy()
         proxy.initialize(db)
 
@@ -263,6 +303,15 @@ class ActivityLog(BaseModel):
     # request_user_agent = peewee.CharField(index=False, null=True)
 
 
+class NormalizedFeedStats(BaseModel):
+    request_feed_uri = peewee.CharField(index=True)
+    year = peewee.IntegerField(index=True)
+    month = peewee.IntegerField(index=True)
+    day = peewee.IntegerField(index=True)
+    hour = peewee.IntegerField(index=True)
+    day_of_week = peewee.IntegerField(index=True)
+
+
 # class Signups(BaseModel):
 #     did = peewee.CharField(index=True)
 #     status = peewee.CharField(index=True)
@@ -272,5 +321,13 @@ class ActivityLog(BaseModel):
 
 with DBConnection() as conn:
     conn.create_tables(
-        [Post, SubscriptionState, Account, BotActions, ModActions, ActivityLog]
+        [
+            Post,
+            SubscriptionState,
+            Account,
+            BotActions,
+            ModActions,
+            ActivityLog,
+            NormalizedFeedStats,
+        ]
     )

@@ -101,3 +101,9 @@ uv run gunicorn --worker-tmp-dir /dev/shm src.astrofeed_server.app:app
 ```bash
 uv run -m astrobot
 ```
+
+## Testing
+
+There are a growing number of tests that help to ensure that the services are operating as expected (which, along with their supporting infrastructure, can be found in `astronomy-feeds/tests/`).
+
+The tests are organized according to pytest discovery and operational practices. To run them, install pytest along with other project dependencies by running `uv sync --all-extras` or `uv sync --extra dev`, and then execute `uv run pytest` in the `astronomy-feeds` directory.
