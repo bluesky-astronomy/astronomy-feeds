@@ -193,7 +193,7 @@ class BaseModel(peewee.Model):
 
 
 class Post(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.now(timezone.utc), index=True)
+    indexed_at = peewee.DateTimeField(default=datetime.now(timezone.utc).replace(tzinfo=None), index=True)
     uri = peewee.CharField(index=True)
     cid = peewee.CharField(index=True)
     author = peewee.CharField(index=True)
@@ -245,7 +245,7 @@ class SubscriptionState(BaseModel):
 class Account(BaseModel):
     handle = peewee.CharField(index=True)
     did = peewee.CharField(default="not set", index=True)
-    indexed_at = peewee.DateTimeField(default=datetime.now(timezone.utc), index=True)
+    indexed_at = peewee.DateTimeField(default=datetime.now(timezone.utc).replace(tzinfo=None), index=True)
 
     # Account flags
     is_valid = peewee.BooleanField(index=True)
@@ -268,7 +268,7 @@ class Account(BaseModel):
 
 
 class BotActions(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.now(timezone.utc), index=True)
+    indexed_at = peewee.DateTimeField(default=datetime.now(timezone.utc).replace(tzinfo=None), index=True)
     did = peewee.CharField(default="not set")
     type = peewee.CharField(null=False, default="unrecognized", index=True)
     stage = peewee.CharField(
@@ -280,11 +280,11 @@ class BotActions(BaseModel):
     latest_cid = peewee.CharField(null=False, default="")
     complete = peewee.BooleanField(null=False, default=False, index=True)
     authorized = peewee.BooleanField(null=False, index=True, default=True)
-    checked_at = peewee.DateTimeField(null=False, index=True, default=datetime.now(timezone.utc))
+    checked_at = peewee.DateTimeField(null=False, index=True, default=datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 class ModActions(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.now(timezone.utc), index=True)
+    indexed_at = peewee.DateTimeField(default=datetime.now(timezone.utc).replace(tzinfo=None), index=True)
     did_mod = peewee.CharField(index=True, null=False)
     did_user = peewee.CharField(index=True)
     action = peewee.CharField(index=True, null=False)
@@ -292,7 +292,7 @@ class ModActions(BaseModel):
 
 
 class ActivityLog(BaseModel):
-    request_dt = peewee.DateTimeField(default=datetime.now(timezone.utc), index=True)
+    request_dt = peewee.DateTimeField(default=datetime.now(timezone.utc).replace(tzinfo=None), index=True)
     request_feed_uri = peewee.CharField(index=True, null=False)
     request_limit = peewee.IntegerField(index=False, null=False, default=0)
     request_is_scrolled = peewee.BooleanField(null=False, default=False)
