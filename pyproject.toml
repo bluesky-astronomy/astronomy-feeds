@@ -36,6 +36,7 @@ dependencies = [
   # astrofeed_server
   "Flask>=2.3.2,<3.0",
   "gunicorn>=20.1.0,",
+  "psycopg2-binary>=2.9.10",
   "ruff"
 ]
 
