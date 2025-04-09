@@ -117,7 +117,7 @@ def new_signup(did, handle, valid=True):
     account_entries = fetch_account_entry_for_did(did)
     already_signed_up = any([account.is_valid for account in account_entries])
     if already_signed_up:
-        logger.warn(
+        logger.warning(
             f"Account {handle} is already signed up to the feeds! Unable to sign them up."
         )
         teardown_connection(get_database())
@@ -208,11 +208,11 @@ def hide_post_by_uri(uri: str, did: str) -> tuple[bool, str]:
     if len(post_entires) == 0:
         return False, "Unable to hide post: post is not in feeds."
     if len(account_entries) > 1:
-        logger.warn(
+        logger.warning(
             f"Account with DID {did} appears twice in the database. Hiding first one only."
         )
     if len(post_entires) > 1:
-        logger.warn(
+        logger.warning(
             f"Post with URI {uri} appears twice in the database. Hiding first one only."
         )
 
