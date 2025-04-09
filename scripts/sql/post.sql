@@ -11,22 +11,22 @@ CREATE TABLE "post" (
 ,  "indexed_at" timestamp NOT NULL
 ,  "feed_exoplanets" integer NOT NULL DEFAULT '0'
 ,  "feed_astrophotos" integer NOT NULL DEFAULT '0'
-,  "feed_cosmology" integer NOT NULL
-,  "feed_extragalactic" integer NOT NULL
-,  "feed_highenergy" integer NOT NULL
-,  "feed_instrumentation" integer NOT NULL
-,  "feed_methods" integer NOT NULL
-,  "feed_milkyway" integer NOT NULL
-,  "feed_planetary" integer NOT NULL
-,  "feed_radio" integer NOT NULL
-,  "feed_stellar" integer NOT NULL
-,  "feed_education" integer NOT NULL
-,  "feed_history" integer NOT NULL
-,  "hidden" integer NOT NULL
-,  "likes" integer NOT NULL
-,  "feed_research" integer NOT NULL
-,  "feed_solar" integer NOT NULL
-,  "feed_questions" integer NOT NULL
+,  "feed_cosmology" integer NOT NULL DEFAULT '0'
+,  "feed_extragalactic" integer NOT NULL DEFAULT '0'
+,  "feed_highenergy" integer NOT NULL DEFAULT '0'
+,  "feed_instrumentation" integer NOT NULL DEFAULT '0'
+,  "feed_methods" integer NOT NULL DEFAULT '0'
+,  "feed_milkyway" integer NOT NULL DEFAULT '0'
+,  "feed_planetary" integer NOT NULL DEFAULT '0'
+,  "feed_radio" integer NOT NULL DEFAULT '0'
+,  "feed_stellar" integer NOT NULL DEFAULT '0'
+,  "feed_education" integer NOT NULL DEFAULT '0'
+,  "feed_history" integer NOT NULL DEFAULT '0'
+,  "hidden" integer NOT NULL DEFAULT '0'
+,  "likes" integer NOT NULL DEFAULT '0'
+,  "feed_research" integer NOT NULL DEFAULT '0'
+,  "feed_solar" integer NOT NULL DEFAULT '0'
+,  "feed_questions" integer NOT NULL DEFAULT '0'
 );
 DROP INDEX IF EXISTS "idx_post_cid";
 CREATE INDEX "idx_post_cid" ON "post" ("cid");

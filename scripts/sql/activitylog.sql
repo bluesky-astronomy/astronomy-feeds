@@ -5,7 +5,7 @@ CREATE TABLE "activitylog" (
 ,  "request_dt" timestamp NOT NULL
 ,  "request_feed_uri" varchar(255) NOT NULL
 ,  "request_limit" integer NOT NULL
-,  "request_is_scrolled" integer NOT NULL
+,  "request_is_scrolled" integer NOT NULL DEFAULT '0'
 ,  "request_user_did" varchar(255) DEFAULT NULL
 );
 DROP INDEX IF EXISTS "activitylog_request_dt";
