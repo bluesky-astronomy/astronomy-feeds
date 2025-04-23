@@ -230,3 +230,39 @@ def hide_post_by_uri(uri: str, did: str) -> tuple[bool, str]:
         account.save()
     teardown_connection(get_database())
     return True, "Post hidden from feeds successfully."
+
+def ban_user_by_did(did: str) -> tuple[bool, str]:
+    """Bans a user from the feeds. Returns a string saying if there was (or wasn't) success."""
+    account_entries = fetch_account_entry_for_did(did)
+
+    # Perform checks on account
+    setup_connection(get_database())
+    if len(account_entries) == 0:
+        return False, "Unable to ban user: user is not signed up to the feeds."
+    if len(account_entries) > 1:
+        logger.warning(
+            f"User with DID {did} appears more than once in the database. Banning all entries."
+        )
+
+    # ban the user
+    any_banned = False
+    max_ban_count = 0
+    for account in account_entries:
+        if not account.is_banned:
+            account.is_banned = True
+            any_banned = True
+            if account.banned_count > max_ban_count:
+                max_ban_count = account.banned_count
+    if any_banned:
+        ban_count = max_ban_count+1
+        for account in account_entries:
+            account.banned_count = ban_count
+    else:
+        teardown_connection(get_database())
+        return False, "Unable to ban user: user already banned."
+
+    with get_database().atomic():
+        for account in account_entries:
+            account.save()
+    teardown_connection(get_database())
+    return True, "User banned from feeds successfully."
