@@ -251,8 +251,9 @@ def ban_user_by_did(did: str) -> tuple[bool, str]:
         if not account.is_banned:
             account.is_banned = True
             any_banned = True
-            if account.banned_count > max_ban_count:
-                max_ban_count = account.banned_count
+        if account.banned_count > max_ban_count:
+            max_ban_count = account.banned_count
+
     if any_banned:
         ban_count = max_ban_count+1
         for account in account_entries:
