@@ -31,7 +31,7 @@ class ModeratorBanCommand(Command):
         )
 
         # if command post is a reply, ban replied-to user
-        if hasattr(self.notification.notification.record, "reply"):
+        if self.notification.notification.record.reply is not None:
             uri_to_ban = self.notification.notification.record.reply.parent.uri
             did_to_ban = uri_to_ban.replace("at://", "").split("/")[0]
             mod_did = self.notification.author.did
