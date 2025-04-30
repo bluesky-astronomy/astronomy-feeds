@@ -27,22 +27,15 @@ class ModeratorBanCommand(Command):
     def execute_good_permissions(self, client: Client):
                 # Default failure case
         explanation = (
-            "Unable to execute ban; this command must reply to or specify the user to ban."
+            "Unable to execute ban; this command must specify the handle of the user to ban."
         )
 
         # if command post is a reply, ban replied-to user
-        if self.notification.notification.record.reply is not None:
-            uri_to_ban = self.notification.notification.record.reply.parent.uri
-            did_to_ban = uri_to_ban.replace("at://", "").split("/")[0]
-            mod_did = self.notification.author.did
-            ban_reason = " ".join(self.notification.words[1:]) # perhaps this should be different? multi-step command to get reason?
-            explanation = ban_user(did=did_to_ban, did_mod=mod_did, reason=ban_reason)
-
-        # otherwise, check for handle to ban after command word
-        # note: to check handle validity, we should check whether the handle actually resolves, rather than whether we have an entry 
-        # with that handle already; in case whoever we are trying to ban has changed their handle since they registered to post
-        elif self.notification.words[1][0] == "@":
-            handle_to_ban = self.notification.words[1][1:]
+        if len(self.notification.words) > 1:
+            handle_to_ban = self.notification.words[1]
+            # note: to check handle validity, we should check whether the handle actually resolves and use the DID from there, rather 
+            # than checking whether we have an entry with that handle already; in case whoever we are trying to ban has changed their 
+            # handle since they registered to post
             if did_to_ban := IdResolver(timeout=30).handle.resolve(handle_to_ban):
                 mod_did = self.notification.author.did
                 ban_reason = " ".join(self.notification.words[2:]) # perhaps this should be different? multi-step command to get reason?
