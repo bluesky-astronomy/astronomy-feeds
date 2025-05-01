@@ -26,7 +26,7 @@ def download_all_posts(table):
     print("-> Saving!")
     if table.__name__ == "BotActions":
         dataframe["checked_at"] = dataframe["checked_at"].astype(str)
-    dataframe.to_csv(outdir / f"{table.__name__}.parquet", index=False, header=False)
+    dataframe.to_csv(outdir, index=False, header=False)
 
 
 setup_connection(get_database())
