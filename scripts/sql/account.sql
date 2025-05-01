@@ -5,12 +5,12 @@ CREATE TABLE "account" (
 ,  "handle" varchar(255) NOT NULL
 ,  "submission_id" varchar(255) NOT NULL
 ,  "did" varchar(255) NOT NULL
-,  "is_valid" integer NOT NULL
-,  "feed_all" integer NOT NULL
+,  "is_valid" boolean NOT NULL
+,  "feed_all" boolean NOT NULL
 ,  "indexed_at" timestamp NOT NULL
 ,  "mod_level" integer NOT NULL
-,  "is_muted" integer NOT NULL
-,  "is_banned" integer NOT NULL
+,  "is_muted" boolean NOT NULL
+,  "is_banned" boolean NOT NULL
 ,  "hidden_count" integer NOT NULL
 ,  "muted_count" integer NOT NULL
 ,  "banned_count" integer NOT NULL

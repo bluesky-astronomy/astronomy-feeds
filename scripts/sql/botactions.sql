@@ -10,8 +10,8 @@ CREATE TABLE "botactions" (
 ,  "parent_cid" varchar(255) NOT NULL
 ,  "latest_uri" varchar(255) NOT NULL
 ,  "latest_cid" varchar(255) NOT NULL
-,  "complete" integer NOT NULL
-,  "authorized" integer NOT NULL
+,  "complete" boolean NOT NULL
+,  "authorized" boolean NOT NULL
 ,  "checked_at" timestamp NOT NULL
 );
 DROP INDEX IF EXISTS "botactions_authorized";

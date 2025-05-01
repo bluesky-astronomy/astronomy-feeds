@@ -6,27 +6,27 @@ CREATE TABLE "post" (
 ,  "cid" varchar(255) NOT NULL
 ,  "author" varchar(255) NOT NULL
 ,  "text" varchar(500) NOT NULL
-,  "feed_all" integer NOT NULL DEFAULT '0'
-,  "feed_astro" integer NOT NULL DEFAULT '0'
+,  "feed_all" boolean NOT NULL DEFAULT FALSE
+,  "feed_astro" boolean NOT NULL DEFAULT FALSE
 ,  "indexed_at" timestamp NOT NULL
-,  "feed_exoplanets" integer NOT NULL DEFAULT '0'
-,  "feed_astrophotos" integer NOT NULL DEFAULT '0'
-,  "feed_cosmology" integer NOT NULL DEFAULT '0'
-,  "feed_extragalactic" integer NOT NULL DEFAULT '0'
-,  "feed_highenergy" integer NOT NULL DEFAULT '0'
-,  "feed_instrumentation" integer NOT NULL DEFAULT '0'
-,  "feed_methods" integer NOT NULL DEFAULT '0'
-,  "feed_milkyway" integer NOT NULL DEFAULT '0'
-,  "feed_planetary" integer NOT NULL DEFAULT '0'
-,  "feed_radio" integer NOT NULL DEFAULT '0'
-,  "feed_stellar" integer NOT NULL DEFAULT '0'
-,  "feed_education" integer NOT NULL DEFAULT '0'
-,  "feed_history" integer NOT NULL DEFAULT '0'
-,  "hidden" integer NOT NULL DEFAULT '0'
+,  "feed_exoplanets" boolean NOT NULL DEFAULT FALSE
+,  "feed_astrophotos" boolean NOT NULL DEFAULT FALSE
+,  "feed_cosmology" boolean NOT NULL DEFAULT FALSE
+,  "feed_extragalactic" boolean NOT NULL DEFAULT FALSE
+,  "feed_highenergy" boolean NOT NULL DEFAULT FALSE
+,  "feed_instrumentation" boolean NOT NULL DEFAULT FALSE
+,  "feed_methods" boolean NOT NULL DEFAULT FALSE
+,  "feed_milkyway" boolean NOT NULL DEFAULT FALSE
+,  "feed_planetary" boolean NOT NULL DEFAULT FALSE
+,  "feed_radio" boolean NOT NULL DEFAULT FALSE
+,  "feed_stellar" boolean NOT NULL DEFAULT FALSE
+,  "feed_education" boolean NOT NULL DEFAULT FALSE
+,  "feed_history" boolean NOT NULL DEFAULT FALSE
+,  "hidden" boolean NOT NULL DEFAULT FALSE
 ,  "likes" integer NOT NULL DEFAULT '0'
-,  "feed_research" integer NOT NULL DEFAULT '0'
-,  "feed_solar" integer NOT NULL DEFAULT '0'
-,  "feed_questions" integer NOT NULL DEFAULT '0'
+,  "feed_research" boolean NOT NULL DEFAULT FALSE
+,  "feed_solar" boolean NOT NULL DEFAULT FALSE
+,  "feed_questions" boolean NOT NULL DEFAULT FALSE
 );
 DROP INDEX IF EXISTS "idx_post_cid";
 CREATE INDEX "idx_post_cid" ON "post" ("cid");
