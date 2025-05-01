@@ -12,7 +12,11 @@ from tests.test_lib.test_database import (
     testdb_post_entry,
     generate_testdb_post_by_author,
 )
-from tests.test_lib.test_util import check_call_signature, check_botactions_entry, check_modactions_entry
+from tests.test_lib.test_util import (
+    check_call_signature,
+    check_botactions_entry,
+    check_modactions_entry,
+)
 
 #
 # utility functions
@@ -96,12 +100,14 @@ def test_success(test_db_conn, mock_client):
         text="Post hidden from feeds successfully.",
     )
     check_botactions_entry(
-        command=hide_command, 
+        command=hide_command,
         botaction=botaction,
     )
     check_modactions_entry(
         command=hide_command,
-        did_user=hide_command.notification.notification.record.reply.parent.uri.replace("at://", "").split("/")[0],
+        did_user=hide_command.notification.notification.record.reply.parent.uri.replace(
+            "at://", ""
+        ).split("/")[0],
         modaction=modaction,
     )
 
@@ -182,12 +188,14 @@ def test_success_multiple_author_entries(test_db_conn, mock_client):
         text="Post hidden from feeds successfully.",
     )
     check_botactions_entry(
-        command=hide_command, 
+        command=hide_command,
         botaction=botaction,
     )
     check_modactions_entry(
         command=hide_command,
-        did_user=hide_command.notification.notification.record.reply.parent.uri.replace("at://", "").split("/")[0],
+        did_user=hide_command.notification.notification.record.reply.parent.uri.replace(
+            "at://", ""
+        ).split("/")[0],
         modaction=modaction,
     )
 
@@ -269,12 +277,14 @@ def test_success_multiple_post_entries(test_db_conn, mock_client):
         text="Post hidden from feeds successfully.",
     )
     check_botactions_entry(
-        command=hide_command, 
+        command=hide_command,
         botaction=botaction,
     )
     check_modactions_entry(
         command=hide_command,
-        did_user=hide_command.notification.notification.record.reply.parent.uri.replace("at://", "").split("/")[0],
+        did_user=hide_command.notification.notification.record.reply.parent.uri.replace(
+            "at://", ""
+        ).split("/")[0],
         modaction=modaction,
     )
 
@@ -337,7 +347,7 @@ def test_failure_insufficient_mod_level(test_db_conn, mock_client):
         text="Sorry, but you don't have the required permissions to run this command. Reason: Lacking required moderator level (2)",
     )
     check_botactions_entry(
-        command=hide_command, 
+        command=hide_command,
         botaction=botaction,
     )
 
@@ -406,7 +416,7 @@ def test_failure_author_not_signed_up(test_db_conn, mock_client):
         text="Unable to hide post: post author is not signed up to the feeds.",
     )
     check_botactions_entry(
-        command=hide_command, 
+        command=hide_command,
         botaction=botaction,
     )
 
@@ -472,7 +482,7 @@ def test_failure_post_not_in_feeds(test_db_conn, mock_client):
         text="Unable to hide post: post is not in feeds.",
     )
     check_botactions_entry(
-        command=hide_command, 
+        command=hide_command,
         botaction=botaction,
     )
 
@@ -535,6 +545,6 @@ def test_failure_post_already_hidden(test_db_conn, mock_client):
         text="Unable to hide post: post already hidden.",
     )
     check_botactions_entry(
-        command=hide_command, 
+        command=hide_command,
         botaction=botaction,
     )

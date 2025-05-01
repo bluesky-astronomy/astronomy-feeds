@@ -13,6 +13,7 @@ from tests.test_lib.test_util import check_call_signature, check_botactions_entr
 # utility functions
 #
 
+
 # cannot be a fixture, unfortunately, since each test needs to specify target post and author differently
 def get_joke_command(
     requesting_user: Account | testdb_account_entry,
@@ -20,9 +21,7 @@ def get_joke_command(
     """Builds a hide command object given a target post and moderator account."""
     # we don't store root uri and cid in our Post table, leaving those as default values
     joke_notification = build_notification(
-        "mention", 
-        record_text=f"@{HANDLE} joke", 
-        author_did=requesting_user.did
+        "mention", record_text=f"@{HANDLE} joke", author_did=requesting_user.did
     )
     return JokeCommand(MentionNotification(joke_notification))
 
@@ -30,6 +29,7 @@ def get_joke_command(
 #
 # test functions
 #
+
 
 def test_joke(test_db_conn, mock_client):
     # connect & collect
@@ -55,6 +55,6 @@ def test_joke(test_db_conn, mock_client):
         text=jokes,
     )
     check_botactions_entry(
-        command=joke_command, 
+        command=joke_command,
         botaction=botaction,
     )

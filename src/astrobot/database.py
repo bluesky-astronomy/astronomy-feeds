@@ -231,6 +231,7 @@ def hide_post_by_uri(uri: str, did: str) -> tuple[bool, str]:
     teardown_connection(get_database())
     return True, "Post hidden from feeds successfully."
 
+
 def ban_user_by_did(did: str) -> tuple[bool, str]:
     """Bans a user from the feeds. Returns a string saying if there was (or wasn't) success."""
     account_entries = fetch_account_entry_for_did(did)
@@ -255,7 +256,7 @@ def ban_user_by_did(did: str) -> tuple[bool, str]:
             max_ban_count = account.banned_count
 
     if any_banned:
-        ban_count = max_ban_count+1
+        ban_count = max_ban_count + 1
         for account in account_entries:
             account.banned_count = ban_count
     else:

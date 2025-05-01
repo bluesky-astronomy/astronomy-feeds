@@ -8,12 +8,17 @@ from astrobot.config import HANDLE
 from tests.test_lib.test_database import (
     testdb_account_entry,
 )
-from tests.test_lib.test_util import check_call_signature, check_botactions_entry, check_modactions_entry
+from tests.test_lib.test_util import (
+    check_call_signature,
+    check_botactions_entry,
+    check_modactions_entry,
+)
 
 
 #
 # utility functions
 #
+
 
 def get_ban_command(
     target_user: Account | testdb_account_entry,
@@ -32,13 +37,14 @@ def get_ban_command(
 # test functions
 #
 
+
 def test_success(test_db_conn, mock_client, mock_idresolver):
     """Tests standard expected success case.
 
-    After command execution, the targeted user's Account entry should have banned=True, 
-    and have its banned_count field incremented by one; there should be new BotAction 
-    and ModAction entries created, with appropriate information; and a Bluesky API call 
-    should have been made, to send a post to the instigating moderator informing them 
+    After command execution, the targeted user's Account entry should have banned=True,
+    and have its banned_count field incremented by one; there should be new BotAction
+    and ModAction entries created, with appropriate information; and a Bluesky API call
+    should have been made, to send a post to the instigating moderator informing them
     of action success.
     """
     # connect & collect
@@ -46,7 +52,9 @@ def test_success(test_db_conn, mock_client, mock_idresolver):
         moderator_account = Account.select().where(
             Account.mod_level >= ModeratorBanCommand.level
         )[0]
-        target_account_before = Account.select().where(Account.did != moderator_account.did)[0]
+        target_account_before = Account.select().where(
+            Account.did != moderator_account.did
+        )[0]
 
     # set up successful mock ID resolution
     mock_idresolver.add_mapping(target_account_before.handle, target_account_before.did)
@@ -84,23 +92,24 @@ def test_success(test_db_conn, mock_client, mock_idresolver):
         text="User banned from feeds successfully.",
     )
     check_botactions_entry(
-        command=ban_command, 
+        command=ban_command,
         botaction=botaction,
     )
     check_modactions_entry(
-        command=ban_command, 
-        did_user=target_account_before.did, 
+        command=ban_command,
+        did_user=target_account_before.did,
         modaction=modaction,
     )
 
+
 def test_success_multiple_author_entries(test_db_conn, mock_client, mock_idresolver):
     """Tests success case in which user to ban has multiple entries in Account table.
-    
-    After command execution, every one of the Account entries associated with the target 
-    user should have banned=True, and they should *all* have their banned_count field 
-    set to one higher than the banned_count of whichever entry had the maximum 
-    banned_count before command execution; there should be a new BotAction and ModAction 
-    entry created, with appropriate information; and a Bluesky API call should have been 
+
+    After command execution, every one of the Account entries associated with the target
+    user should have banned=True, and they should *all* have their banned_count field
+    set to one higher than the banned_count of whichever entry had the maximum
+    banned_count before command execution; there should be a new BotAction and ModAction
+    entry created, with appropriate information; and a Bluesky API call should have been
     made, to send a post to the instigating moderator informing them of action success.
     """
     # connect & collect
@@ -108,26 +117,34 @@ def test_success_multiple_author_entries(test_db_conn, mock_client, mock_idresol
         moderator_account = Account.select().where(
             Account.mod_level >= ModeratorBanCommand.level
         )[0]
-        target_account_before = Account.select().where(Account.did != moderator_account.did)[0]
+        target_account_before = Account.select().where(
+            Account.did != moderator_account.did
+        )[0]
 
         # Need to duplicate our target author a few times, with specific properties:
-        #   * we want some duplicate entries to already be banned, and some not; 
+        #   * we want some duplicate entries to already be banned, and some not;
         #   * and we want them to have different banned_counts
-        # This will allow us to test that all entries, regardless of initial state, 
+        # This will allow us to test that all entries, regardless of initial state,
         # are banned at the end; and that they all get the correct banned_count
         target_account_dict = target_account_before.__dict__["__data__"]
         max_account_id = Account.select().order_by(Account.id.desc())[0].id
         base_banned_count = target_account_dict["banned_count"]
         for i in [1, 2]:
-            target_account_dict["id"] = max_account_id + i # guarantee unique id per entry
-            target_account_dict["is_banned"] = i%2 == 0 # one already banned, one not
-            target_account_dict["banned_count"] = base_banned_count + i # three different banned counts
+            target_account_dict["id"] = (
+                max_account_id + i
+            )  # guarantee unique id per entry
+            target_account_dict["is_banned"] = i % 2 == 0  # one already banned, one not
+            target_account_dict["banned_count"] = (
+                base_banned_count + i
+            )  # three different banned counts
             with conn.atomic():
                 Account.insert(target_account_dict).execute()
         target_duplicates_before = list(
             Account.select().where(Account.did == target_account_before.did)
         )
-        max_banned_count_before = max([account.banned_count for account in target_duplicates_before])
+        max_banned_count_before = max(
+            [account.banned_count for account in target_duplicates_before]
+        )
 
     # set up successful mock ID resolution
     mock_idresolver.add_mapping(target_account_before.handle, target_account_before.did)
@@ -166,23 +183,22 @@ def test_success_multiple_author_entries(test_db_conn, mock_client, mock_idresol
         text="User banned from feeds successfully.",
     )
     check_botactions_entry(
-        command=ban_command, 
+        command=ban_command,
         botaction=botaction,
     )
     check_modactions_entry(
-        command=ban_command, 
-        did_user=target_account_before.did, 
+        command=ban_command,
+        did_user=target_account_before.did,
         modaction=modaction,
     )
-
 
 
 def test_failure_insufficient_mod_level(test_db_conn, mock_client, mock_idresolver):
     """Tests failure case in which instigating account has insufficient mod access.
 
     In this case, no modification should be made to any Account entry; no ModAction
-    entry should be created, and a BotAction entry should be created with 
-    authorized=False; and a Bluesky API call should be made to send a post to the 
+    entry should be created, and a BotAction entry should be created with
+    authorized=False; and a Bluesky API call should be made to send a post to the
     instigating account indicating action failure, and the reason for the failure.
     """
     # connect & collect
@@ -190,7 +206,9 @@ def test_failure_insufficient_mod_level(test_db_conn, mock_client, mock_idresolv
         moderator_account = Account.select().where(
             Account.mod_level < ModeratorBanCommand.level
         )[0]  # need a mod of too low a level
-        target_account_before = Account.select().where(Account.did != moderator_account.did)[0]
+        target_account_before = Account.select().where(
+            Account.did != moderator_account.did
+        )[0]
         latest_modaction_before = ModActions.select().order_by(
             ModActions.indexed_at.desc()
         )[0]
@@ -233,7 +251,7 @@ def test_failure_insufficient_mod_level(test_db_conn, mock_client, mock_idresolv
         text=f"Sorry, but you don't have the required permissions to run this command. Reason: Lacking required moderator level ({ban_command.level})",
     )
     check_botactions_entry(
-        command=ban_command, 
+        command=ban_command,
         botaction=botaction,
     )
 
@@ -241,9 +259,9 @@ def test_failure_insufficient_mod_level(test_db_conn, mock_client, mock_idresolv
 def test_failure_no_handle_provided(test_db_conn, mock_client, mock_idresolver):
     """Tests failure case in which instigating mention notification does not specify a handle to ban.
 
-    In this case, no ModAction entry should be created, and a BotAction entry 
-    should be created as usual; and a Bluesky API call should be made to send 
-    a post to the instigating account indicating action failure, and the reason 
+    In this case, no ModAction entry should be created, and a BotAction entry
+    should be created as usual; and a Bluesky API call should be made to send
+    a post to the instigating account indicating action failure, and the reason
     for the failure.
     """
     # connect & collect
@@ -289,23 +307,28 @@ def test_failure_no_handle_provided(test_db_conn, mock_client, mock_idresolver):
         text="Unable to execute ban; this command must specify the handle of the user to ban.",
     )
     check_botactions_entry(
-        command=ban_command, 
+        command=ban_command,
         botaction=botaction,
     )
 
-def test_failure_cannot_resolve_handle_to_ban(test_db_conn, mock_client, mock_idresolver):
+
+def test_failure_cannot_resolve_handle_to_ban(
+    test_db_conn, mock_client, mock_idresolver
+):
     """Tests failure case in which the handle specified to ban in a mention cannot be resolved.
-    
+
     In this case, no modification should be made to any Account entry; no ModAction
-    entry should be created, and a BotAction entry should be created as usual; and 
-    a Bluesky API call should be made to send a post to the instigating account 
+    entry should be created, and a BotAction entry should be created as usual; and
+    a Bluesky API call should be made to send a post to the instigating account
     indicating action failure, and the reason for the failure.
     """
     with DBConnection():
         moderator_account = Account.select().where(
             Account.mod_level >= ModeratorBanCommand.level
         )[0]
-        target_account_before = Account.select().where(Account.did != moderator_account.did)[0]
+        target_account_before = Account.select().where(
+            Account.did != moderator_account.did
+        )[0]
         latest_modaction_before = ModActions.select().order_by(
             ModActions.indexed_at.desc()
         )[0]
@@ -345,19 +368,20 @@ def test_failure_cannot_resolve_handle_to_ban(test_db_conn, mock_client, mock_id
     check_call_signature(
         command=ban_command,
         mock_client=mock_client,
-        text=f"Unable to execute ban; not able to resolve given user handle \"{ban_command.notification.words[1]}\"",
+        text=f'Unable to execute ban; not able to resolve given user handle "{ban_command.notification.words[1]}"',
     )
     check_botactions_entry(
-        command=ban_command, 
+        command=ban_command,
         botaction=botaction,
     )
 
+
 def test_failure_user_not_signed_up(test_db_conn, mock_client, mock_idresolver):
     """Tests failure case in which target user is not signed up to post in feeds.
-    
-    In this case, no ModAction entry should be created, and a BotAction entry 
-    should be created as usual; and a Bluesky API call should be made to send 
-    a post to the instigating account indicating action failure, and the reason 
+
+    In this case, no ModAction entry should be created, and a BotAction entry
+    should be created as usual; and a Bluesky API call should be made to send
+    a post to the instigating account indicating action failure, and the reason
     for the failure.
     """
     # create data for a user who will not be entered into the database
@@ -407,18 +431,18 @@ def test_failure_user_not_signed_up(test_db_conn, mock_client, mock_idresolver):
         text="Unable to ban user: user is not signed up to the feeds.",
     )
     check_botactions_entry(
-        command=ban_command, 
+        command=ban_command,
         botaction=botaction,
     )
 
 
 def test_failure_user_already_banned(test_db_conn, mock_client, mock_idresolver):
     """Tests failure case in which target user is already banned from feeds.
-    
-    In this case, no modification should be made to any Account entry (with all 
-    Account entries for target user remaining banned); no ModAction entry should 
-    be created, and a BotAction entry should be created as usual; and a Bluesky 
-    API call should be made to send a post to the instigating account indicating 
+
+    In this case, no modification should be made to any Account entry (with all
+    Account entries for target user remaining banned); no ModAction entry should
+    be created, and a BotAction entry should be created as usual; and a Bluesky
+    API call should be made to send a post to the instigating account indicating
     action failure, and the reason for the failure.
     """
     # connect & collect
@@ -431,7 +455,9 @@ def test_failure_user_already_banned(test_db_conn, mock_client, mock_idresolver)
         )[0]
 
         # modify our author account to make it banned already
-        target_account_before = Account.select().where(Account.did != moderator_account.did)[0]
+        target_account_before = Account.select().where(
+            Account.did != moderator_account.did
+        )[0]
         target_account_before.is_banned = True
         target_account_before.banned_count = 1
         target_account_before.save()
@@ -474,6 +500,6 @@ def test_failure_user_already_banned(test_db_conn, mock_client, mock_idresolver)
         text="Unable to ban user: user already banned.",
     )
     check_botactions_entry(
-        command=ban_command, 
+        command=ban_command,
         botaction=botaction,
     )

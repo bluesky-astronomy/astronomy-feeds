@@ -1,7 +1,12 @@
 """Moderation-related actions."""
 
 from astrofeed_lib.accounts import CachedModeratorList
-from astrobot.database import new_mod_action, new_signup, hide_post_by_uri, ban_user_by_did
+from astrobot.database import (
+    new_mod_action,
+    new_signup,
+    hide_post_by_uri,
+    ban_user_by_did,
+)
 from astrofeed_lib import logger
 
 

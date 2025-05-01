@@ -26,24 +26,22 @@ class ModeratorBanCommand(Command):
 
     def execute_good_permissions(self, client: Client):
         # Default failure case
-        explanation = (
-            "Unable to execute ban; this command must specify the handle of the user to ban."
-        )
+        explanation = "Unable to execute ban; this command must specify the handle of the user to ban."
 
         # make sure there is a specified handle to ban
         if len(self.notification.words) > 1:
             handle_to_ban = self.notification.words[1]
-            # note: to check handle validity, we should check whether the handle actually resolves and use the DID from there, rather 
-            # than checking whether we have an entry with that handle already; in case whoever we are trying to ban has changed their 
+            # note: to check handle validity, we should check whether the handle actually resolves and use the DID from there, rather
+            # than checking whether we have an entry with that handle already; in case whoever we are trying to ban has changed their
             # handle since they registered to post
             if did_to_ban := IdResolver(timeout=30).handle.resolve(handle_to_ban):
                 mod_did = self.notification.author.did
                 ban_reason = " ".join(self.notification.words[2:])
-                explanation = ban_user(did=did_to_ban, did_mod=mod_did, reason=ban_reason)
-            else:
-                explanation = (
-                    f"Unable to execute ban; not able to resolve given user handle \"{handle_to_ban}\""
+                explanation = ban_user(
+                    did=did_to_ban, did_mod=mod_did, reason=ban_reason
                 )
+            else:
+                explanation = f'Unable to execute ban; not able to resolve given user handle "{handle_to_ban}"'
 
         # inform the user of the outcome
         send_post(

@@ -8,6 +8,7 @@ from astrofeed_lib.database import DBConnection
 
 from tests.conftest import MockClient
 
+
 def check_call_signature(
     command: Command,
     mock_client: MockClient,
@@ -47,7 +48,9 @@ def check_call_signature(
     root_ref = command.notification.root_ref
 
     # information specific to each case
-    if type(text) is str: # hack to allow for testing multiple possibilities at once (mostly for joke command)
+    if (
+        type(text) is str
+    ):  # hack to allow for testing multiple possibilities at once (mostly for joke command)
         text = [text]
     assert call_signature["text"] in text
     assert call_signature["reply_to"] == get_reply_info(root_ref, parent_ref)
@@ -81,7 +84,7 @@ def check_botactions_entry(command: Command, botaction: BotActions):
     assert botaction.checked_at < datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-def check_modactions_entry(command: Command, did_user : str, modaction: ModActions):
+def check_modactions_entry(command: Command, did_user: str, modaction: ModActions):
     """Checks that the ModActions table entry reflects data in an executed command."""
     assert modaction.indexed_at < datetime.now(timezone.utc).replace(tzinfo=None)
     assert modaction.did_mod == command.notification.notification.author.did
