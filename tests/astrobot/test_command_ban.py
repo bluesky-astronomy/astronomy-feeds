@@ -253,6 +253,61 @@ def test_failure_insufficient_mod_level(test_db_conn, mock_client, mock_idresolv
     )
 
 
+def test_failure_no_handle_provided(test_db_conn, mock_client, mock_idresolver):
+    """Tests failure case in which instigating mention notification does not specify a handle to ban.
+
+    In this case, no modification should be made to any Account entry; no ModAction
+    entry should be created, and a BotAction entry should be created as usual; and 
+    a Bluesky API call should be made to send a post to the instigating account 
+    indicating action failure, and the reason for the failure.
+    """
+    # connect & collect
+    with DBConnection():
+        moderator_account = Account.select().where(
+            Account.mod_level >= ModeratorBanCommand.level
+        )[0]  # need a mod of high enough level
+        latest_modaction_before = ModActions.select().order_by(
+            ModActions.indexed_at.desc()
+        )[0]
+
+    # make our own ban notification and ban command, without the required handle specification
+    ban_notification = build_notification(
+        "mention",
+        record_text=f"@{HANDLE} ban",
+        author_did=moderator_account.did,
+    )
+    ban_command = ModeratorBanCommand(MentionNotification(ban_notification))
+
+    # act
+    ban_command.execute(mock_client)
+
+    # post-act connect & collect
+    with DBConnection():
+        botaction = BotActions.select().where(
+            BotActions.parent_uri == ban_command.notification.parent_ref.uri
+        )[0]
+        n_modactions = (
+            ModActions.select()
+            .where(
+                (ModActions.did_mod == moderator_account.did)
+                & (ModActions.indexed_at > latest_modaction_before.indexed_at)
+            )
+            .count()
+        )
+
+    # checks
+    assert n_modactions == 0
+
+    check_call_signature(
+        command=ban_command,
+        mock_client=mock_client,
+        text="Unable to execute ban; this command must specify the handle of the user to ban.",
+    )
+    check_botactions_entry(
+        command=ban_command, 
+        botaction=botaction,
+    )
+
 def test_failure_cannot_resolve_handle_to_ban(test_db_conn, mock_client, mock_idresolver):
     """Tests failure case in which the handle specified to ban in a mention cannot be resolved
     
