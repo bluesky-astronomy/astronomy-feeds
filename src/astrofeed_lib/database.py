@@ -1,6 +1,6 @@
 import peewee
 from peewee import DatabaseProxy
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION, ASTROFEED_POSTGRES
 from playhouse.pool import PooledMySQLDatabase, PooledPostgresqlDatabase
