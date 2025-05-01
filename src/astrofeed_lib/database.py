@@ -319,15 +319,15 @@ class NormalizedFeedStats(BaseModel):
 #     cid = peewee.CharField()
 
 
-with DBConnection() as conn:
-    conn.create_tables(
-        [
-            Post,
-            SubscriptionState,
-            Account,
-            BotActions,
-            ModActions,
-            ActivityLog,
-            NormalizedFeedStats,
-        ]
-    )
+# with DBConnection() as conn:
+#     conn.create_tables(
+#         [
+#             Post,
+#             SubscriptionState,
+#             Account,
+#             BotActions,
+#             ModActions,
+#             ActivityLog,
+#             NormalizedFeedStats,
+#         ]
+#     )
