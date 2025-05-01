@@ -1,5 +1,3 @@
-#from dataclasses import asdict
-
 from astrofeed_lib.database import BotActions, ModActions, Account
 from astrofeed_lib.database import DBConnection
 
@@ -17,14 +15,11 @@ from tests.test_lib.test_util import check_call_signature, check_botactions_entr
 # utility functions
 #
 
-
-# cannot be fixtures, unfortunately, since each test needs to specify target post and author differently
-
 def get_ban_command(
     target_user: Account | testdb_account_entry,
     moderator_account: Account | testdb_account_entry,
 ):
-    """Builds a ban command object given a target user and a moderator account."""
+    """Builds a ban command object given target user and moderator accounts."""
     ban_notification = build_notification(
         "mention",
         record_text=f"@{HANDLE} ban {target_user.handle}",
@@ -37,21 +32,20 @@ def get_ban_command(
 # test functions
 #
 
-
 def test_success(test_db_conn, mock_client, mock_idresolver):
-    """Tests success case in which ban command explicitly named (by handle) user to ban
+    """Tests standard expected success case.
 
-    After command execution, the targeted user's Account entry (the one associated with 
-    the replied-to post) should have banned=True, and have its banned_count field 
-    incremented by one; there should be a new BotAction and ModAction entry created, 
-    with appropriate information; and a Bluesky API call should have been made, to send 
-    a post to the instigating moderator informing them of action success.
+    After command execution, the targeted user's Account entry should have banned=True, 
+    and have its banned_count field incremented by one; there should be new BotAction 
+    and ModAction entries created, with appropriate information; and a Bluesky API call 
+    should have been made, to send a post to the instigating moderator informing them 
+    of action success.
     """
     # connect & collect
     with DBConnection():
         moderator_account = Account.select().where(
             Account.mod_level >= ModeratorBanCommand.level
-        )[0]  # need a mod of high enough level
+        )[0]
         target_account_before = Account.select().where(Account.did != moderator_account.did)[0]
 
     # set up successful mock ID resolution
@@ -84,8 +78,6 @@ def test_success(test_db_conn, mock_client, mock_idresolver):
     assert target_account_after.is_banned
     assert target_account_after.banned_count == target_account_before.banned_count + 1
 
-    # do posts get hidden automatically when a user is banned?
-
     check_call_signature(
         command=ban_command,
         mock_client=mock_client,
@@ -102,11 +94,7 @@ def test_success(test_db_conn, mock_client, mock_idresolver):
     )
 
 def test_success_multiple_author_entries(test_db_conn, mock_client, mock_idresolver):
-    """Tests success case in which user to ban has multiple entries in Account table
-
-    Note: for this and futures cases, it doesn't matter whether we take the "reply" or
-    "mention" path, as beyond the reply vs mention decision point, they will both make 
-    the same function call.
+    """Tests success case in which user to ban has multiple entries in Account table.
     
     After command execution, every one of the Account entries associated with the target 
     user should have banned=True, and they should *all* have their banned_count field 
@@ -119,7 +107,7 @@ def test_success_multiple_author_entries(test_db_conn, mock_client, mock_idresol
     with DBConnection() as conn:
         moderator_account = Account.select().where(
             Account.mod_level >= ModeratorBanCommand.level
-        )[0]  # need a high enough level
+        )[0]
         target_account_before = Account.select().where(Account.did != moderator_account.did)[0]
 
         # Need to duplicate our target author a few times, with specific properties:
@@ -140,7 +128,6 @@ def test_success_multiple_author_entries(test_db_conn, mock_client, mock_idresol
             Account.select().where(Account.did == target_account_before.did)
         )
         max_banned_count_before = max([account.banned_count for account in target_duplicates_before])
-
 
     # set up successful mock ID resolution
     mock_idresolver.add_mapping(target_account_before.handle, target_account_before.did)
@@ -172,8 +159,6 @@ def test_success_multiple_author_entries(test_db_conn, mock_client, mock_idresol
     for account in target_duplicates_after:
         assert account.is_banned
         assert account.banned_count == max_banned_count_before + 1
-
-    # do posts get hidden automatically when a user is banned?
 
     check_call_signature(
         command=ban_command,
@@ -256,21 +241,21 @@ def test_failure_insufficient_mod_level(test_db_conn, mock_client, mock_idresolv
 def test_failure_no_handle_provided(test_db_conn, mock_client, mock_idresolver):
     """Tests failure case in which instigating mention notification does not specify a handle to ban.
 
-    In this case, no modification should be made to any Account entry; no ModAction
-    entry should be created, and a BotAction entry should be created as usual; and 
-    a Bluesky API call should be made to send a post to the instigating account 
-    indicating action failure, and the reason for the failure.
+    In this case, no ModAction entry should be created, and a BotAction entry 
+    should be created as usual; and a Bluesky API call should be made to send 
+    a post to the instigating account indicating action failure, and the reason 
+    for the failure.
     """
     # connect & collect
     with DBConnection():
         moderator_account = Account.select().where(
             Account.mod_level >= ModeratorBanCommand.level
-        )[0]  # need a mod of high enough level
+        )[0]
         latest_modaction_before = ModActions.select().order_by(
             ModActions.indexed_at.desc()
         )[0]
 
-    # make our own ban notification and ban command, without the required handle specification
+    # make a ban notification and command, without the required handle specification
     ban_notification = build_notification(
         "mention",
         record_text=f"@{HANDLE} ban",
@@ -309,7 +294,7 @@ def test_failure_no_handle_provided(test_db_conn, mock_client, mock_idresolver):
     )
 
 def test_failure_cannot_resolve_handle_to_ban(test_db_conn, mock_client, mock_idresolver):
-    """Tests failure case in which the handle specified to ban in a mention cannot be resolved
+    """Tests failure case in which the handle specified to ban in a mention cannot be resolved.
     
     In this case, no modification should be made to any Account entry; no ModAction
     entry should be created, and a BotAction entry should be created as usual; and 
@@ -319,7 +304,7 @@ def test_failure_cannot_resolve_handle_to_ban(test_db_conn, mock_client, mock_id
     with DBConnection():
         moderator_account = Account.select().where(
             Account.mod_level >= ModeratorBanCommand.level
-        )[0]  # need a mod of high enough level
+        )[0]
         target_account_before = Account.select().where(Account.did != moderator_account.did)[0]
         latest_modaction_before = ModActions.select().order_by(
             ModActions.indexed_at.desc()
@@ -357,8 +342,6 @@ def test_failure_cannot_resolve_handle_to_ban(test_db_conn, mock_client, mock_id
     assert target_account_after.banned_count == target_account_before.banned_count
     assert n_modactions == 0
 
-    # do posts get hidden automatically when a user is banned?
-
     check_call_signature(
         command=ban_command,
         mock_client=mock_client,
@@ -372,12 +355,12 @@ def test_failure_cannot_resolve_handle_to_ban(test_db_conn, mock_client, mock_id
 def test_failure_user_not_signed_up(test_db_conn, mock_client, mock_idresolver):
     """Tests failure case in which target user is not signed up to post in feeds.
     
-    In this case, no modification should be made to any Account entry; no ModAction
-    entry should be created, and a BotAction entry should be created as usual; and 
-    a Bluesky API call should be made to send a post to the instigating account 
-    indicating action failure, and the reason for the failure.
+    In this case, no ModAction entry should be created, and a BotAction entry 
+    should be created as usual; and a Bluesky API call should be made to send 
+    a post to the instigating account indicating action failure, and the reason 
+    for the failure.
     """
-    # create an author who will not be entered into the database, and a post by them that will not
+    # create data for a user who will not be entered into the database
     unregistered_user = testdb_account_entry(
         handle="Dasha", did="did:plc:DDDDDDDDDDDDDDDDDDDDDDDD"
     )
@@ -386,7 +369,7 @@ def test_failure_user_not_signed_up(test_db_conn, mock_client, mock_idresolver):
     with DBConnection():
         moderator_account = Account.select().where(
             Account.mod_level > ModeratorBanCommand.level
-        )[0]  # need a mod of high enough level
+        )[0]
         latest_modaction_before = ModActions.select().order_by(
             ModActions.indexed_at.desc()
         )[0]
@@ -442,7 +425,7 @@ def test_failure_user_already_banned(test_db_conn, mock_client, mock_idresolver)
     with DBConnection():
         moderator_account = Account.select().where(
             Account.mod_level >= ModeratorBanCommand.level
-        )[0]  # need a mod of high enough level
+        )[0]
         latest_modaction_before = ModActions.select().order_by(
             ModActions.indexed_at.desc()
         )[0]
@@ -484,8 +467,6 @@ def test_failure_user_already_banned(test_db_conn, mock_client, mock_idresolver)
     assert target_account_after.is_banned
     assert target_account_after.banned_count == target_account_before.banned_count
     assert n_modactions == 0
-
-    # do posts get hidden automatically when a user is banned?
 
     check_call_signature(
         command=ban_command,

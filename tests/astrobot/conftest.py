@@ -5,7 +5,9 @@ import astrobot.commands.moderation.ban
 
 class MockIdResolver(IdResolver):
     '''atproto IdResolver replacement that uses mock handle resolver to avoid network checks for handle resolution'''
-    # class variable to store handle -> DID mappings
+    # class variable to store handle -> DID mappings; this needs to be a class (static) variable 
+    # because the command creates its own instance of this class during execution, so we need to 
+    # be able to modify this in a way that all instances (including as-yet-uncreated ones) will see
     handle_to_did = dict()
 
     def __init__(self, plc_url = None, timeout = None, cache = None, backup_nameservers = None):
