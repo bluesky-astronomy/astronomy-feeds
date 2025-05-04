@@ -264,7 +264,7 @@ class Account(BaseModel):
     # Deprecated columns
     # Todo remove eventually - will need to be removed from the db first though
     feed_all = peewee.BooleanField(default=False)
-    submission_id = peewee.CharField()
+    submission_id = peewee.CharField(null=True)
 
 
 class BotActions(BaseModel):
@@ -286,7 +286,7 @@ class BotActions(BaseModel):
 class ModActions(BaseModel):
     indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
     did_mod = peewee.CharField(index=True, null=False)
-    did_user = peewee.CharField(index=True)
+    did_user = peewee.CharField(index=True, null=True)
     action = peewee.CharField(index=True, null=False)
     expiry = peewee.DateTimeField(index=True, null=True)
 
