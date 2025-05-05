@@ -13,7 +13,7 @@ from tests.test_lib.test_util import (
     check_botactions_entry,
     check_modactions_entry,
 )
-
+from tests.astrobot.conftest import MockIdResolver
 
 #
 # utility functions
@@ -23,6 +23,7 @@ from tests.test_lib.test_util import (
 def get_ban_command(
     target_user: Account | testdb_account_entry,
     moderator_account: Account | testdb_account_entry,
+    id_resolver: MockIdResolver,
 ):
     """Builds a ban command object given target user and moderator accounts."""
     ban_notification = build_notification(
@@ -30,7 +31,7 @@ def get_ban_command(
         record_text=f"@{HANDLE} ban {target_user.handle}",
         author_did=moderator_account.did,
     )
-    return ModeratorBanCommand(MentionNotification(ban_notification))
+    return ModeratorBanCommand(MentionNotification(ban_notification), id_resolver)
 
 
 #
@@ -60,7 +61,9 @@ def test_success(test_db_conn, mock_client, mock_idresolver):
     mock_idresolver.add_mapping(target_account_before.handle, target_account_before.did)
 
     # get our ban command
-    ban_command = get_ban_command(target_account_before, moderator_account)
+    ban_command = get_ban_command(
+        target_account_before, moderator_account, mock_idresolver
+    )
 
     # act
     ban_command.execute(mock_client)
@@ -150,7 +153,9 @@ def test_success_multiple_author_entries(test_db_conn, mock_client, mock_idresol
     mock_idresolver.add_mapping(target_account_before.handle, target_account_before.did)
 
     # get our ban command
-    ban_command = get_ban_command(target_account_before, moderator_account)
+    ban_command = get_ban_command(
+        target_account_before, moderator_account, mock_idresolver
+    )
 
     # act
     ban_command.execute(mock_client)
@@ -217,7 +222,9 @@ def test_failure_insufficient_mod_level(test_db_conn, mock_client, mock_idresolv
     mock_idresolver.add_mapping(target_account_before.handle, target_account_before.did)
 
     # get our ban command
-    ban_command = get_ban_command(target_account_before, moderator_account)
+    ban_command = get_ban_command(
+        target_account_before, moderator_account, mock_idresolver
+    )
 
     # act
     ban_command.execute(mock_client)
@@ -279,7 +286,9 @@ def test_failure_no_handle_provided(test_db_conn, mock_client, mock_idresolver):
         record_text=f"@{HANDLE} ban",
         author_did=moderator_account.did,
     )
-    ban_command = ModeratorBanCommand(MentionNotification(ban_notification))
+    ban_command = ModeratorBanCommand(
+        MentionNotification(ban_notification), mock_idresolver
+    )
 
     # act
     ban_command.execute(mock_client)
@@ -337,7 +346,9 @@ def test_failure_cannot_resolve_handle_to_ban(
     mock_idresolver.remove_mapping_by_handle(target_account_before.handle)
 
     # get our ban command
-    ban_command = get_ban_command(target_account_before, moderator_account)
+    ban_command = get_ban_command(
+        target_account_before, moderator_account, mock_idresolver
+    )
 
     # act
     ban_command.execute(mock_client)
@@ -402,7 +413,7 @@ def test_failure_user_not_signed_up(test_db_conn, mock_client, mock_idresolver):
     mock_idresolver.add_mapping(unregistered_user.handle, unregistered_user.did)
 
     # get our ban command
-    ban_command = get_ban_command(unregistered_user, moderator_account)
+    ban_command = get_ban_command(unregistered_user, moderator_account, mock_idresolver)
 
     # act
     ban_command.execute(mock_client)
@@ -466,7 +477,9 @@ def test_failure_user_already_banned(test_db_conn, mock_client, mock_idresolver)
     mock_idresolver.add_mapping(target_account_before.handle, target_account_before.did)
 
     # get our ban command
-    ban_command = get_ban_command(target_account_before, moderator_account)
+    ban_command = get_ban_command(
+        target_account_before, moderator_account, mock_idresolver
+    )
 
     # act
     ban_command.execute(mock_client)

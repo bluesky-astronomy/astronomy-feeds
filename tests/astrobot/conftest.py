@@ -1,8 +1,6 @@
 import pytest
 from atproto import IdResolver
 
-import astrobot.commands.moderation.ban
-
 
 class MockIdResolver(IdResolver):
     """atproto IdResolver replacement that uses mock handle resolver to avoid network checks for handle resolution"""
@@ -47,12 +45,5 @@ class MockIdResolver(IdResolver):
 
 @pytest.fixture(scope="function")
 def mock_idresolver():
-    """replace each test's ban command's IdResolver with the mock class, and yield an instance to the test"""
-    store_IdResolver = astrobot.commands.moderation.ban.IdResolver
-    astrobot.commands.moderation.ban.IdResolver = MockIdResolver
-
-    # send an instance of the mock class to the test so that it can easily add mappings as it needs
-    yield MockIdResolver(timeout=30)
-
-    # cleanup; put original IdResolver back
-    astrobot.commands.moderation.ban.IdResolver = store_IdResolver
+    """Sends a separate instance of our mock IdResolver class to each test"""
+    return MockIdResolver(timeout=30)

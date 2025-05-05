@@ -14,8 +14,13 @@ class ModeratorBanCommand(Command):
     command = "ban"
     level = 3
 
-    def __init__(self, notification: MentionNotification):
+    def __init__(
+        self,
+        notification: MentionNotification,
+        id_resolver: IdResolver = IdResolver(timeout=30),
+    ):
         self.notification = notification
+        self.id_resolver = id_resolver
 
     @staticmethod
     def is_instance_of(
@@ -34,7 +39,7 @@ class ModeratorBanCommand(Command):
             # note: to check handle validity, we should check whether the handle actually resolves and use the DID from there, rather
             # than checking whether we have an entry with that handle already; in case whoever we are trying to ban has changed their
             # handle since they registered to post
-            if did_to_ban := IdResolver(timeout=30).handle.resolve(handle_to_ban):
+            if did_to_ban := self.id_resolver.handle.resolve(handle_to_ban):
                 mod_did = self.notification.author.did
                 ban_reason = " ".join(self.notification.words[2:])
                 explanation = ban_user(
