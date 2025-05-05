@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from dataclasses import asdict
 
 from astrofeed_lib.database import BotActions, ModActions, Post, Account
@@ -8,14 +7,16 @@ from astrobot.commands.moderation.hide import ModeratorHideCommand
 from astrobot.notifications import MentionNotification
 from astrobot.generate_notification import build_notification, build_reply_ref
 from astrobot.config import HANDLE
-from astrobot.post import get_embed_info, get_reply_info
 from tests.test_lib.test_database import (
     testdb_account_entry,
     testdb_post_entry,
     generate_testdb_post_by_author,
 )
-
-from tests.conftest import MockClient
+from tests.test_lib.test_util import (
+    check_call_signature,
+    check_botactions_entry,
+    check_modactions_entry,
+)
 
 #
 # utility functions
@@ -39,90 +40,6 @@ def get_hide_command(
         author_did=moderator_account.did,
     )
     return ModeratorHideCommand(MentionNotification(hide_notification))
-
-
-def check_call_signature(
-    hide_command: ModeratorHideCommand,
-    mock_client: MockClient,
-    # currently, the expected post text is all that varies that isn't contained in the hide command itself
-    text: str,
-):
-    """Checks that the the call signature recorded by a MockClient.send_post call reflects data in the executed hide command.
-
-    Most of the details of what we expect to be in this call come from the command object and its
-    associated notification; the expected post text is the only thing that doesn't, so it gets its
-    own argument.
-
-    note: the hide command performs the following call to astrobot.post.send_post()
-    >> send_post(
-    >>     client=client,
-    >>     text=explanation,
-    >>     root_post=self.notification.root_ref,
-    >>     parent_post=self.notification.parent_ref,
-    >> )
-    (additional argument name specifiers added to the first two arguments for clarity),
-    which leaves its other arguments as defaults image=None, image_alt=None, embed=None, quote=None
-
-    Within astrobot.post.send_post, we then have
-    >> reply_info = get_reply_info(root_post, parent_post)
-    >> embed_info = get_embed_info(embed, quote)
-    before finally having the call
-    >> client.send_post(text=text, reply_to=reply_info, embed=embed_info)
-    which leaves its other arguments as defaults profile_identify = None, langs = None, facets = None
-
-    The result of all of this is that only the text and reply_to arguments can possibly have any
-    information that is not specified in the defaults of the astrobot.post.send_post and
-    atproto.Client.send_post funtions; all other information should be the same for each case,
-    and will be determined purely by non-overidden default values from the function definitions.
-    """
-    call_signature = mock_client.send_post_call_signature
-    parent_ref = hide_command.notification.parent_ref
-    root_ref = hide_command.notification.root_ref
-
-    # information specific to each case
-    assert call_signature["text"] == text
-    assert call_signature["reply_to"] == get_reply_info(root_ref, parent_ref)
-
-    # information defined by non-overidden funtion definition default values
-    assert call_signature["profile_identify"] is None
-    assert call_signature["embed"] == get_embed_info(None, None)
-    assert call_signature["langs"] is None
-    assert call_signature["facets"] is None
-
-
-def check_botactions_entry(hide_command: ModeratorHideCommand, botaction: BotActions):
-    """Checks that the BotActions table entry reflects data in the executed hide command."""
-    with DBConnection():
-        mod_level = (
-            Account.select()
-            .where(Account.did == hide_command.notification.author.did)[0]
-            .mod_level
-        )
-
-    assert botaction.indexed_at < datetime.now(timezone.utc).replace(tzinfo=None)
-    assert botaction.did == hide_command.notification.author.did
-    assert botaction.type == hide_command.command
-    assert botaction.stage == "complete"
-    assert botaction.parent_uri == hide_command.notification.parent_ref.uri
-    assert botaction.parent_cid == hide_command.notification.parent_ref.cid
-    assert botaction.latest_uri == hide_command.notification.parent_ref.uri
-    assert botaction.latest_cid == hide_command.notification.parent_ref.cid
-    assert botaction.complete
-    assert botaction.authorized == (mod_level >= hide_command.level)
-    assert botaction.checked_at < datetime.now(timezone.utc).replace(tzinfo=None)
-
-
-def check_modactions_entry(hide_command: ModeratorHideCommand, modaction: ModActions):
-    """Checks that the ModActions table entry reflects data in the executed hide command."""
-    assert modaction.indexed_at < datetime.now(timezone.utc).replace(tzinfo=None)
-    assert modaction.did_mod == hide_command.notification.notification.author.did
-    assert (
-        modaction.did_user
-        == hide_command.notification.notification.record.reply.parent.uri.replace(
-            "at://", ""
-        ).split("/")[0]
-    )
-    assert modaction.expiry is None
 
 
 #
@@ -178,12 +95,21 @@ def test_success(test_db_conn, mock_client):
     assert author_account_after.hidden_count == author_account_before.hidden_count + 1
 
     check_call_signature(
-        hide_command=hide_command,
+        command=hide_command,
         mock_client=mock_client,
         text="Post hidden from feeds successfully.",
     )
-    check_botactions_entry(hide_command, botaction)
-    check_modactions_entry(hide_command, modaction)
+    check_botactions_entry(
+        command=hide_command,
+        botaction=botaction,
+    )
+    check_modactions_entry(
+        command=hide_command,
+        did_user=hide_command.notification.notification.record.reply.parent.uri.replace(
+            "at://", ""
+        ).split("/")[0],
+        modaction=modaction,
+    )
 
 
 def test_success_multiple_author_entries(test_db_conn, mock_client):
@@ -257,12 +183,21 @@ def test_success_multiple_author_entries(test_db_conn, mock_client):
     assert target_post_after.hidden
 
     check_call_signature(
-        hide_command=hide_command,
+        command=hide_command,
         mock_client=mock_client,
         text="Post hidden from feeds successfully.",
     )
-    check_botactions_entry(hide_command, botaction)
-    check_modactions_entry(hide_command, modaction)
+    check_botactions_entry(
+        command=hide_command,
+        botaction=botaction,
+    )
+    check_modactions_entry(
+        command=hide_command,
+        did_user=hide_command.notification.notification.record.reply.parent.uri.replace(
+            "at://", ""
+        ).split("/")[0],
+        modaction=modaction,
+    )
 
 
 def test_success_multiple_post_entries(test_db_conn, mock_client):
@@ -337,12 +272,21 @@ def test_success_multiple_post_entries(test_db_conn, mock_client):
     assert author_account_after.hidden_count == author_account_before.hidden_count + 1
 
     check_call_signature(
-        hide_command=hide_command,
+        command=hide_command,
         mock_client=mock_client,
         text="Post hidden from feeds successfully.",
     )
-    check_botactions_entry(hide_command, botaction)
-    check_modactions_entry(hide_command, modaction)
+    check_botactions_entry(
+        command=hide_command,
+        botaction=botaction,
+    )
+    check_modactions_entry(
+        command=hide_command,
+        did_user=hide_command.notification.notification.record.reply.parent.uri.replace(
+            "at://", ""
+        ).split("/")[0],
+        modaction=modaction,
+    )
 
 
 def test_failure_insufficient_mod_level(test_db_conn, mock_client):
@@ -398,11 +342,14 @@ def test_failure_insufficient_mod_level(test_db_conn, mock_client):
     assert n_modactions == 0
 
     check_call_signature(
-        hide_command=hide_command,
+        command=hide_command,
         mock_client=mock_client,
         text="Sorry, but you don't have the required permissions to run this command. Reason: Lacking required moderator level (2)",
     )
-    check_botactions_entry(hide_command, botaction)
+    check_botactions_entry(
+        command=hide_command,
+        botaction=botaction,
+    )
 
 
 def test_failure_author_not_signed_up(test_db_conn, mock_client):
@@ -464,11 +411,14 @@ def test_failure_author_not_signed_up(test_db_conn, mock_client):
     assert n_modactions == 0
 
     check_call_signature(
-        hide_command=hide_command,
+        command=hide_command,
         mock_client=mock_client,
         text="Unable to hide post: post author is not signed up to the feeds.",
     )
-    check_botactions_entry(hide_command, botaction)
+    check_botactions_entry(
+        command=hide_command,
+        botaction=botaction,
+    )
 
 
 def test_failure_post_not_in_feeds(test_db_conn, mock_client):
@@ -527,11 +477,14 @@ def test_failure_post_not_in_feeds(test_db_conn, mock_client):
     assert n_modactions == 0
 
     check_call_signature(
-        hide_command=hide_command,
+        command=hide_command,
         mock_client=mock_client,
         text="Unable to hide post: post is not in feeds.",
     )
-    check_botactions_entry(hide_command, botaction)
+    check_botactions_entry(
+        command=hide_command,
+        botaction=botaction,
+    )
 
 
 def test_failure_post_already_hidden(test_db_conn, mock_client):
@@ -587,8 +540,11 @@ def test_failure_post_already_hidden(test_db_conn, mock_client):
     assert n_modactions == 0
 
     check_call_signature(
-        hide_command=hide_command,
+        command=hide_command,
         mock_client=mock_client,
         text="Unable to hide post: post already hidden.",
     )
-    check_botactions_entry(hide_command, botaction)
+    check_botactions_entry(
+        command=hide_command,
+        botaction=botaction,
+    )

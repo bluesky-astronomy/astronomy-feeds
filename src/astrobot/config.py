@@ -4,7 +4,7 @@ import os
 from .commands import CommandRegistry
 from .commands.joke import JokeCommand
 from .commands.signup import SignupCommand
-from .commands.moderation import ModeratorHideCommand
+from .commands.moderation import ModeratorHideCommand, ModeratorBanCommand
 
 
 def _get_handle(handle_env_var: str):
@@ -39,4 +39,4 @@ STALE_COMMAND_CHECK_INTERVAL = (
 
 # Setup command registry
 COMMAND_REGISTRY = CommandRegistry()
-COMMAND_REGISTRY.register_commands([JokeCommand, SignupCommand, ModeratorHideCommand])
+COMMAND_REGISTRY.register_commands([JokeCommand, SignupCommand, ModeratorHideCommand, ModeratorBanCommand])
