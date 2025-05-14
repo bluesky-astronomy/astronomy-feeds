@@ -37,6 +37,7 @@ dependencies = [
   "Flask>=2.3.2,<3.0",
   "gunicorn>=20.1.0,",
   "psycopg2-binary>=2.9.10",
+  "flask-cors>=5.0.1",
 ]
 
 [project.optional-dependencies]
