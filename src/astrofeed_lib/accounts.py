@@ -79,7 +79,17 @@ class CachedModeratorList(CachedAccountQuery):
         }
 
 
+class CachedBannedList(CachedAccountQuery):
+    def account_query(self):
+        return get_banned_accounts()
+
+
 def get_moderators() -> dict[str, int]:
     """Returns a set containing the DIDs of all current moderators."""
     query = Account.select(Account.did, Account.mod_level).where(Account.mod_level >= 1)  # type: ignore
     return {user.did: user.mod_level for user in query.execute()}
+
+
+def get_banned_accounts() -> set[str]:
+    query = Account.select(Account.did).where(Account.is_banned)
+    return {user.did for user in query.execute()}
