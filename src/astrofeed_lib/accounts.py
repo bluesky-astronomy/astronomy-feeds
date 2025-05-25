@@ -63,13 +63,6 @@ class CachedModeratorList(CachedAccountQuery):
     def account_query(self):
         return get_moderators()
 
-    def get_accounts(self) -> dict:
-        is_overdue = time.time() - self.last_query_time > self.query_interval
-        if is_overdue or self.accounts is None:
-            self.query_database()
-            self.last_query_time = time.time()
-        return self.accounts  # type: ignore
-
     def get_accounts_above_level(self, minimum_level: int) -> set[str]:
         """Wraps get_accounts and returns only moderators with the desired minimum
         level.
