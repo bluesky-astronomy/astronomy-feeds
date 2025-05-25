@@ -15,32 +15,29 @@ class AccountQuery:
         self.accounts = None
         self.flags = flags
         self.query_database = self.query_database
+    
+    def get_accounts(self) -> set:
+        """Fetches accounts given the query defined in self.account_query."""
+        self.query_database()
+        return self.accounts  # type ignore because pylance is a silly thing here. this should always be a set
 
     def query_database(self) -> None:
+        """Performs the actual database query step to fetch things."""
         with DBConnection():
             self.accounts = self.account_query()
-        """
-        setup_connection(get_database())
-        self.accounts = self.account_query()
-        teardown_connection(get_database())
-        """
 
     def account_query(self):
-        """Intended to be overwritten! Should return a set of accounts."""
+        """OVERWRITE ME IF SUBCLASSING. Returns a set of accounts."""
         query = Account.select()
         if self.flags is not None:
             query = query.where(*self.flags)
         return {account.did for account in query}
 
-    def get_accounts(self) -> set:
-        self.query_database()
-        return self.accounts  # type ignore because pylance is a silly thing here. this should always be a set
 
 
 class CachedAccountQuery(AccountQuery):
     def __init__(
         self,
-        with_database_closing=False,
         flags=None,
         query_interval: int = 60 * 60 * 24,
     ) -> None:
@@ -52,6 +49,11 @@ class CachedAccountQuery(AccountQuery):
         self.last_query_time = time.time()
 
     def get_accounts(self) -> set:
+        """Fetches accounts given the query defined in self.account_query.
+        
+        The result of this query is cached for the length of time defined by
+        query_interval when initiating this class. By default, it's 24 hours.
+        """
         is_overdue = time.time() - self.last_query_time > self.query_interval
         if is_overdue or self.accounts is None:
             self.query_database()
@@ -78,11 +80,14 @@ class CachedBannedList(CachedAccountQuery):
 
 
 def get_moderators() -> dict[str, int]:
-    """Returns a set containing the DIDs of all current moderators."""
+    """Returns a dict containing the DIDs of all current moderators as keys and their
+    mod level as values.
+    """
     query = Account.select(Account.did, Account.mod_level).where(Account.mod_level >= 1)  # type: ignore
     return {user.did: user.mod_level for user in query.execute()}
 
 
 def get_banned_accounts() -> set[str]:
+    """Returns a set containing the DIDs of all banned accounts."""
     query = Account.select(Account.did).where(Account.is_banned)
     return {user.did for user in query.execute()}
