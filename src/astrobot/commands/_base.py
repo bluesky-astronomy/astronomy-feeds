@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from atproto import Client
 from ..notifications import LikeNotification, ReplyNotification, MentionNotification
 from ..post import send_post
-from astrobot.moderation import MODERATORS
+from astrobot.moderation import MODERATORS, BANNED_USERS
 from astrobot.database import new_bot_action
 
 
@@ -34,23 +34,32 @@ class Command(ABC):
 
     def user_cannot_use_command(self):
         """Work out if a user is allowed to use this command based on the command's
-        self.level. Returns False if they *can* use it, or True if they cannot.
+        self.level. Returns False if they *can* use it, or a string containing a reason
+        if they cannot.
 
         Command levels explained:
         =0: any user may use
         >0: any moderator with a level greater than or equal to level may use
         """
+        author_did = self.notification.author.did
+        
+        # Check user not banned
+        # Todo: make it so a banned user, if trying to use a command, actually gets banned on a Bluesky level so that they physically can't interact with it
+        if author_did in BANNED_USERS.get_accounts():
+            return (
+                "You are banned from the Astronomy feeds, and cannot interact with "
+                "this bot.\n\n"
+                "Contact @moderation.astronomy.blue if you would like to appeal."
+            )
+
         # Level == 0 -> no permissions are on this command!
         if self.level == 0:
             return False
 
         # Hence, must have level > 0 -> requires mod permissions
-        author_did = self.notification.author.did
         if author_did in MODERATORS.get_accounts_above_level(self.level):
             return False
 
-        # Todo: block banned/muted users from ever touching a command on the bot
-        # Todo: make it so a banned user, if trying to use a command, actually gets banned on a Bluesky level so that they physically can't interact with it
         return f"Lacking required moderator level ({self.level})"
 
     def execute_no_permissions(self, client: Client, reason: str):
