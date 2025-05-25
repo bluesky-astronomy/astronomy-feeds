@@ -1,6 +1,6 @@
 """Moderation-related actions."""
 
-from astrofeed_lib.accounts import CachedModeratorList
+from astrofeed_lib.accounts import CachedModeratorList, CachedBannedList
 from astrobot.database import (
     new_mod_action,
     new_signup,
@@ -12,6 +12,7 @@ from astrofeed_lib import logger
 
 # Setup list of moderators
 MODERATORS = CachedModeratorList(query_interval=60)
+BANNED_USERS = CachedBannedList(query_interval=60)
 
 
 def ban_user(did: str, did_mod: str, reason: str):
