@@ -68,7 +68,7 @@ FEED_TERMS: dict[str, list[str]] = {
     # "EXAMPLE": {"emoji": [], "words": []},
     # MAIN FEEDS
     "all": None,
-    "astro": {"emoji": ["🔭", "🪐"], "words": ["#astro", "#astronomy"]},
+    "astro": {"emoji": ["🔭"], "words": ["#astro", "#astronomy"]},
     "astrophotos": {
         "emoji": [],
         "words": ["#astrophoto", "#astrophotos", "#astrophotography"],
