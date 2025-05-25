@@ -193,7 +193,7 @@ def get_feed_list():
 # http://127.0.0.1:5000/api/app.getFeedStats?feed=all&month=3&group_by_feed=True&group_by_hour=True
 # http://127.0.0.1:5000/api/app.getFeedStats?feed=at://did:plc:jcoy7v3a2t4rcfdh6i4kza25/app.bsky.feed.generator/cosmology&group_by_day_of_week=True
 def api_get_feed_stats():
-    feed_uri = request.args.get("feed", default="all", type=str)
+    feed = request.args.get("feed", default="all", type=str)
     year = request.args.get("year", default=0, type=int)
     month = request.args.get("month", default=0, type=int)
     day = request.args.get("day", default=0, type=int)
@@ -207,12 +207,12 @@ def api_get_feed_stats():
     )
 
     # Check that the feed is configured
-    if feed_uri != "all":
-        if feed_uri not in config.FEED_URIS:
+    if feed != "all":
+        if feed not in config.FEED_TERMS:
             return "Unsupported algorithm", 400
-        feed = config.FEED_URIS[feed_uri]
-    else:
-        feed = "all"
+        # feed = config.FEED_URIS[feed_uri]
+    # else:
+    #     feed = "all"
 
     try:
         body = get_feed_stats(
