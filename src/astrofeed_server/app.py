@@ -210,9 +210,6 @@ def api_get_feed_stats():
     if feed != "all":
         if feed not in config.FEED_TERMS:
             return "Unsupported algorithm", 400
-        # feed = config.FEED_URIS[feed_uri]
-    # else:
-    #     feed = "all"
 
     try:
         body = get_feed_stats(
