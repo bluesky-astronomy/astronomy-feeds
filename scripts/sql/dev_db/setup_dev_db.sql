@@ -2,8 +2,8 @@
 to the prod database (only needs to be done once) */
 
 -- variables that will be used for the setup
-\set dev_db_name   astrosky_astronomy_dev   -- based on current naming convention
-\set prod_db_name  astrosky_astronomy
+\set dev_db_name   devdb   -- based on current naming convention
+\set prod_db_name  proddb
 \set prod_user     postgres                 -- assuming we are superuser 'postgres'
 \set prod_password `echo $PGPASSWORD`       -- take this from env so we don't hard code a password
 \set prod_host     localhost                -- assuming prod is on the same server, with standard config
