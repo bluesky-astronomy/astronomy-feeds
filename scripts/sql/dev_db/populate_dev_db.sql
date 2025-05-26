@@ -7,8 +7,12 @@ CREATE TABLE public.post (
     like prod_public.post including all
 );
 INSERT INTO public.post
-SELECT * from prod_public.post
-LIMIT 50000;
+SELECT * FROM (
+    SELECT * from prod_public.post
+    ORDER BY prod_public.post.indexed_at DESC
+    LIMIT 50000
+)
+ORDER BY indexed_at ASC;
 
 -- ModActions; take all for now
 DROP TABLE IF EXISTS public.modactions;
@@ -49,6 +53,12 @@ CREATE TABLE public.activitylog (
     like prod_public.activitylog including all
 );
 INSERT INTO public.activitylog
-SELECT * from prod_public.activitylog WHERE prod_public.activitylog.request_user_did = 'did:plc:jcoy7v3a2t4rcfdh6i4kza25' LIMIT 1000;
+SELECT * FROM (
+    SELECT * from prod_public.activitylog 
+    WHERE prod_public.activitylog.request_user_did = 'did:plc:jcoy7v3a2t4rcfdh6i4kza25' 
+    ORDER BY prod_public.activitylog.request_dt DESC
+    LIMIT 50000
+)
+ORDER BY request_dt ASC;
 
--- not taking NormalizedFeedStats for now - maybe generate on the fly?
+-- not taking NormalizedFeedStats for now - maybe generate after the fact?
