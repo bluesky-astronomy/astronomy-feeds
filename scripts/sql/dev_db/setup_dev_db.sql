@@ -1,12 +1,15 @@
 /* run this to connect a newly created (and ideally empty) dev database
 to the prod database (only needs to be done once) */
 
--- variables that will be used for the setup
-\set dev_db_name   devdb   -- based on current naming convention
+-- variables that will be used for the setup, under the following assumptions
+--    * we can access the server as superuser 'postgres', with a password 
+--      defined in environment variable PGPASSWORD
+--    * the prod and dev databases are on the same local server, at port 5432
+\set dev_db_name   devdb
 \set prod_db_name  proddb
-\set prod_user     postgres                 -- assuming we are superuser 'postgres'
-\set prod_password `echo $PGPASSWORD`       -- take this from env so we don't hard code a password
-\set prod_host     localhost                -- assuming prod is on the same server, with standard config
+\set prod_user     postgres
+\set prod_password `echo $PGPASSWORD`
+\set prod_host     localhost
 \set prod_port     5432
 
 -- if there is an existing dev database, drop it; create a new dev database, then connect to it
