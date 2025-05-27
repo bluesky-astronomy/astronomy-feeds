@@ -2,10 +2,7 @@
 new data from prod, or to change how it is sampled) */
 
 -- Post; take 50k for now
-DROP TABLE IF EXISTS public.post;
-CREATE TABLE public.post (
-    like prod_public.post including all
-);
+DELETE FROM public.post;
 INSERT INTO public.post
 SELECT * FROM (
     SELECT * from prod_public.post
@@ -15,43 +12,28 @@ SELECT * FROM (
 ORDER BY indexed_at ASC;
 
 -- ModActions; take all for now
-DROP TABLE IF EXISTS public.modactions;
-CREATE TABLE public.modactions (
-    like prod_public.modactions including all
-);
+DELETE FROM public.modactions;
 INSERT INTO public.modactions
 SELECT * from prod_public.modactions;
 
 -- BotActions; take all for now
-DROP TABLE IF EXISTS public.botactions;
-CREATE TABLE public.botactions (
-    like prod_public.botactions including all
-);
+DELETE FROM public.botactions;
 INSERT INTO public.botactions
 SELECT * from prod_public.botactions;
 
 -- Account; take all for now
-DROP TABLE IF EXISTS public.account;
-CREATE TABLE public.account (
-    like prod_public.account including all
-);
+DELETE FROM public.account;
 INSERT INTO public.account
 SELECT * from prod_public.account;
 
 -- SubscriptionState; take all for now
-DROP TABLE IF EXISTS public.subscriptionstate;
-CREATE TABLE public.subscriptionstate (
-    like prod_public.subscriptionstate including all
-);
+DELETE FROM public.subscriptionstate;
 INSERT INTO public.subscriptionstate
 SELECT * from prod_public.subscriptionstate;
 
 -- ActivityLog; take all times Emily has viewed the feeds for now...
 -- TODO: replace with anonymizing the DID of users viewing the feed
-DROP TABLE IF EXISTS public.activitylog;
-CREATE TABLE public.activitylog (
-    like prod_public.activitylog including all
-);
+DELETE FROM public.activitylog;
 INSERT INTO public.activitylog
 SELECT * FROM (
     SELECT * from prod_public.activitylog 
