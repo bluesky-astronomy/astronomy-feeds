@@ -5,3 +5,8 @@ schema changes (NOT needed to retrieve new data in unchanged schema) */
 DROP SCHEMA IF EXISTS prod_public CASCADE;
 CREATE SCHEMA prod_public;
 IMPORT FOREIGN SCHEMA public FROM SERVER prod_server INTO prod_public;
+
+-- recreate local schema (assuming there is a schema dump from prod in 'schema.sql')
+DROP SCHEMA IF EXISTS public;
+CREATE SCHEMA public;
+\i schema.sql
