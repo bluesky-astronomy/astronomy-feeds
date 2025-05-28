@@ -1,0 +1,9 @@
+# make sure there is an up-to-date schema dump from prod
+pg_dump --schema-only proddb > schema.sql
+
+# run the script to recreate and reimport the prod schema in the dev db
+psql -X -U postgres -h localhost -p 5432 -d devdb -f ./update_dev_db.sql
+
+# updated local prod schema replica will have no data; run the script to 
+# repopulate data from the updated foreign schema
+. ./update_dev_db_data.sh
