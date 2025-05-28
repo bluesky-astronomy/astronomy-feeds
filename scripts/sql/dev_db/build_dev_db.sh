@@ -1,0 +1,5 @@
+# run the script to set up the dev database
+psql -X -U postgres -h localhost -p 5432 -d proddb -f ./setup_dev_db.sql
+
+#run the script to update the dev db with the prod schema and data
+. ./update_dev_db_schema.sh

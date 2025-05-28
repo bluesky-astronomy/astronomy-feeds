@@ -1,0 +1,5 @@
+# run the script to populate local dev db prod schema replica with foreign data from prod
+psql -X -U postgres -h localhost -p 5432 -d devdb -f ./populate_dev_db.sql
+
+# update the devdb dump file
+pg_dump -N '*prod*' -N 'fdw_setup' -e 'plpgsql' -T 'postgres_fdw' devdb > db.sql
