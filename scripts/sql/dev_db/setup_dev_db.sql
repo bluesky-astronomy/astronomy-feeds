@@ -17,16 +17,17 @@ DROP DATABASE IF EXISTS :dev_db_name;
 CREATE DATABASE :dev_db_name;
 \connect :dev_db_name
 
--- assuming we have the FDW extension
-CREATE EXTENSION IF NOT EXISTS postgres_fdw;
+-- install our FDW extension on a dedicated schema that won't be dropped during prod schema updates
+CREATE SCHEMA fdw_setup;
+CREATE EXTENSION postgres_fdw SCHEMA fdw_setup;
 
 -- now we have to make the server
-CREATE SERVER IF NOT EXISTS prod_server 
+CREATE SERVER prod_server 
 FOREIGN DATA WRAPPER postgres_fdw 
 OPTIONS (host :'prod_host', dbname :'prod_db_name', port :'prod_port');
 
 -- make a user mapping to a remote user with the access we need; the local user either needs to be required to 
 -- provide a password to log in locally, or needs to be a super user locally
-CREATE USER MAPPING IF NOT EXISTS FOR current_user
-SERVER prod_server 
+CREATE USER MAPPING FOR current_user
+SERVER prod_server
 OPTIONS (user :'prod_user', password :'prod_password');
