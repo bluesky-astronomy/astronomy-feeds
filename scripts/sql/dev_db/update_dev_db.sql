@@ -7,6 +7,6 @@ CREATE SCHEMA prod_public;
 IMPORT FOREIGN SCHEMA public FROM SERVER prod_server INTO prod_public;
 
 -- recreate local schema (assuming there is a schema dump from prod in 'schema.sql')
-DROP SCHEMA IF EXISTS public;
+DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
 \i schema.sql
