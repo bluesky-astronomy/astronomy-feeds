@@ -19,7 +19,13 @@ def _select_posts(feed, limit):
     return (
         Post.select(Post.indexed_at, Post.uri, Post.cid, Post.hidden)
         .join(Account, on=(Account.did == Post.author))
-        .where(Account.is_valid, feed_boolean, ~Post.hidden)
+        .where(
+            Account.is_valid,
+            feed_boolean,
+            ~Post.hidden,
+            ~Account.is_banned,
+            ~Account.is_muted,
+        )
         .order_by(Post.indexed_at.desc())
         .limit(limit)
     )
