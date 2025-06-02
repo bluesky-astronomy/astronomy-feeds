@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # make sure there is an up-to-date schema dump from prod
 pg_dump --schema-only proddb > schema.sql
 
