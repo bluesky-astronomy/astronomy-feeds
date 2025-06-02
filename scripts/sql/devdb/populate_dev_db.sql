@@ -37,7 +37,6 @@ DELETE FROM public.activitylog;
 INSERT INTO public.activitylog
 SELECT * FROM (
     SELECT * from prod_public.activitylog 
-    WHERE prod_public.activitylog.request_user_did = 'did:plc:jcoy7v3a2t4rcfdh6i4kza25' 
     ORDER BY prod_public.activitylog.request_dt DESC
     LIMIT 50000
 )
