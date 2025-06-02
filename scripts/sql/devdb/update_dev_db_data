@@ -7,4 +7,4 @@ psql -X -U postgres -h localhost -p 5432 -d devdb -f ./populate_dev_db.sql
 psql -X -U postgres -h localhost -p 5432 -d devdb -f ../update_sequences.sql
 
 # update the devdb dump file
-pg_dump -N '*prod*' -N 'fdw_setup' -e 'plpgsql' -T 'postgres_fdw' devdb > db.sql
+pg_dump -N '*prod*' -N 'fdw_setup' -e 'plpgsql' -T 'postgres_fdw' devdb > devdb.sql
