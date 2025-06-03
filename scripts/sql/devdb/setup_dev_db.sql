@@ -1,6 +1,8 @@
 /* run this to connect a newly created (and ideally empty) dev database
 to the prod database (only needs to be done once) */
 
+BEGIN TRANSACTION;
+
 -- variables that will be used for the setup, under the following assumptions
 --    * we can access the server as superuser 'postgres', with a password 
 --      defined in environment variable PGPASSWORD
@@ -31,3 +33,5 @@ OPTIONS (host :'prod_host', dbname :'prod_db_name', port :'prod_port');
 CREATE USER MAPPING FOR current_user
 SERVER prod_server
 OPTIONS (user :'prod_user', password :'prod_password');
+
+COMMIT;

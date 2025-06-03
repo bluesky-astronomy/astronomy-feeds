@@ -1,6 +1,8 @@
 /* run this to refresh the dev database data (either to ingest 
 new data from prod, or to change how it is sampled) */
 
+BEGIN TRANSACTION;
+
 -- Post; take 50k for now
 DELETE FROM public.post;
 INSERT INTO public.post
@@ -43,3 +45,5 @@ SELECT * FROM (
 ORDER BY request_dt ASC;
 
 -- not taking NormalizedFeedStats for now - maybe generate after the fact?
+
+COMMIT;
