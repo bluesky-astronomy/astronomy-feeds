@@ -1,8 +1,6 @@
 /* run this to connect a newly created (and ideally empty) dev database
 to the prod database (only needs to be done once) */
 
-BEGIN TRANSACTION;
-
 -- variables that will be used for the setup, under the following assumptions
 --    * we can access the server as superuser 'postgres', with a password 
 --      defined in environment variable PGPASSWORD
@@ -18,6 +16,8 @@ BEGIN TRANSACTION;
 DROP DATABASE IF EXISTS :dev_db_name;
 CREATE DATABASE :dev_db_name;
 \connect :dev_db_name
+
+BEGIN TRANSACTION;
 
 -- install our FDW extension on a dedicated schema that won't be dropped during prod schema updates
 CREATE SCHEMA fdw_setup;
