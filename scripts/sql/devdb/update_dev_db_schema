@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
+# run this script to (re-)import the production database schema into 
+# the developer database as a foreign schema, and to (re-)create the 
+# production database schema locally from a schema dump file
 
-# make sure there is an up-to-date schema dump from prod
+# make sure there is an up-to-date schema dump from the production database
 pg_dump --schema-only -U postgres -d proddb > schema.sql
 
-# run the script to recreate and reimport the prod schema in the dev db
+# run the SQL script to recreate and reimport the prod schema in the dev db
 psql -X -U postgres -d devdb -f ./update_dev_db.sql
 
-# updated local prod schema replica will have no data; run the script to 
-# repopulate data from the updated foreign schema
+# updated local prod schema replica will have no data; run the bash script 
+# to repopulate developer database data from the production database
 ./update_dev_db_data

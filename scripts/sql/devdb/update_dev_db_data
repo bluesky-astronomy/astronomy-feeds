@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
+# run this script to (re-)populate local developer database tables with current data 
+# from the production database, according to sampling logic defined in the SQL script
 
-# run the script to populate local dev db prod schema replica with foreign data from prod
+# run the SQL script to populate local developer database tables with foreign data from production
 psql -X -U postgres -d devdb -f ./populate_dev_db.sql
 
-# run the script to set up the sequences
+# run the SQL script to set up the sequences correctly for local tables
 psql -X -U postgres -d devdb -f ../update_sequences.sql
 
 # update the devdb dump file
