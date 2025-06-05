@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
+# run this script to initially create and set up (or to destroy and re-set up)
+# a developer database from scratch, given access to a production database
 
-# run the script to set up the dev database
+# run the SQL script to set up the developer database
 psql -X -U postgres -d proddb -f ./setup_dev_db.sql
 
-#run the script to update the dev db with the prod schema and data
+#run the bash script to update the developer database with the production schema and data
 ./update_dev_db_schema

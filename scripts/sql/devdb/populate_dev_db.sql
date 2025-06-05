@@ -1,5 +1,5 @@
-/* run this to refresh the dev database data (either to ingest 
-new data from prod, or to change how it is sampled) */
+/* this script populates local developer database tables from FDW wrapped 
+foreign tables, according to specified sampling logic. */
 
 BEGIN TRANSACTION;
 

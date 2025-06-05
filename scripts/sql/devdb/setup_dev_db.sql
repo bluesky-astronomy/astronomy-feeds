@@ -1,9 +1,8 @@
-/* run this to connect a newly created (and ideally empty) dev database
-to the prod database (only needs to be done once) */
+/* this script (re-)creates a developer database from scratch (dropping an existing one
+if it exists), and connects it to a production database via FDW */
 
 -- variables that will be used for the setup, under the following assumptions
---    * we can access the server as superuser 'postgres', with a password 
---      defined in environment variable PGPASSWORD
+--    * we can access the server as superuser 'postgres'
 --    * the prod and dev databases are on the same local server, at port 5432
 \set dev_db_name   devdb
 \set prod_db_name  proddb

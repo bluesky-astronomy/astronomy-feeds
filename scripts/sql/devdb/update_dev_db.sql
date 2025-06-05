@@ -1,5 +1,5 @@
-/* run this to update foreign schema in the dev database when prod 
-schema changes (NOT needed to retrieve new data in unchanged schema) */
+/* this script updates foreign schema in the dev database when prod 
+schema changes (**WILL** delete current data in developer database) */
 
 BEGIN TRANSACTION;
 
