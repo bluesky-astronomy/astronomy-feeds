@@ -189,10 +189,10 @@ class DBConnection(object):
 
 def datetime_now_utc_naive():
     """Provides a timezone-unaware datetime object, making use only of non-deprecated datetime functions.
-    
-    Given that we have timezone-unaware columns in our database, we need to be able to give a function that 
-    supplies up-to-date at time-of-call, UTC-aligned timezone unaware datetime objects to the peewee DateTimeField 
-    constructor's default argument. For now, this seems like the best way to do that withough incurring ~1 million 
+
+    Given that we have timezone-unaware columns in our database, we need to be able to give a function that
+    supplies up-to-date at time-of-call, UTC-aligned timezone unaware datetime objects to the peewee DateTimeField
+    constructor's default argument. For now, this seems like the best way to do that withough incurring ~1 million
     deprecation warnings in everything.
     """
     return datetime.now(timezone.utc).replace(tzinfo=None)
@@ -204,7 +204,9 @@ class BaseModel(peewee.Model):
 
 
 class Post(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime_now_utc_naive, index=True)  # Todo: find a non-deprecated alternative method (must be a method peewee can call!)
+    indexed_at = peewee.DateTimeField(
+        default=datetime_now_utc_naive, index=True
+    )  # Todo: find a non-deprecated alternative method (must be a method peewee can call!)
     uri = peewee.CharField(index=True)
     cid = peewee.CharField(index=True)
     author = peewee.CharField(index=True)
@@ -291,7 +293,9 @@ class BotActions(BaseModel):
     latest_cid = peewee.CharField(null=False, default="")
     complete = peewee.BooleanField(null=False, default=False, index=True)
     authorized = peewee.BooleanField(null=False, index=True, default=True)
-    checked_at = peewee.DateTimeField(null=False, index=True, default=datetime_now_utc_naive)
+    checked_at = peewee.DateTimeField(
+        null=False, index=True, default=datetime_now_utc_naive
+    )
 
 
 class ModActions(BaseModel):
