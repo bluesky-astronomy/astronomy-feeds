@@ -1,13 +1,11 @@
-import os
 import pytest
 from datetime import datetime
 from atproto import Client
-from peewee import SqliteDatabase
 
 from astrofeed_lib.database import proxy
 from astrofeed_lib.config import ASTROFEED_PRODUCTION
 from astrobot.generate_notification import construct_strong_ref_main
-from tests.test_lib.test_database import build_test_db
+from tests.test_lib.test_database import build_test_db, populate_test_db, delete_test_db
 
 # mock client class to replace the network-connected methods
 class MockClient(Client):
@@ -44,23 +42,31 @@ def mock_client():
     '''gives each test it's own mock client'''
     return MockClient()
 
-@pytest.fixture(scope="function")
-def test_db_conn():
-    '''creates and connects an SQLite test database for the session'''
+@pytest.fixture(scope="session")
+def test_db_conn_session():
+    '''creates and connects a PostgreSQL test database for the session'''
     # make new database and get connection
-    database_name = f"test_db_{datetime.now()}.db"
-    build_test_db(database_name=database_name)
-    db_conn = SqliteDatabase(database_name, autoconnect=False)
+    now = datetime.now()
+    test_database_name = f"test_db_{now.year}_{now.month}_{now.day}_{now.hour}_{now.minute}_{now.second}_{now.microsecond}"
+    db_conn = build_test_db(test_database_name)
 
     # redirect code to use new database
     database_prev = proxy.obj
     proxy.initialize(db_conn)
-    #setup_connection(proxy)
 
     # send connection
     yield proxy
 
-    # cleanup
-    #teardown_connection(proxy)
-    os.remove(database_name)
+    # cleanup; get rid of test database and schema file, and reset original database connection
     proxy.initialize(database_prev)
+    delete_test_db(test_database_name)
+    
+
+@pytest.fixture(scope="function")
+def test_db_conn(test_db_conn_session):
+    '''manages the session database connection per test'''
+    # freshly (re-)populate test database for the requesting test
+    populate_test_db(test_db_conn_session, overwrite=True)
+
+    # send session connection to the requesting test
+    return test_db_conn_session
