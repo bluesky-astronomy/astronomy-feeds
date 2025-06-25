@@ -1,6 +1,6 @@
 import peewee
 from peewee import DatabaseProxy
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from .config import BLUESKY_DATABASE, ASTROFEED_PRODUCTION, ASTROFEED_POSTGRES
 from playhouse.pool import PooledMySQLDatabase, PooledPostgresqlDatabase
@@ -187,13 +187,24 @@ class DBConnection(object):
         teardown_connection(proxy)
 
 
+def datetime_now_utc_unaware():
+    """Provides a timezone-unaware datetime object, making use only of non-deprecated datetime functions.
+    
+    Given that we have timezone-unaware columns in our database, we need to be able to give a function that 
+    supplies up-to-date at time-of-call, UTC-aligned timezone unaware datetime objects to the peewee DateTimeField 
+    constructor's default argument. For now, this seems like the best way to do that withough incurring ~1 million 
+    deprecation warnings in everything.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 class BaseModel(peewee.Model):
     class Meta:
         database = get_database()
 
 
 class Post(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)  # Todo: find a non-deprecated alternative method (must be a method peewee can call!)
+    indexed_at = peewee.DateTimeField(default=datetime_now_utc_unaware, index=True)  # Todo: find a non-deprecated alternative method (must be a method peewee can call!)
     uri = peewee.CharField(index=True)
     cid = peewee.CharField(index=True)
     author = peewee.CharField(index=True)
@@ -245,7 +256,7 @@ class SubscriptionState(BaseModel):
 class Account(BaseModel):
     handle = peewee.CharField(index=True)
     did = peewee.CharField(default="not set", index=True)
-    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    indexed_at = peewee.DateTimeField(default=datetime_now_utc_unaware, index=True)
 
     # Account flags
     is_valid = peewee.BooleanField(index=True)
@@ -268,7 +279,7 @@ class Account(BaseModel):
 
 
 class BotActions(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    indexed_at = peewee.DateTimeField(default=datetime_now_utc_unaware, index=True)
     did = peewee.CharField(default="not set")
     type = peewee.CharField(null=False, default="unrecognized", index=True)
     stage = peewee.CharField(
@@ -280,11 +291,11 @@ class BotActions(BaseModel):
     latest_cid = peewee.CharField(null=False, default="")
     complete = peewee.BooleanField(null=False, default=False, index=True)
     authorized = peewee.BooleanField(null=False, index=True, default=True)
-    checked_at = peewee.DateTimeField(null=False, index=True, default=datetime.utcnow)
+    checked_at = peewee.DateTimeField(null=False, index=True, default=datetime_now_utc_unaware)
 
 
 class ModActions(BaseModel):
-    indexed_at = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    indexed_at = peewee.DateTimeField(default=datetime_now_utc_unaware, index=True)
     did_mod = peewee.CharField(index=True, null=False)
     did_user = peewee.CharField(index=True, null=True)
     action = peewee.CharField(index=True, null=False)
@@ -292,7 +303,7 @@ class ModActions(BaseModel):
 
 
 class ActivityLog(BaseModel):
-    request_dt = peewee.DateTimeField(default=datetime.utcnow, index=True)
+    request_dt = peewee.DateTimeField(default=datetime_now_utc_unaware, index=True)
     request_feed_uri = peewee.CharField(index=True, null=False)
     request_limit = peewee.IntegerField(index=False, null=False, default=0)
     request_is_scrolled = peewee.BooleanField(null=False, default=False)
