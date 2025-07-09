@@ -102,8 +102,8 @@ def resize_image(img_data, max_size_kb=900):
             break
         if quality <= 0:
             raise RuntimeError("Unable to make image small enough!")
-        
-    with open(location, 'rb') as handle:
+
+    with open(location, "rb") as handle:
         img_data = handle.read()
     os.remove(location)
     return img_data
@@ -164,10 +164,7 @@ def create_pinned_post(feed):
 
         embed = models.AppBskyEmbedExternal.Main(
             external=models.AppBskyEmbedExternal.External(
-                description=description,
-                title=title,
-                uri=url,
-                thumb=thumb_blob
+                description=description, title=title, uri=url, thumb=thumb_blob
             )
         )
 
@@ -176,12 +173,13 @@ def create_pinned_post(feed):
     time.sleep(1)
     return short_name, response.uri
 
+
 uris = {}
 for feed in feedInfoBluesky.feeds:
     name, uri = create_pinned_post(feed)
     uris[name] = uri
 
-with open(outdir / "pinned_posts.json", 'w') as handle:
+with open(outdir / "pinned_posts.json", "w") as handle:
     json.dump(uris, handle)
 
 print(uris)
