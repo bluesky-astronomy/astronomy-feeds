@@ -165,7 +165,7 @@ def get_feed_skeleton():
     # Add pinned instruction post
     # See: https://bsky.app/profile/did:plc:jcoy7v3a2t4rcfdh6i4kza25/post/3kc632qlmnm2j
     if cursor is None:
-        add_pinned_post_to_feed(body)
+        add_pinned_post_to_feed(body, feed)
 
     return jsonify(body)
 
