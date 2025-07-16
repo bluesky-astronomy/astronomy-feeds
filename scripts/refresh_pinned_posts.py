@@ -27,23 +27,23 @@ FEEDS_WITH_NO_DESCRIPTION = {"questions", "signup"}
 
 # Todo refactor into the config section somehow
 FEED_DESCRIPTIONS = {
-    "all": "all posts from all signed up users of the Astronomy feeds.",
-    "astro": "astronomy posts, by astronomers!",
-    "astrophotos": "astrophotography posts on Bluesky.",
-    "research": "posts about astronomy, astrophysics, and planetary science research.",
-    "cosmology": "posts about cosmology research.",
-    "exoplanets": "posts about research on exoplanets.",
-    "extragalactic": "posts about research on extragalactic galaxies and phenomena.",
-    "highenergy": "posts about high-energy astrophysics.",
-    "instrumentation": "posts about instrumentation for astronomy.",
-    "methods": "posts about software and statistics for astronomy.",
-    "milkyway": "posts about Galactic and Milky Way astronomy.",
-    "planetary": "posts about planetary science.",
-    "radio": "posts about radio astronomy.",
-    "solar": "posts about heliophysics.",
-    "stellar": "posts about stellar physics.",
-    "education": "posts about astronomy education.",
-    "history": "posts about the history of astronomy and astrophysics.",
+    "all": " Contains all posts from all signed up users of the Astronomy feeds.",
+    "astro": " Contains a filtered view of astronomy content on Bluesky.",
+    # "astrophotos": " Contains astrophotography posts on Bluesky.",
+    "research": " Contains posts about astronomy and planetary science research.",
+    # "cosmology": " Contains posts about cosmology research.",
+    # "exoplanets": " Contains posts about research on exoplanets.",
+    # "extragalactic": " Contains posts about research on extragalactic galaxies and phenomena.",
+    # "highenergy": " Contains posts about high-energy astrophysics.",
+    "instrumentation": " Discuss astronomy instrumentation here.",
+    "methods": " Discuss software and stats for astro here.",
+    # "milkyway": " Contains posts about Galactic and Milky Way astronomy.",
+    # "planetary": " Contains posts about planetary science.",
+    # "radio": " Contains posts about radio astronomy.",
+    # "solar": " Contains posts about heliophysics.",
+    # "stellar": " Contains posts about stellar physics.",
+    "education": " Discuss astronomy education here.",
+    # "history": " Contains posts about the history of astronomy and astrophysics.",
 }
 
 
@@ -133,24 +133,26 @@ def create_pinned_post(feed):
                 FEED_TERMS[short_name]["emoji"] + FEED_TERMS[short_name]["words"]
             )
             criteria = " or".join(criteria.rsplit(",", 1))  # Change last ',' to 'or'
-            criteria = f"• Posts containing {criteria} are included.\n"
+            criteria = f"• Then, add {criteria} to your post.\n"
 
     # Construct text & embed to send
     text = "This feed exists for technical purposes."
     embed = None
+    feed_description = ""
+    if short_name in FEED_DESCRIPTIONS:
+        feed_description = FEED_DESCRIPTIONS[short_name]
     if short_name not in FEEDS_WITH_NO_DESCRIPTION:
         text = (
             client_utils.TextBuilder()
             .text("Welcome to the ")
             .link(f"{display_name}", url)
-            .text(f" feed! Contains {FEED_DESCRIPTIONS[short_name]}\n\n")
-            .text(criteria)
+            .text(f" feed!{feed_description}\n\n")
             .text("• You need to ")
             .link("sign up", "https://astrosky.eco/about/signup")
             .text(" for your posts to appear here.\n")
-            .text("• We have ")
-            .link("many other", "https://astrosky.eco/feeds")
-            .text(" astro-related feeds!")
+            .text(criteria)
+            .text("• Check out our ")
+            .link("other feeds!", "https://astrosky.eco/feeds")
             .text("\n\n")
             .text("See the FAQ for more info:")
         )
@@ -162,6 +164,10 @@ def create_pinned_post(feed):
         img_data = resize_image(img_data)
         thumb_blob = client.upload_blob(img_data).blob
 
+        # Overwrite description + title
+        title = title.replace(" - The Astrosky Ecosystem", "")
+        description = f"Frequently asked questions about the {display_name} feed."
+
         embed = models.AppBskyEmbedExternal.Main(
             external=models.AppBskyEmbedExternal.External(
                 description=description, title=title, uri=url, thumb=thumb_blob
@@ -170,18 +176,27 @@ def create_pinned_post(feed):
 
     # Send it!
     response = client.send_post(text, embed=embed)
-    time.sleep(1)
     return short_name, response.uri
 
 
+feeds = feedInfoBluesky.feeds[::-1]  # SInce order is reverse alphabetical
+
 uris = {}
-for feed in feedInfoBluesky.feeds:
+for feed in feeds:
     name, uri = create_pinned_post(feed)
     uris[name] = uri
+    time.sleep(2)
 
+print("------------------------------------------")
+print("Outputting URIs to print:")
+print(uris)
+print("------------------------------------------")
+
+
+print("------------------------------------------")
+print("Saving...")
+print("------------------------------------------")
 with open(outdir / "pinned_posts.json", "w") as handle:
     json.dump(uris, handle)
 
-print(uris)
-
-# print(feeds)
+print("Done!")
