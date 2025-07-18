@@ -7,7 +7,16 @@ from dataclasses import dataclass, asdict
 from abc import ABC
 from uuid import uuid4
 
-from astrofeed_lib.database import Account, Post, BotActions, ModActions, proxy, DBConnection, setup_connection, teardown_connection
+from astrofeed_lib.database import (
+    Account,
+    Post,
+    BotActions,
+    ModActions,
+    proxy,
+    DBConnection,
+    setup_connection,
+    teardown_connection,
+)
 from astrofeed_lib.feeds import post_in_feeds
 
 
@@ -25,7 +34,9 @@ class testdb_post_entry(testdb_entry):
     text: str = "text of post"
     feed_all: bool = True
     feed_astro: bool = False
-    indexed_at: datetime = datetime.now(timezone.utc).replace(tzinfo=None) # column type is "timestamp without time zone"
+    indexed_at: datetime = datetime.now(timezone.utc).replace(
+        tzinfo=None
+    )  # column type is "timestamp without time zone"
     feed_exoplanets: bool = False
     feed_astrophotos: bool = False
     feed_cosmology: bool = False
@@ -45,6 +56,7 @@ class testdb_post_entry(testdb_entry):
     feed_solar: bool = False
     feed_questions: bool = False
 
+
 @dataclass
 class testdb_account_entry(testdb_entry):
     handle: str = "handle.domain"
@@ -52,7 +64,9 @@ class testdb_account_entry(testdb_entry):
     did: str = "did:plc:ACCOUNT_DID_XXXXXXXXXXXX"
     is_valid: bool = True
     feed_all: bool = True
-    indexed_at: datetime = datetime.now(timezone.utc).replace(tzinfo=None) # column type is "timestamp without time zone"
+    indexed_at: datetime = datetime.now(timezone.utc).replace(
+        tzinfo=None
+    )  # column type is "timestamp without time zone"
     mod_level: int = 0
     is_muted: bool = False
     is_banned: bool = False
@@ -61,18 +75,23 @@ class testdb_account_entry(testdb_entry):
     banned_count: int = 0
     warned_count: int = 0
 
+
 @dataclass
 class testdb_modaction_entry(testdb_entry):
-    indexed_at: datetime = datetime.now(timezone.utc).replace(tzinfo=None) # column type is "timestamp without time zone"
+    indexed_at: datetime = datetime.now(timezone.utc).replace(
+        tzinfo=None
+    )  # column type is "timestamp without time zone"
     did_mod: str = "did:plc:MOD_DID_XXXXXXXXXXXXXXXX"
     did_user: str = "did:plc:USER_DID_XXXXXXXXXXXXXXX"
     action: str = "type of mod action"  # signup, signup_cancelled, hide
-    expiry: datetime = None # only column i've seen so far that can be null
+    expiry: datetime = None  # only column i've seen so far that can be null
 
 
 @dataclass
 class testdb_botaction_entry(testdb_entry):
-    indexed_at: datetime = datetime.now(timezone.utc).replace(tzinfo=None) # column type is "timestamp without time zone"
+    indexed_at: datetime = datetime.now(timezone.utc).replace(
+        tzinfo=None
+    )  # column type is "timestamp without time zone"
     did: str = "did:plc:SUBJECT_DID_XXXXXXXXXXXX"
     type: str = "type of bot action"  # signup, joke, hide, unrecognized
     stage: str = "completion state"  # initial, rules_sent, get_description, get_moderator, complete
@@ -86,7 +105,9 @@ class testdb_botaction_entry(testdb_entry):
     latest_cid: str = "COMPLETING_POST_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
     complete: bool = True
     authorized: bool = True
-    checked_at: datetime = datetime.now(timezone.utc).replace(tzinfo=None) # column type is "timestamp without time zone"
+    checked_at: datetime = datetime.now(timezone.utc).replace(
+        tzinfo=None
+    )  # column type is "timestamp without time zone"
 
 
 def generate_testdb_signup_entries(
@@ -151,21 +172,13 @@ def populate_test_db(
         testdb_account_entry(
             handle="Alice", did="did:plc:AAAAAAAAAAAAAAAAAAAAAAAA", mod_level=5
         ),
-        testdb_account_entry(
-            handle="Bob", did="did:plc:BBBBBBBBBBBBBBBBBBBBBBBB"
-        ),
-        testdb_account_entry(
-            handle="Charlie", did="did:plc:CCCCCCCCCCCCCCCCCCCCCCCC"
-        ),
+        testdb_account_entry(handle="Bob", did="did:plc:BBBBBBBBBBBBBBBBBBBBBBBB"),
+        testdb_account_entry(handle="Charlie", did="did:plc:CCCCCCCCCCCCCCCCCCCCCCCC"),
     ]
 
     posts = [
-        generate_testdb_post_by_author(
-            text="astronomy is great!", author=accounts[0]
-        ),
-        generate_testdb_post_by_author(
-            text="astronomy is neat!", author=accounts[1]
-        ),
+        generate_testdb_post_by_author(text="astronomy is great!", author=accounts[0]),
+        generate_testdb_post_by_author(text="astronomy is neat!", author=accounts[1]),
         generate_testdb_post_by_author(
             text="my latest work is being published in MNRAS ☄️",
             author=accounts[0],
@@ -186,9 +199,7 @@ def populate_test_db(
         )
     ]
     botactions = [
-        testdb_botaction_entry(
-            did=accounts[0].did, type="joke", stage="complete"
-        )
+        testdb_botaction_entry(did=accounts[0].did, type="joke", stage="complete")
     ]
 
     ##
@@ -200,11 +211,7 @@ def populate_test_db(
     # make sure we have at least one mod account, convert account entries to dicts, and add
     # minimum set of mod and bot actions per account
     if (
-        len(
-            mod_accounts := [
-                account for account in accounts if account.mod_level > 0
-            ]
-        )
+        len(mod_accounts := [account for account in accounts if account.mod_level > 0])
         == 0
     ):
         raise ValueError(
@@ -260,6 +267,7 @@ def populate_test_db(
                 test_db_conn.create_tables([model])
                 model.insert_many(entries).execute()
 
+
 def build_test_db(
     test_db_name: str,
 ) -> peewee.PostgresqlDatabase:
@@ -275,17 +283,22 @@ def build_test_db(
     # populate_test_db_postgres(test_db_conn := peewee.PostgresqlDatabase(test_database_name, host=host, port=port, user=user, password=password))
 
     # build database connection URIs from these details
-    dev_conn_uri=f"postgresql://{user}:{password}@{host}:{port}/{dev_db_name}?"
-    test_conn_uri=f"postgresql://{user}:{password}@{host}:{port}/{test_db_name}?"
+    dev_conn_uri = f"postgresql://{user}:{password}@{host}:{port}/{dev_db_name}?"
+    test_conn_uri = f"postgresql://{user}:{password}@{host}:{port}/{test_db_name}?"
 
     # dump schema from the dev database and create our test database
-    subprocess.call(f"pg_dump -d \"{dev_conn_uri}\" --schema-only --schema 'public' > ./testschema.sql", shell=True)
+    subprocess.call(
+        f"pg_dump -d \"{dev_conn_uri}\" --schema-only --schema 'public' > ./testschema.sql",
+        shell=True,
+    )
     with DBConnection():
         proxy.obj.execute_sql(f"CREATE DATABASE {test_db_name} OWNER {user};")
         proxy.obj.execute_sql(f"GRANT ALL ON DATABASE {test_db_name} TO {user}")
 
     # connect to test database and set up schema
-    test_db_conn = peewee.PostgresqlDatabase(test_db_name, host=host, port=port, user=user, password=password)
+    test_db_conn = peewee.PostgresqlDatabase(
+        test_db_name, host=host, port=port, user=user, password=password
+    )
     setup_connection(test_db_conn)
     test_db_conn.execute_sql("DROP SCHEMA IF EXISTS public CASCADE;")
     teardown_connection(test_db_conn)
@@ -293,6 +306,7 @@ def build_test_db(
     os.remove("./testschema.sql")
 
     return test_db_conn
+
 
 def delete_test_db(
     test_database_name: str,

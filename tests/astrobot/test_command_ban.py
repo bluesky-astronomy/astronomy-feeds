@@ -164,7 +164,9 @@ def test_success_multiple_author_entries(test_db_conn, mock_client, mock_idresol
     with DBConnection():
         target_duplicates_after = []
         for author in target_duplicates_before:
-            target_duplicates_after.append(Account.select().where(Account.id == author.id)[0])
+            target_duplicates_after.append(
+                Account.select().where(Account.id == author.id)[0]
+            )
         botaction = BotActions.select().where(
             BotActions.parent_uri == ban_command.notification.parent_ref.uri
         )[0]
