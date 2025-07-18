@@ -1,5 +1,7 @@
+import astrofeed_lib  # noqa: E402
 import logging
 from .config import ASTROFEED_PRODUCTION, DEBUG_ENABLED
+from pathlib import Path
 
 # set up logging
 logger = logging.getLogger(__name__)
@@ -17,3 +19,8 @@ if ASTROFEED_PRODUCTION:
 
 logger.setLevel(_logging_level)
 logging.basicConfig(format=_logging_format)
+
+# Set up data path, allowing for files to be read directly from it
+DATA_DIRECTORY = Path(astrofeed_lib.__path__[0]) / "data" 
+
+
