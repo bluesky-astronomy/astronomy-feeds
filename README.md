@@ -106,4 +106,22 @@ uv run -m astrobot
 
 There are a growing number of tests that help to ensure that the services are operating as expected (which, along with their supporting infrastructure, can be found in `astronomy-feeds/tests/`).
 
-The tests are organized according to pytest discovery and operational practices. To run them, install pytest along with other project dependencies by running `uv sync --all-extras` or `uv sync --extra dev`, and then execute `uv run pytest` in the `astronomy-feeds` directory.
+The tests are organized according to pytest discovery and operational practices. To run them, install pytest along with other project dependencies by running 
+```bash
+uv sync --extra dev
+```
+(or `uv sync --all-extras` to install everything extra), and then execute 
+```bash
+uv run pytest
+```
+in the `astronomy-feeds` directory.
+
+The test infrastructure is built to use a PostgreSQL server running in a docker container, as specified elsewhere in the documentation and onboarding material. At present, it also requires the use of a local PostgreSQL client application (for access to the `pg_dump` command, specifically), and the version of this client application must be greater than or equal to the version of the server application in the Docker container. A check to ensure correct versioning is planned for a general-purpose "start dev environment" command that has yet to be implemented; for the time being, versions can manually be checked by running the following commands in a terminal:
+```bash
+sudo docker exec -it "<database name>" pg_dump --version
+```
+for the server version (with the "" included, and with \<database name\> replaced with the name of the target database), and
+```bash
+pg_dump --version
+```
+for the the local client version; and ensuring that the version of the server (first command) is lower than or equal to the version of the client (second command).
