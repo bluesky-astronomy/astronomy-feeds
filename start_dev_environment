@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+echo "Starting docker container AstroskyDB..."
+docker start "AstroskyDB" # assuming this is the name of the container with the PostgreSQL server
+echo "...done."
+
+echo "Checking pg_dump compatibilty between server and client..."
+if [ -z "$(which pg_dump)" ]
+then
+    echo "ERROR: pg_dump not accessible"
+    exit 1
+else
+    pg_dump_version="$(pg_dump --version)"
+    version_number=$(echo $pg_dump_local_version | cut -d ' ' -f 3)
+    major_local=${version_number%%.*}
+    minor_local=${version_number##*.}
+
+    pg_dump_version="$(docker exec -it "AstroskyDB" pg_dump --version)"
+    version_number=$(echo $pg_dump_local_version | cut -d ' ' -f 3)
+    major_docker=${version_number%%.*}
+    minor_docker=${version_number##*.}
+
+    if [[ $major_docker -gt $major_local ||  $minor_docker -gt $minor_local]] # || right only checked if left false
+    then
+        echo "ERROR: version mismatch between pg_dump server (docker) version ($major_docker.$minor_docker) and client (system) version ($major_local.$minor_local)
+        exit 1
+    fi
+fi
