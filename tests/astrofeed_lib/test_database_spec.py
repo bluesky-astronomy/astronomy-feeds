@@ -130,7 +130,7 @@ def test_activitylog():
 
 
 def test_test_case_coverage():
-    """Tests that there is a test case function defined for each model class."""
+    """Tests that there is a test case function defined for database table."""
     test_case_function_names = [func[0][5:] for func in getmembers(modules[__name__], isfunction) if func[0][:5] == "test_"]
 
     for table_name in table_names:
