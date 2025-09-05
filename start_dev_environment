@@ -22,7 +22,7 @@ else
 
     if [[ $major_docker -gt $major_local ||  $minor_docker -gt $minor_local]] # || right only checked if left false
     then
-        echo "ERROR: version mismatch between pg_dump server (docker) version ($major_docker.$minor_docker) and client (system) version ($major_local.$minor_local)
+        echo "ERROR: version mismatch between pg_dump server (docker) version ($major_docker.$minor_docker) and client (system) version ($major_local.$minor_local)"
         exit 1
     fi
 fi
