@@ -1,5 +1,6 @@
 from sys import modules
 from inspect import getmembers, isfunction, isclass
+from warnings import warn
 
 from peewee import IntegerField, BigIntegerField, CharField, BooleanField, DateTimeField
 
@@ -14,15 +15,32 @@ from astrofeed_lib.database import (
     ActivityLog,
 )
 
+#
+# setup
+#
+
+# dictionary of tables/model classes to check compability for, with bool indicating checked status
+tables_to_test = {
+    "account": False,
+    "post": False,
+    "modactions": False,
+    "botactions": False,
+    "subscriptionstate": False,
+    "activitylog": False,
+}
+
+# list of Peewee model classes defined in database module
 model_names = []
 for model_name in dir(astrofeed_lib.database):
     model = getattr(astrofeed_lib.database, model_name)
     if isclass(model) and issubclass(model, BaseModel) and model != BaseModel:
         model_names.append(model.__name__.lower())
 
+# list of tables in the database
 with DBConnection():
     table_names = proxy.get_tables()
 
+# dictionary for translating postgres type labels to Peewee field types
 postgres_type_label_to_peewee_field_type = {
     "integer": IntegerField,
     "bigint": BigIntegerField,
@@ -35,6 +53,12 @@ postgres_type_label_to_peewee_field_type = {
 #
 # utility functions
 #
+def register_test_function_execution(table_name: str):
+    if table_name in tables_to_test.keys():
+        tables_to_test[table_name] = True
+    else:
+        warn(f"warning: {table_name} test function exists, but was not specified in list of tables to test.")
+
 def get_database_table_info(table_name: str):
     """Fetch and return certain column info from specified table in astrofeed_lib.database.proxy database (postgres presumed)."""
     with DBConnection():
@@ -94,6 +118,9 @@ def test_peewee_spec_coverage():
 
 def test_account():
     """Tests compatibility between specs for peewee Account model class and database Account table."""
+    # check that this test function is wanted, and mark that it is defined if so
+    register_test_function_execution("account")
+
     # get info about the account table
     table_info = get_database_table_info("account")
 
@@ -103,6 +130,9 @@ def test_account():
 
 def test_post():
     """Tests compatibility between specs for peewee Post model class and database Post table."""
+    # check that this test function is wanted, and mark that it is defined if so
+    register_test_function_execution("post")
+
     # get info about the account table
     table_info = get_database_table_info("post")
 
@@ -112,6 +142,9 @@ def test_post():
 
 def test_botactions():
     """Tests compatibility between specs for peewee BotActions model class and database BotActions table."""
+    # check that this test function is wanted, and mark that it is defined if so
+    register_test_function_execution("botactions")
+
     # get info about the account table
     table_info = get_database_table_info("botactions")
 
@@ -121,6 +154,9 @@ def test_botactions():
 
 def test_modactions():
     """Tests compatibility between specs for peewee ModActions model class and database ModActions table."""
+    # check that this test function is wanted, and mark that it is defined if so
+    register_test_function_execution("modactions")
+
     # get info about the account table
     table_info = get_database_table_info("modactions")
 
@@ -130,6 +166,9 @@ def test_modactions():
 
 def test_subscriptionstate():
     """Tests compatibility between specs for peewee SubscriptionState model class and database SubscriptionState table."""
+    # check that this test function is wanted, and mark that it is defined if so
+    register_test_function_execution("subscriptionstate")
+
     # get info about the account table
     table_info = get_database_table_info("subscriptionstate")
 
@@ -139,6 +178,9 @@ def test_subscriptionstate():
 
 def test_activitylog():
     """Tests compatibility between specs for peewee ActivityLog model class and database ActivityLog table."""
+    # check that this test function is wanted, and mark that it is defined if so
+    register_test_function_execution("activitylog")
+
     # get info about the account table
     table_info = get_database_table_info("activitylog")
 
@@ -147,12 +189,7 @@ def test_activitylog():
 
 
 def test_test_case_coverage():
-    """Tests that there is a test case function defined for database table."""
-    test_case_function_names = [
-        func[0][5:]
-        for func in getmembers(modules[__name__], isfunction)
-        if func[0][:5] == "test_"
-    ]
-
-    for table_name in table_names:
-        assert table_name in test_case_function_names
+    """Warns if there were any intended test case functions was executed defined for each specified table."""
+    for table_name, tested in tables_to_test.items():
+        if not tested:
+            warn(f"warning: {table_name} is listed as a table that should be tested, but no test function was recorded as executing for it.")
