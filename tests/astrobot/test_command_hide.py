@@ -154,9 +154,11 @@ def test_success_multiple_author_entries(test_db_conn, mock_client):
     # post-act connect & collect
     with DBConnection():
         target_post_after = Post.select().where(Post.uri == target_post_before.uri)[0]
-        author_duplicates_after = list(
-            Account.select().where(Account.did == author_duplicates_before[0].did)
-        )
+        author_duplicates_after = []
+        for author in author_duplicates_before:
+            author_duplicates_after.append(
+                Account.select().where(Account.id == author.id)[0]
+            )
         botaction = BotActions.select().where(
             BotActions.parent_uri == hide_command.notification.parent_ref.uri
         )[0]
@@ -243,9 +245,11 @@ def test_success_multiple_post_entries(test_db_conn, mock_client):
 
     # post-act connect & collect
     with DBConnection():
-        target_post_duplicates_after = list(
-            Post.select().where(Post.uri == target_post_duplicates_before[0].uri)
-        )
+        target_post_duplicates_after = []
+        for post in target_post_duplicates_before:
+            target_post_duplicates_after.append(
+                Post.select().where(Post.id == post.id)[0]
+            )
         author_account_after = Account.select().where(
             Account.did == author_account_before.did
         )[0]

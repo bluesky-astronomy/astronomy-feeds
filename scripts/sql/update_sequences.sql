@@ -1,3 +1,5 @@
+BEGIN TRANSACTION;
+
 SELECT setval(pg_get_serial_sequence('account', 'id')
             , COALESCE(max(id) + 1, 1)
             , false)
