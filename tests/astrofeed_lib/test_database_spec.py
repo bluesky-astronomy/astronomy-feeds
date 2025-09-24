@@ -1,5 +1,4 @@
-from sys import modules
-from inspect import getmembers, isfunction, isclass
+from inspect import isclass
 from warnings import warn
 
 from peewee import IntegerField, BigIntegerField, CharField, BooleanField, DateTimeField
@@ -57,7 +56,7 @@ def register_test_function_execution(table_name: str):
     if table_name in tables_to_test.keys():
         tables_to_test[table_name] = True
     else:
-        warn(f"warning: {table_name} test function exists, but was not specified in list of tables to test.")
+        warn(f"{table_name} test function exists, but was not specified in list of tables to test.")
 
 def get_database_table_info(table_name: str):
     """Fetch and return certain column info from specified table in astrofeed_lib.database.proxy database (postgres presumed)."""
@@ -192,4 +191,4 @@ def test_test_case_coverage():
     """Warns if there were any intended test case functions was executed defined for each specified table."""
     for table_name, tested in tables_to_test.items():
         if not tested:
-            warn(f"warning: {table_name} is listed as a table that should be tested, but no test function was recorded as executing for it.")
+            warn(f"{table_name} is listed as a table that should be tested, but no test function was recorded as executing for it.")
