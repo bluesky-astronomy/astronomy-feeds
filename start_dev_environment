@@ -20,9 +20,11 @@ else
     major_docker=${version_number%%.*}
     minor_docker=${version_number##*.}
 
-    if [[ $major_docker -gt $major_local ||  $minor_docker -gt $minor_local]] # || right only checked if left false
+    if [[ $major_docker -gt $major_local ||  $minor_docker -gt $minor_local ]] # right only checked if left false
     then
         echo "ERROR: version mismatch between pg_dump server (docker) version ($major_docker.$minor_docker) and client (system) version ($major_local.$minor_local)"
         exit 1
+    else
+        echo "...compatible."
     fi
 fi
