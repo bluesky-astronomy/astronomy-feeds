@@ -68,16 +68,16 @@ def get_database_table_info(table_name: str):
             f"WHERE table_name = '{table_name}' AND table_schema = 'public';"
         )
 
-    names, typelabels, maxlengths, nullables, has_defaults = [], [], [], [], []
-    for row in cursor.fetchall():
-        column_name, data_type, max_length, is_nullable, default_value = row
-        if column_name == "id":  # don't need this column
-            continue
-        names.append(column_name)
-        typelabels.append(data_type)
-        maxlengths.append(max_length)
-        nullables.append(is_nullable == "YES")
-        has_defaults.append(default_value is not None)
+        names, typelabels, maxlengths, nullables, has_defaults = [], [], [], [], []
+        for row in cursor.fetchall():
+            column_name, data_type, max_length, is_nullable, default_value = row
+            if column_name == "id":  # don't need this column
+                continue
+            names.append(column_name)
+            typelabels.append(data_type)
+            maxlengths.append(max_length)
+            nullables.append(is_nullable == "YES")
+            has_defaults.append(default_value is not None)
 
     return names, typelabels, maxlengths, nullables, has_defaults
 
