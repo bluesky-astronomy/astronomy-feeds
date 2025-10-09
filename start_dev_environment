@@ -1,12 +1,82 @@
 #!/usr/bin/env bash
 
+# determine whether we have access to getopt
+if [ -z "$(which getopt)" ]; then
+    GETOPT_PRESENT=0
+else
+    GETOPT_PRESENT=1
+fi
+
+# function to print message explaining usage and exit, in case of incorrect usage
+if [ $GETOPT_PRESENT -eq 1 ]; then
+    print_usage_msg()
+    {
+        echo "Usage: start_dev_environment [ -r | --refresh-database ]"
+        exit 2
+    }
+else
+    print_usage_msg()
+    {
+        echo "Usage: start_dev_environment [ -r ]"
+        exit 2
+    }
+fi
+
+# argument parsing and processing (for now assuming getopt...should amend this later)
+REFRESH_DB=0
+
+if [ $GETOPT_PRESENT -eq 1 ]; then
+    ARGUMENTS=$(getopt -a -n start_dev_environment -o r --long refresh-database -- "$@")
+    ARGUMENT_PARSE_SUCCESS=$?
+    if [ "$ARGUMENT_PARSE_SUCCESS" != "0" ]; then
+        print_usage_msg
+    fi
+    eval set -- "$ARGUMENTS"
+
+    while true; do
+        case "$1" in
+            -r | --refresh-database)
+                REFRESH_DB=1
+                shift
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                echo "ERROR: invalid argument passed in."
+                print_usage_msg
+                ;;
+        esac
+    done
+else
+    while getopts ":r" opt; do
+        case $opt in
+            r)
+                REFRESH_DB=1
+                shift
+                ;;
+            \?)
+                echo "ERROR: invalid argument."
+                print_usage_msg
+                ;;
+        esac
+    done
+fi
+
+# start container
 echo "Starting docker container AstroskyDB..."
 docker start "AstroskyDB" # assuming this is the name of the container with the PostgreSQL server
+CONTAINER_START_SUCCESS=$?
+if [ $? -ne 0 ]; then
+    echo "ERROR: unable to start container 'AstroskyDB'. Is the docker daemon running?"
+    exit 1
+fi
 echo "...done."
 
+# check pg_dump compatibility between server in container and out of container install
 echo "Checking pg_dump compatibilty between server and client..."
-if [ -z "$(which pg_dump)" ]
-then
+if [ -z "$(which pg_dump)" ]; then
     echo "ERROR: pg_dump not accessible"
     exit 1
 else
@@ -20,11 +90,15 @@ else
     major_docker=${version_number%%.*}
     minor_docker=${version_number##*.}
 
-    if [[ $major_docker -gt $major_local ||  $minor_docker -gt $minor_local ]] # right only checked if left false
-    then
+    if [[ $major_docker -gt $major_local ||  $minor_docker -gt $minor_local ]]; then # right only checked if left false
         echo "ERROR: version mismatch between pg_dump server (docker) version ($major_docker.$minor_docker) and client (system) version ($major_local.$minor_local)"
         exit 1
     else
         echo "...compatible."
     fi
+fi
+
+# refresh database if requested
+if [ $REFRESH_DB -eq 1 ]; then
+    echo "Thanks for specifying the database-refresh option! :) This is currently not implemented :( but should be soon!"
 fi
