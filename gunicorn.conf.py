@@ -1,2 +1,2 @@
-bind = "0.0.0.0:8080"
-workers = 4
+workers = 3
+# threads = 2  # Ignore for now - not sure if DB request dumping is thread safe
