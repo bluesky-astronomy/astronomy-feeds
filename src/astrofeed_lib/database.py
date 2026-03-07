@@ -1,3 +1,5 @@
+import time
+
 import peewee
 from peewee import DatabaseProxy
 from datetime import datetime, timezone
@@ -333,6 +335,29 @@ class NormalizedFeedStats(BaseModel):
 #     uri = peewee.CharField()
 #     cid = peewee.CharField()
 
+class OauthRequest(BaseModel):
+    state = peewee.CharField(primary_key=True, index=True, )
+    authserver_iss = peewee.CharField()
+    did = peewee.CharField(null=True)
+    handle  = peewee.CharField(null=True)
+    pds_url = peewee.CharField(null=True)
+    pkce_verifier = peewee.CharField()
+    scope = peewee.CharField()
+    dpop_authserver_nonce = peewee.CharField()
+    dpop_private_jwk = peewee.CharField()
+
+
+class OauthSession(BaseModel):
+    did = peewee.CharField(primary_key=True, index=True)
+    handle = peewee.CharField(null=True)
+    pds_url = peewee.CharField()
+    authserver_iss = peewee.CharField()
+    access_token = peewee.TextField(null=True)
+    refresh_token = peewee.TextField(null=True)
+    dpop_authserver_nonce  = peewee.CharField()
+    dpop_pds_nonce = peewee.CharField(null=True)
+    dpop_private_jwk = peewee.CharField()
+
 
 # with DBConnection() as conn:
 #     conn.create_tables(
@@ -344,5 +369,7 @@ class NormalizedFeedStats(BaseModel):
 #             ModActions,
 #             ActivityLog,
 #             NormalizedFeedStats,
+#             OauthRequest,
+#             OauthSession
 #         ]
 #     )

@@ -50,6 +50,9 @@ Running each service requires setting environment variables and running a single
 - `FIREHOSE_CURSOR_OVERRIDE` - cursor override to use when starting the firehose. Defaults to None, and it will instead fetch a cursor from the database. If the database cursor does not exist or is too old, the firehose will instead use the cursor of the latest Bluesky firehose commit.
 - `ASTROFEED_DEBUG` - Enabled debug log output. Will require a restart of the service.
 
+Some of the environment variables are now created with a dot-env file. Currently, they are only used in the astrofeed_server.
+Make a copy of the file .env_template in the root, and fill in the details.
+
 2. Start the service with the command `./run_firehose`, or with:
 
 ```bash
@@ -126,3 +129,19 @@ for the server version (with the "" included, and with \<database name\> replace
 pg_dump --version
 ```
 for the the local client version; and ensuring that the version of the server (first command) is lower than or equal to the version of the client (second command).
+
+
+Atproto
+-------
+This is the backend part of the Atmosphere login for Astrosky Ecosystem website.
+
+Set up as follows, but you'll need to run the frontend to 
+
+- First create the env file, from example.env. Put in/run commands to fill it in.
+- Run a database
+  - Perhaps use /database/Containerfile with podman
+- Make sure astrofeed_server is set up with values as above.
+- Run the webserver
+
+### Bugs:
+- It currently doesn't allow you to log in twice... 

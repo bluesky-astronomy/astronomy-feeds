@@ -4,6 +4,9 @@
 \i post.sql
 \i subscriptionstate.sql
 
+\i oauthrequest.sql
+\i oauthsession.sql
+
 \i normalizedfeedstats.sql
 
 
