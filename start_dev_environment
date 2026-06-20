@@ -10,65 +10,73 @@ else
 fi
 
 ##
+## determine if we have access to numfmt - does not exist on macOS by default, but is useful for printing file sizes in human-readable format
+## if we don't have this, then we will divide the file size by 1024^2 to get MB and print that instead
+##
+if [ -z "$(which numfmt)" ]; then
+    NUMFMT_PRESENT=0
+else
+    NUMFMT_PRESENT=1
+fi
+
+##
 ## function to print message explaining usage and exit, in case of incorrect usage
 ##
 if [ $GETOPT_PRESENT -eq 1 ]; then
     print_usage_msg()
     {
-        echo "Usage: start_dev_environment [ -r | --refresh-database ]"
+        echo "Usage: start_dev_environment -t <token> [ -r ]"
         exit 2
     }
 else
     print_usage_msg()
     {
-        echo "Usage: start_dev_environment [ -r ]"
+        echo "Usage: start_dev_environment -t <token> [ -r ]"
         exit 2
     }
 fi
+
 
 ##
 ## argument parsing and processing
 ##
 REFRESH_DB=0
+unset -v TOKEN
 
-if [ $GETOPT_PRESENT -eq 1 ]; then
-    ARGUMENTS=$(getopt -a -n start_dev_environment -o r --long refresh-database -- "$@")
-    ARGUMENT_PARSE_SUCCESS=$?
-    if [ "$ARGUMENT_PARSE_SUCCESS" != "0" ]; then
-        print_usage_msg
-    fi
-    eval set -- "$ARGUMENTS"
+while getopts "rt:" arg; do
+    case $arg in
+        r | refresh-database)
+            REFRESH_DB=1
+            ;;
+        t | token)
+            TOKEN=$OPTARG
+            ;;
+        \? )
+            echo "Error: Invalid option -$OPTARG" >&2
+            print_usage_msg
+            exit 1
+            ;;
+        : )
+            echo "Error: Option -$OPTARG requires an argument." >&2
+            print_usage_msg
+            exit 1
+            ;;
+    esac
+done
 
-    while true; do
-        case "$1" in
-            -r | --refresh-database)
-                REFRESH_DB=1
-                shift
-                ;;
-            --)
-                shift
-                break
-                ;;
-            *)
-                echo "ERROR: invalid argument passed in."
-                print_usage_msg
-                ;;
-        esac
-    done
-else
-    while getopts ":r" opt; do
-        case $opt in
-            r)
-                REFRESH_DB=1
-                shift
-                ;;
-            \?)
-                echo "ERROR: invalid argument."
-                print_usage_msg
-                ;;
-        esac
-    done
+# Shift off parsed options to reveal remaining positional arguments
+shift $((OPTIND -1))
+
+# Enforce that the '-t' option was actually supplied by the user
+if [ -z "$TOKEN" ]; then
+    echo "Error: The -t option is mandatory." >&2
+    print_usage_msg
+    exit 1
 fi
+
+echo "Token provided: ${TOKEN}"
+echo "Refresh database: $REFRESH_DB"
+
 
 ##
 ## setup/start container
@@ -106,7 +114,9 @@ if [ -z "$(docker ps | grep AstroskyDB)" ]; then
     # set up the AstroskyDB container
     echo "Creating new container 'AstroskyDB...'"
     read -s -p "Please enter a password to use for the PostreSQL server and database: " USER_PASSWORD; echo;
-    docker run --name AstroskyDB -e POSTGRES_PASSWORD=$USER_PASSWORD -d -p 5432:5432 -v postgres-data:/var/lib/postgresql/data -d postgres:alpine > /dev/null 2>&1
+    #PostgreSQL 18+ requires the postgres-data mount point to be /var/lib/postgresql, NOT /var/lib/postgresql/data, 
+    #which was the default in older versions; alpine image uses 18+ so we use the new mount point here
+    docker run --name AstroskyDB -e POSTGRES_PASSWORD=$USER_PASSWORD -d -p 5432:5432 -v postgres-data:/var/lib/postgresql -d postgres:alpine > /dev/null 2>&1
     echo "...container created."
     while [ "$(docker container inspect -f {{.State.Running}} AstroskyDB)" == "false" ]
     do
@@ -124,7 +134,7 @@ if [ -z "$(docker ps | grep AstroskyDB)" ]; then
     docker exec -it "AstroskyDB" psql -U postgres -c 'CREATE DATABASE bluesky_astronomy;' > /dev/null 2>&1
     echo "...database created."
 
-    until [ "$(sudo docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(datname) FROM pg_database WHERE datname = 'bluesky_astronomy'")" -eq 1 ]
+    until [ "$(docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(datname) FROM pg_database WHERE datname = 'bluesky_astronomy'")" -eq 1 ]
     do
         echo "Waiting for database to be accessible before creating user."
         sleep 1
@@ -133,6 +143,15 @@ if [ -z "$(docker ps | grep AstroskyDB)" ]; then
     docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "CREATE USER bluesky_astronomy WITH ENCRYPTED PASSWORD '''$USER_PASSWORD''';"
     echo "...user created."
 
+    echo "Creating user 'aob_service'..."
+    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "CREATE USER aob_service;"
+    echo "...user created."
+
+    echo "Creating user 'tae_service'..."
+    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "CREATE USER tae_service;"
+    echo "...user created."
+
+
     until [ "$(sudo docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(rolname) FROM pg_roles WHERE rolname = 'bluesky_astronomy'")" -eq 1 ]
     do
         echo "Waiting for user creation to finish before granting privileges."
@@ -140,7 +159,8 @@ if [ -z "$(docker ps | grep AstroskyDB)" ]; then
     done
     echo "Granting privileges on database..."
     docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c 'GRANT ALL PRIVILEGES ON DATABASE bluesky_astronomy TO bluesky_astronomy;'
-    echo "...privileges granted."
+    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "GRANT ALL PRIVILEGES ON SCHEMA public TO bluesky_astronomy;"
+    echo "...privileges granted on database and public schema to bluesky_astronomy."
 
     # if not already given argument to refresh database, check if user wants to populate new database now
     if [ $REFRESH_DB -eq 0 ]; then
@@ -188,11 +208,19 @@ if [ $REFRESH_DB -eq 1 ]; then
     fi
 
     # download latest dev database dump
-    DEV_DB_SIZE="$(curl -sI http://astrosky.eco/download/devdb.sql | grep -i Content-Length | cut -d ' ' -f 2 | tr -d '\r' | numfmt --to=iec)"
+    #token = JSGbW35BLetgk8nS4bAnL8uQacx4BK
+
+    DEV_DB_SIZE="$(curl -sI "https://feeds.astrosky.eco/api/dev.downloadDevDB?token=${TOKEN}" | grep -i Content-Length | cut -d ' ' -f 2 | tr -d '\r')" 
+    if [ $NUMFMT_PRESENT -eq 1 ]; then
+        DEV_DB_SIZE="$(echo $DEV_DB_SIZE | numfmt --to=iec)"
+    else
+        DEV_DB_SIZE="$((${DEV_DB_SIZE} / 1024 / 1024)) MB"
+    fi
+
     read -p "Need to download data file of size ~$DEV_DB_SIZE (will be removed after); \
              is this ok? (y to continue, anything else to abort): " DOWNLOAD_RESPONSE
     if [ "$DOWNLOAD_RESPONSE" == "y" ] || [ "$DOWNLOAD_RESPONSE" == "Y" ]; then
-        curl -O http://astrosky.eco/download/devdb.sql
+        curl -o devdb.sql https://feeds.astrosky.eco/api/dev.downloadDevDB?token=${TOKEN}
         if [ ! -f "devdb.sql" ]; then
             echo "ERROR: download of devdb.sql was unsuccessful"
             exit 1
@@ -204,12 +232,14 @@ if [ $REFRESH_DB -eq 1 ]; then
         exit 0;
     fi
 
+: <<'END_COMMENT'
     # update database with new data
     if [ "$(sudo docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(datname) FROM pg_database WHERE datname = 'bluesky_astronomy'")" -eq 1 ]; then
         if [ "data in database" ]; then
             echo "WARNING: found pre-existing database named 'bluesky_astronomy', continuing from here will permanently delete all current local data in favor of new data."
             read -p "Continue? (y to proceed): " OVERWRITE_RESPONSE; echo;
             if [ "$DOWNLOAD_RESPONSE" == "y" ] || [ "$DOWNLOAD_RESPONSE" == "Y" ]; then
+                echo "Need to remove the data already present."
                 # TODO: clean devdb
             else
                 echo "Exiting without overwriting current database data."
@@ -217,14 +247,20 @@ if [ $REFRESH_DB -eq 1 ]; then
             fi
         else
             echo "Empty database named 'bluesky_astronomy' exists, populating with downloaded data..."
+        fi
     else
         # TODO: dev db does not already exist, needs to be created and set up
+        echo "Setting up new database 'bluesky_astronomy'..."
+    fi
+END_COMMENT
 
     # now we can run the downloaded database file
-    docker exec -it "AstroskyDB" psql -d devdb -f devdb.sql
+    docker cp devdb.sql "AstroskyDB":/tmp/devdb.sql
+    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -f /tmp/devdb.sql
 
     # remove database file
+    echo "Removing downloaded database file locally and in container..."
     rm devdb.sql
+    docker exec -it "AstroskyDB" rm /tmp/devdb.sql
 
-    fi
 fi
