@@ -1,4 +1,10 @@
-#!/usr/bin/env bash
+## #!/usr/bin/env bash
+
+#!/bin/bash
+## disable "helpful" docker - what's next message
+## may or may not work for you - not working on MacOS.
+## You can also disable this in the Docker Desktop settings under "General" by unchecking "Show Docker CLI hints in terminal"
+export DOCKER_CLI_HINTS=false
 
 ##
 ## determine whether we have access to getopt
@@ -35,6 +41,42 @@ else
         exit 2
     }
 fi
+
+create_database()
+{
+    echo "Creating database 'bluesky_astronomy'..."
+    docker exec -t "AstroskyDB" psql -U postgres -c 'CREATE DATABASE bluesky_astronomy;' > /dev/null 2>&1
+    echo "...database created."
+
+    until [ "$(docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(datname) FROM pg_database WHERE datname = 'bluesky_astronomy'")" -eq 1 ]
+    do
+        echo "Waiting for database to be accessible before creating user."
+        sleep 1
+    done
+    echo "Creating user 'bluesky_astronomy'..."
+    docker exec -t "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "CREATE USER bluesky_astronomy WITH ENCRYPTED PASSWORD '''$USER_PASSWORD''';"
+    echo "...user created."
+
+    echo "Creating user 'aob_service'..."
+    docker exec -t "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "CREATE USER aob_service;"
+    echo "...user created."
+
+    echo "Creating user 'tae_service'..."
+    docker exec -t "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "CREATE USER tae_service;"
+    echo "...user created."
+
+
+    until [ "$(docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(rolname) FROM pg_roles WHERE rolname = 'bluesky_astronomy'")" -eq 1 ]
+    do
+        echo "Waiting for user creation to finish before granting privileges."
+        sleep 1
+    done
+    echo "Granting privileges on database..."
+    docker exec -t "AstroskyDB" psql -U postgres -d bluesky_astronomy -c 'GRANT ALL PRIVILEGES ON DATABASE bluesky_astronomy TO bluesky_astronomy;'
+    docker exec -t "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "GRANT ALL PRIVILEGES ON SCHEMA public TO bluesky_astronomy;"
+    echo "...privileges granted on database and public schema to bluesky_astronomy."
+
+}
 
 
 ##
@@ -130,37 +172,11 @@ if [ -z "$(docker ps | grep AstroskyDB)" ]; then
         echo "Waiting for server to come online before creating database."
         sleep 1
     done
-    echo "Creating database 'bluesky_astronomy'..."
-    docker exec -it "AstroskyDB" psql -U postgres -c 'CREATE DATABASE bluesky_astronomy;' > /dev/null 2>&1
-    echo "...database created."
-
-    until [ "$(docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(datname) FROM pg_database WHERE datname = 'bluesky_astronomy'")" -eq 1 ]
-    do
-        echo "Waiting for database to be accessible before creating user."
-        sleep 1
-    done
-    echo "Creating user 'bluesky_astronomy'..."
-    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "CREATE USER bluesky_astronomy WITH ENCRYPTED PASSWORD '''$USER_PASSWORD''';"
-    echo "...user created."
-
-    echo "Creating user 'aob_service'..."
-    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "CREATE USER aob_service;"
-    echo "...user created."
-
-    echo "Creating user 'tae_service'..."
-    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "CREATE USER tae_service;"
-    echo "...user created."
 
 
-    until [ "$(sudo docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(rolname) FROM pg_roles WHERE rolname = 'bluesky_astronomy'")" -eq 1 ]
-    do
-        echo "Waiting for user creation to finish before granting privileges."
-        sleep 1
-    done
-    echo "Granting privileges on database..."
-    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c 'GRANT ALL PRIVILEGES ON DATABASE bluesky_astronomy TO bluesky_astronomy;'
-    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -c "GRANT ALL PRIVILEGES ON SCHEMA public TO bluesky_astronomy;"
-    echo "...privileges granted on database and public schema to bluesky_astronomy."
+    # call function to create database and set up user permissions, etc. as needed
+    create_database
+
 
     # if not already given argument to refresh database, check if user wants to populate new database now
     if [ $REFRESH_DB -eq 0 ]; then
