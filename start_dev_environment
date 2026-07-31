@@ -6,6 +6,8 @@
 ## You can also disable this in the Docker Desktop settings under "General" by unchecking "Show Docker CLI hints in terminal"
 export DOCKER_CLI_HINTS=false
 
+export PG_VERSION=16-alpine
+
 ##
 ## determine whether we have access to getopt
 ##
@@ -139,8 +141,8 @@ if [ -z "$(docker ps | grep AstroskyDB)" ]; then
     echo "Couldn't find container 'AstroskyDB'; setting up container..."
 
     # get image
-    echo "Pulling postgres:alpine image..."
-    docker pull postgres:alpine
+    echo "Pulling postgres:$PG_VERSION image..."
+    docker pull postgres:$PG_VERSION
 
     # create volume for persistent data if none already exists
     docker volume inspect postgres-data > /dev/null 2>&1
@@ -158,7 +160,7 @@ if [ -z "$(docker ps | grep AstroskyDB)" ]; then
     read -s -p "Please enter a password to use for the PostreSQL server and database: " USER_PASSWORD; echo;
     #PostgreSQL 18+ requires the postgres-data mount point to be /var/lib/postgresql, NOT /var/lib/postgresql/data, 
     #which was the default in older versions; alpine image uses 18+ so we use the new mount point here
-    docker run --name AstroskyDB -e POSTGRES_PASSWORD=$USER_PASSWORD -d -p 5432:5432 -v postgres-data:/var/lib/postgresql -d postgres:alpine > /dev/null 2>&1
+    docker run --name AstroskyDB -e POSTGRES_PASSWORD=$USER_PASSWORD -d -p 5432:5432 -v postgres-data:/var/lib/postgresql -d postgres:$PG_VERSION > /dev/null 2>&1
     echo "...container created."
     while [ "$(docker container inspect -f {{.State.Running}} AstroskyDB)" == "false" ]
     do
@@ -248,35 +250,42 @@ if [ $REFRESH_DB -eq 1 ]; then
         exit 0;
     fi
 
-: <<'END_COMMENT'
+
     # update database with new data
-    if [ "$(sudo docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(datname) FROM pg_database WHERE datname = 'bluesky_astronomy'")" -eq 1 ]; then
-        if [ "data in database" ]; then
+    if [ "$(docker exec "AstroskyDB" psql -U postgres -Atq -c "SELECT COUNT(datname) FROM pg_database WHERE datname = 'bluesky_astronomy'")" -eq 1 ]; then
+        #if [ "data in database" ]; then
             echo "WARNING: found pre-existing database named 'bluesky_astronomy', continuing from here will permanently delete all current local data in favor of new data."
             read -p "Continue? (y to proceed): " OVERWRITE_RESPONSE; echo;
             if [ "$DOWNLOAD_RESPONSE" == "y" ] || [ "$DOWNLOAD_RESPONSE" == "Y" ]; then
                 echo "Need to remove the data already present."
-                # TODO: clean devdb
+                docker exec "AstroskyDB" psql -U postgres -c 'DROP DATABASE bluesky_astronomy WITH (FORCE);'
+                echo "Database dropped, creating new database..."
+                create_database
             else
                 echo "Exiting without overwriting current database data."
                 exit 0;
             fi
-        else
-            echo "Empty database named 'bluesky_astronomy' exists, populating with downloaded data..."
-        fi
+        #else
+            # echo "Empty database named 'bluesky_astronomy' exists, populating with downloaded data..."
+        #fi
     else
-        # TODO: dev db does not already exist, needs to be created and set up
         echo "Setting up new database 'bluesky_astronomy'..."
+        create_database
     fi
-END_COMMENT
+
 
     # now we can run the downloaded database file
     docker cp devdb.sql "AstroskyDB":/tmp/devdb.sql
-    docker exec -it "AstroskyDB" psql -U postgres -d bluesky_astronomy -f /tmp/devdb.sql
+    docker exec -t "AstroskyDB" psql -U postgres -d bluesky_astronomy -f /tmp/devdb.sql
+
+    echo "Database refresh complete."
+    echo "Refreshing materialized views..."
+    docker exec -t "AstroskyDB" psql -U postgres -d bluesky_astronomy -c 'REFRESH MATERIALIZED VIEW normalizedfeedstats;'
+    echo "New data has been loaded into the database, and the downloaded database file will now be removed from both local environment and container."
 
     # remove database file
     echo "Removing downloaded database file locally and in container..."
     rm devdb.sql
-    docker exec -it "AstroskyDB" rm /tmp/devdb.sql
+    docker exec -t "AstroskyDB" rm /tmp/devdb.sql
 
 fi
