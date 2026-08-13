@@ -41,10 +41,10 @@ MANAGER_CHECK_INTERVAL = 60
 # Buffer size of the internal process queue (I think it's in bytes?)
 # N.B.: one commit is about ~1-2 KB
 # The last multiple is size in MB
-QUEUE_BUFFER_SIZE = 1024**2 * 8
+QUEUE_BUFFER_SIZE = 1024**2 * 100
 
 # Number of commits the firehose client should try to send at once.
-COMMITS_TO_ADD_AT_ONCE = 100
+COMMITS_TO_ADD_AT_ONCE = 10
 
 # Maximum number of commits each processing worker should try to get at once.
 COMMITS_TO_FETCH_AT_ONCE = 100
